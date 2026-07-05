@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default async function AccountSettingsPage() {
   const user = await getServerUser()
   if (!user) {
