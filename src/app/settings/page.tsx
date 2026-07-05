@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
