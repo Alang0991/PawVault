@@ -11,7 +11,7 @@ export const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -19,7 +19,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email },
         })
 
         if (!user) {
@@ -39,52 +39,60 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.displayName || user.username,
-          role: user.role
-        }
-      }
-    })
-    ,
-    // OAuth providers (optional) — added only when env vars are present
+          role: user.role,
+        } as any
+      },
+    }),
+
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
           GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           }) as any,
         ]
       : []),
+
     ...(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
       ? [
           DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
-            clientSecret: process.env.DISCORD_CLIENT_SECRET
+            clientSecret: process.env.DISCORD_CLIENT_SECRET,
           }) as any,
         ]
       : []),
   ],
+
   pages: {
     signIn: "/auth/signin",
     signOut: "/auth/signout",
-    error: "/auth/error"
+    error: "/auth/error",
   },
+
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
   },
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = user.role
+        token.id = (user as any).id
+        token.role = (user as any).role
       }
+
       return token
     },
+
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id
-        (session.user as any).role = token.role
+        ;(session.user as any).id = token.id as string
+        ;(session.user as any).role =
+          token.role as string | null | undefined
       }
+
       return session
-    }
+    },
   },
-  secret: process.env.NEXTAUTH_SECRET
+
+  secret: process.env.NEXTAUTH_SECRET,
 }
