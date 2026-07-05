@@ -12,7 +12,7 @@ export default async function ModerationPage() {
 
   const role = session.user.role
   const allowedRoles = ["ADMIN", "MODERATOR"]
-  if (!allowedRoles.includes(role)) {
+  if (!role || !allowedRoles.includes(role)) {
     return (
       <div className="min-h-screen py-12">
         <div className="container mx-auto px-4 max-w-3xl">
