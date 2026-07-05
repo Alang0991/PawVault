@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default async function CreatorMediaPage() {
   const user = await getServerUser()
   if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {

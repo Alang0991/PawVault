@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatDate } from "@/lib/helpers"
 
+export const dynamic = "force-dynamic"
+
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   const user = await getServerUser()
 

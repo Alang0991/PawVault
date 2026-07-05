@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star, Users, TrendingUp } from "lucide-react"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default async function CreatorsPage() {
   const creators = await prisma.user.findMany({
     where: {

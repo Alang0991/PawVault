@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice, formatDate } from "@/lib/helpers"
 
+export const dynamic = "force-dynamic"
+
 export default async function CreatorCustomersPage() {
   const user = await getServerUser()
   if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {

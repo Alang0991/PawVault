@@ -8,6 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatPrice, formatDate } from "@/lib/helpers"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default async function PayoutsPage() {
   const user = await getServerUser()
   if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {

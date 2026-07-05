@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/helpers"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default async function CreatorCouponsPage() {
   const user = await getServerUser()
   if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {
