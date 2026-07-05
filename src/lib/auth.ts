@@ -1,9 +1,16 @@
-import { NextAuthOptions, User as NextAuthUser } from "next-auth"
+import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import DiscordProvider from "next-auth/providers/discord"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+
+interface AuthUser {
+  id: string
+  email: string
+  name: string
+  role?: string | null
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -39,8 +46,8 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.displayName || user.username,
-          role: user.role,
-        } as NextAuthUser
+          role: user.role ?? null,
+        } as AuthUser
       },
     }),
 
@@ -76,8 +83,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = (user as NextAuthUser).id
-        token.role = (user as NextAuthUser).role
+        token.id = (user as AuthUser).id
+        token.role = (user as AuthUser).role ?? null
       }
 
       return token
@@ -85,8 +92,11 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string | null | undefined
+        session.user = {
+          ...session.user,
+          id: token.id ?? session.user.id,
+          role: token.role ?? null,
+        }
       }
 
       return session
