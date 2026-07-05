@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getServerUser } from '@/lib/session'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertTriangle, CheckCircle, XCircle, Users, FileText, MessageSquare } from 'lucide-react'
-import { redirect } from 'next/navigation'
 
 interface Report {
   id: string
