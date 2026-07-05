@@ -118,7 +118,7 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={(session.user as any).avatar || ""} alt={session.user.name || ""} />
+                      <AvatarImage src={session.user.avatar || session.user.image || ""} alt={session.user.name || ""} />
                       <AvatarFallback className="bg-gradient-to-br from-rose-600 to-orange-500 text-white">
                         {session.user.name?.[0]?.toUpperCase() || "U"}
                       </AvatarFallback>

@@ -10,7 +10,7 @@ export default async function ModerationPage() {
     redirect(`/auth/signin?callbackUrl=/moderation`)
   }
 
-  const role = (session.user as any)?.role
+  const role = session.user.role
   const allowedRoles = ["ADMIN", "MODERATOR"]
   if (!allowedRoles.includes(role)) {
     return (

@@ -21,7 +21,7 @@ export default async function SettingsPage() {
     redirect("/auth/signin")
   }
 
-  const userId = (session.user as any).id
+  const userId = session.user.id
 
   const user = await prisma.user.findUnique({
     where: { id: userId }

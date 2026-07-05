@@ -21,7 +21,7 @@ export default async function DownloadsPage() {
     redirect("/auth/signin")
   }
 
-  const userId = (session.user as any).id
+  const userId = session.user.id
 
   const completedOrders = await prisma.order.findMany({
     where: { 

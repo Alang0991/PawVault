@@ -21,7 +21,7 @@ export default async function OrdersPage() {
     redirect("/auth/signin")
   }
 
-  const userId = (session.user as any).id
+  const userId = session.user.id
 
   const orders = await prisma.order.findMany({
     where: { buyerId: userId },

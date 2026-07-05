@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       data: {
         reportId: validated.reportId,
         adminId: user.id,
-        action: validated.action.toUpperCase() as any,
+        action: validated.action.toUpperCase(),
         notes: `Action taken by moderator ${user.username}`,
       },
     })
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     if (validated.action === 'ban' && report.reportedType === 'User') {
       await prisma.user.update({
         where: { id: report.reportedId },
-        data: { role: 'BANNED' as any },
+        data: { role: 'BANNED' },
       })
     }
 

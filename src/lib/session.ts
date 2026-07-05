@@ -5,13 +5,13 @@ import { NextResponse } from "next/server"
 
 export async function getServerUser() {
   const session = await getServerSession(authOptions)
-  
-  if (!session || !(session.user as any)?.id) {
+
+  if (!session || !session.user?.id) {
     return null
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: (session.user as any).id },
+    where: { id: session.user.id },
     select: {
       id: true,
       email: true,

@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth"
+import { NextAuthOptions, User as NextAuthUser } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import DiscordProvider from "next-auth/providers/discord"
@@ -40,7 +40,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.displayName || user.username,
           role: user.role,
-        } as any
+        } as NextAuthUser
       },
     }),
 
@@ -49,7 +49,7 @@ export const authOptions: NextAuthOptions = {
           GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          }) as any,
+          }),
         ]
       : []),
 
@@ -58,7 +58,7 @@ export const authOptions: NextAuthOptions = {
           DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
-          }) as any,
+          }),
         ]
       : []),
   ],
@@ -76,8 +76,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = (user as any).id
-        token.role = (user as any).role
+        token.id = (user as NextAuthUser).id
+        token.role = (user as NextAuthUser).role
       }
 
       return token
@@ -85,9 +85,8 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        ;(session.user as any).id = token.id as string
-        ;(session.user as any).role =
-          token.role as string | null | undefined
+        session.user.id = token.id as string
+        session.user.role = token.role as string | null | undefined
       }
 
       return session

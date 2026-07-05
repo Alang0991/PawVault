@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const userId = (session.user as any).id
+    const userId = session.user.id
 
     const user = await prisma.user.findUnique({
       where: { id: userId }
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const userId = (session.user as any).id
+    const userId = session.user.id
 
     const products = await prisma.product.findMany({
       where: { creatorId: userId },
