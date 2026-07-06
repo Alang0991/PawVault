@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic"
 
-import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"

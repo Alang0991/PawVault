@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic"
 
-import { useState } from "react"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -17,14 +16,12 @@ import { User, Mail, Globe, Save } from "lucide-react"
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/signin")
   }
 
-  const userId = session.user.id
-
   const user = await prisma.user.findUnique({
-    where: { id: userId }
+    where: { id: session.user.id }
   })
 
   if (!user) {

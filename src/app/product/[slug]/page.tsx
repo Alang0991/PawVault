@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic"
 
-import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 import { formatPrice } from "@/lib/helpers"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"

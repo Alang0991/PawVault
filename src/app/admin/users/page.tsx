@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic"
 
-import { prisma } from "@/lib/db"
-import { getServerUser } from "@/lib/session"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +11,24 @@ import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/helpers"
 
 export default async function AdminUsersPage() {
-  const user = await getServerUser()
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    redirect("/auth/signin")
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      displayName: true,
+      role: true,
+      isVerified: true,
+      createdAt: true,
+    },
+  })
+
   if (!user || user.role !== "ADMIN") {
     redirect("/")
   }

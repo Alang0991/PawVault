@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic"
 
-import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { ProductCard } from "@/components/product-card"
 import { notFound } from "next/navigation"

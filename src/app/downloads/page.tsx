@@ -17,15 +17,13 @@ import {
 export default async function DownloadsPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/signin")
   }
 
-  const userId = session.user.id
-
   const completedOrders = await prisma.order.findMany({
     where: { 
-      buyerId: userId,
+      buyerId: session.user.id,
       status: "COMPLETED"
     },
     include: {

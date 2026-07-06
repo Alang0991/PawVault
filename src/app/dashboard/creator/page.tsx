@@ -105,14 +105,12 @@ async function getCreatorDashboardData(userId: string) {
 export default async function CreatorDashboardPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/signin")
   }
 
-  const userId = session.user.id
-
   const user = await prisma.user.findUnique({
-    where: { id: userId }
+    where: { id: session.user.id }
   })
 
   if (!user || !["CREATOR", "VERIFIED_CREATOR"].includes(user.role)) {

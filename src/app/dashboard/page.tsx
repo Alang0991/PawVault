@@ -72,7 +72,17 @@ export default async function DashboardPage() {
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id }
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      displayName: true,
+      role: true,
+      avatar: true,
+      bio: true,
+      isVerified: true,
+    },
   })
 
   if (!user) {

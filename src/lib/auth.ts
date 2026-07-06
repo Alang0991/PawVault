@@ -5,13 +5,6 @@ import DiscordProvider from "next-auth/providers/discord"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 
-interface AuthUser {
-  id: string
-  email: string
-  name: string
-  role?: string | null
-}
-
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -47,7 +40,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.displayName || user.username,
           role: user.role ?? null,
-        } as AuthUser
+        }
       },
     }),
 
@@ -83,8 +76,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = (user as AuthUser).id
-        token.role = (user as AuthUser).role ?? null
+        token.id = user.id
+        token.role = user.role ?? null
       }
 
       return token
@@ -92,11 +85,8 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user = {
-          ...session.user,
-          id: token.id ?? session.user.id,
-          role: token.role ?? null,
-        }
+        session.user.id = token.id ?? ""
+        session.user.role = token.role ?? null
       }
 
       return session

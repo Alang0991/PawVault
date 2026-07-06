@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"

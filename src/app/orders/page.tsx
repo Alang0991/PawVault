@@ -17,14 +17,12 @@ import {
 export default async function OrdersPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/signin")
   }
 
-  const userId = session.user.id
-
   const orders = await prisma.order.findMany({
-    where: { buyerId: userId },
+    where: { buyerId: session.user.id },
     include: {
       items: {
         include: {
