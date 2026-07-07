@@ -1,9 +1,22 @@
+import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Sparkles, TrendingUp, Shield, Zap, Users, Star } from "lucide-react"
 
-export default function Home() {
+export const dynamic = "force-dynamic"
+
+export default async function Home() {
+  const [creatorCount, productCount, downloadCount, reviewAvg] = await Promise.all([
+    prisma.user.count({ where: { role: { in: ["CREATOR", "VERIFIED_CREATOR"] } } }),
+    prisma.product.count({ where: { isPublished: true } }),
+    prisma.download.count(),
+    prisma.review.aggregate({ _avg: { rating: true } }),
+  ])
+
+  const avgRating = reviewAvg._avg.rating ?? 0
+  const hasReviews = avgRating > 0
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -116,23 +129,32 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
             <div className="space-y-2">
-              <div className="text-4xl md:text-5xl font-bold">10K+</div>
+              <div className="text-4xl md:text-5xl font-bold">{creatorCount.toLocaleString()}</div>
               <div className="text-white/80">Active Creators</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl md:text-5xl font-bold">50K+</div>
+              <div className="text-4xl md:text-5xl font-bold">{productCount.toLocaleString()}</div>
               <div className="text-white/80">Digital Products</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl md:text-5xl font-bold">1M+</div>
+              <div className="text-4xl md:text-5xl font-bold">{downloadCount.toLocaleString()}</div>
               <div className="text-white/80">Downloads</div>
             </div>
             <div className="space-y-2">
-              <div className="text-4xl md:text-5xl font-bold">4.9</div>
-              <div className="text-white/80 flex items-center justify-center gap-1">
-                Average Rating
-                <Star className="h-4 w-4 fill-yellow-400" />
-              </div>
+              {hasReviews ? (
+                <>
+                  <div className="text-4xl md:text-5xl font-bold">{avgRating.toFixed(1)}</div>
+                  <div className="text-white/80 flex items-center justify-center gap-1">
+                    Average Rating
+                    <Star className="h-4 w-4 fill-yellow-400" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-4xl md:text-5xl font-bold">No ratings yet</div>
+                  <div className="text-white/80">Average Rating</div>
+                </>
+              )}
             </div>
           </div>
         </div>
