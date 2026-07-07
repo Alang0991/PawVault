@@ -6,8 +6,10 @@ import { prisma } from './prisma'
 export type StorageProvider = 'supabase'
 
 export interface StorageOptions {
-  folder: string
+  folder: 'avatars' | 'products' | 'stores' | 'files'
   userId?: string
+  productId?: string
+  storeId?: string
   validation?: keyof typeof VALIDATION_OPTIONS
   contentType?: string
 }
@@ -47,15 +49,45 @@ export function getSupabaseClient() {
   })
 }
 
-function generateKey(folder: string, filename: string): string {
+function sanitizeFilename(filename: string): string {
+  const ext = filename.includes('.') ? filename.split('.').pop() : ''
+  const baseName = filename.includes('.') 
+    ? filename.slice(0, filename.lastIndexOf('.'))
+    : filename
+  const sanitized = baseName
+    .replace(/[^a-zA-Z0-9-_]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60)
+  return ext ? `${sanitized}.${ext}` : sanitized
+}
+
+function generateKey(options: StorageOptions, filename: string): string {
   const timestamp = Date.now()
-  const random = Math.random().toString(36).slice(2, 10)
-  const ext = filename.includes('.') ? filename.split('.').pop() : 'bin'
-  const baseName = filename
-    .replace(`.${ext}`, '')
-    .replace(/[^a-zA-Z0-9-_]/g, '')
-    .slice(0, 40)
-  return `${folder}/${timestamp}-${random}-${baseName}.${ext}`
+  const random = Math.random().toString(36).slice(2, 8)
+  const safeName = sanitizeFilename(filename)
+  const filePart = `${timestamp}-${random}-${safeName}`
+
+  if (options.folder === 'avatars' && options.userId) {
+    return `avatars/${options.userId}/${filePart}`
+  }
+
+  if (options.folder === 'stores' && options.userId) {
+    return `stores/${options.userId}/${filePart}`
+  }
+
+  if (options.folder === 'products' && options.productId) {
+    if (options.contentType?.startsWith('video/')) {
+      return `products/${options.productId}/files/${filePart}`
+    }
+    return `products/${options.productId}/images/${filePart}`
+  }
+
+  if (options.folder === 'files' && options.productId) {
+    return `products/${options.productId}/files/${filePart}`
+  }
+
+  return `${options.folder}/${filePart}`
 }
 
 export async function uploadFile(
@@ -71,8 +103,10 @@ export async function uploadFile(
 
   const supabase = getSupabaseClient()
   const bucket = getBucket()
-  const key = generateKey(options.folder, file.name)
-  const buffer = Buffer.from(await file.arrayBuffer())
+  const key = generateKey(options, file.name)
+
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
 
   const { error } = await supabase.storage
     .from(bucket)
@@ -82,6 +116,15 @@ export async function uploadFile(
     })
 
   if (error) {
+    console.error('Supabase Storage upload error:', {
+      message: error.message,
+      statusCode: (error as any).statusCode,
+      bucket,
+      key,
+      fileName: file.name,
+      fileSize: file.size,
+      contentType: file.type,
+    })
     throw new Error(`Supabase Storage upload failed: ${error.message}`)
   }
 
@@ -99,6 +142,7 @@ export async function uploadFile(
       fileSize: file.size,
       contentType: file.type,
       key,
+      bucket,
       folder: options.folder,
       provider: 'supabase',
     },

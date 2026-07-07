@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const type = (file.type.startsWith("video") ? "video" : "image") as "image" | "video"
     const result = await uploadFile(
       file,
-      { folder: "products", userId: user.id, validation: "productMedia" },
+      { folder: "products", userId: user.id, productId, validation: "productMedia" },
     )
 
     if (isThumbnail) {
