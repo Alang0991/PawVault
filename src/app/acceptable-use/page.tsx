@@ -7,7 +7,7 @@ export default function AcceptableUsePage() {
         <h1 className="text-3xl font-bold mb-8">Acceptable Use Policy</h1>
         <div className="prose dark:prose-invert">
           <p>Last updated: July 1, 2026</p>
-          <p>Furmarket is committed to providing a safe and respectful platform for all users.</p>
+          <p>PawVault is committed to providing a safe and respectful platform for all users.</p>
           <h2>Prohibited Content</h2>
           <ul>
             <li>Copyrighted material without permission</li>

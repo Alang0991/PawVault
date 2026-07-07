@@ -3,16 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
-import { z } from "zod"
-
-const createFileSchema = z.object({
-  productId: z.string(),
-  filename: z.string(),
-  url: z.string().url(),
-  size: z.number().int().positive(),
-  platform: z.string().optional(),
-  version: z.string().optional(),
-})
+import { uploadFile, saveFileRecord } from "@/lib/storage"
 
 export async function POST(request: Request) {
   try {
@@ -21,88 +12,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const validated = createFileSchema.parse(body)
+    const form = await request.formData()
+    const file = form.get("file")
+    const productId = form.get("productId") as string
+    const version = (form.get("version") as string) || undefined
+    const platform = (form.get("platform") as string) || undefined
 
-    const product = await prisma.product.findUnique({
-      where: { id: validated.productId },
-    })
-
-    if (!product) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
-      )
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    }
+    if (!productId) {
+      return NextResponse.json({ error: "productId is required" }, { status: 400 })
     }
 
+    const product = await prisma.product.findUnique({ where: { id: productId } })
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
     if (product.creatorId !== user.id && user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const file = await prisma.productFile.create({
-      data: {
-        productId: validated.productId,
-        filename: validated.filename,
-        url: validated.url,
-        size: validated.size,
-        platform: validated.platform,
-        version: validated.version,
-      },
-    })
-
-    return NextResponse.json({ file }, { status: 201 })
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
-        { status: 400 }
-      )
-    }
-
-    console.error("Upload file error:", error)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
+    const result = await uploadFile(
+      file,
+      { folder: "files", userId: user.id, validation: "productFile" },
+      request,
     )
-  }
-}
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const user = await getServerUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const file = await prisma.productFile.findUnique({
-      where: { id: params.id },
-      include: { product: true },
+    const saved = await saveFileRecord(user.id, productId, result, file.name, {
+      version,
+      platform,
     })
 
-    if (!file) {
-      return NextResponse.json(
-        { error: "File not found" },
-        { status: 404 }
-      )
-    }
-
-    if (file.product.creatorId !== user.id && user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    await prisma.productFile.delete({
-      where: { id: params.id },
-    })
-
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ file: saved }, { status: 201 })
   } catch (error) {
-    console.error("Delete file error:", error)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    )
+    const message = error instanceof Error ? error.message : "Upload failed"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

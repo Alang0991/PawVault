@@ -135,7 +135,7 @@ export const VALIDATION_OPTIONS = {
   },
   banner: {
     maxSize: 10 * 1024 * 1024, // 10MB
-    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', '.gif'],
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
     allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp', '.gif']
   },
   productMedia: {
@@ -145,7 +145,19 @@ export const VALIDATION_OPTIONS = {
   },
   productFile: {
     maxSize: 10 * 1024 * 1024 * 1024, // 10GB
-    allowedTypes: ['application/zip', 'application/x-zip-compressed', 'application/x-rar-compressed', 'application/x-7z-compressed', 'application/pdf'],
-    allowedExtensions: ['.zip', '.rar', '.7z', '.pdf']
+    allowedTypes: [
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-rar-compressed',
+      'application/x-7z-compressed',
+      'application/pdf',
+      'application/octet-stream',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/avif',
+    ],
+    allowedExtensions: ['.zip', '.rar', '.7z', '.pdf', '.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.blend', '.fbx', '.obj', '.unitypackage', '.asset']
   }
 } as const

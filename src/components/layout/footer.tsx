@@ -10,7 +10,7 @@ export function Footer() {
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-rose-600 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
                 F
               </div>
-              <span className="text-xl font-bold">Furmarket</span>
+              <span className="text-xl font-bold">PawVault</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               The VRChat-focused digital marketplace for instant imports. Support VR creators and discover premium VRChat assets.
@@ -58,7 +58,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p> Furmarket. All rights reserved.</p>
+          <p> PawVault. All rights reserved.</p>
         </div>
       </div>
     </footer>

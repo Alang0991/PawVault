@@ -3,15 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
-import { z } from "zod"
-
-const createMediaSchema = z.object({
-  productId: z.string(),
-  url: z.string().url(),
-  type: z.enum(["image", "video"]),
-  order: z.number().int().default(0),
-  isThumbnail: z.boolean().default(false),
-})
+import { uploadFile, saveMediaRecord, deleteFile } from "@/lib/storage"
 
 export async function POST(request: Request) {
   try {
@@ -20,47 +12,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const validated = createMediaSchema.parse(body)
+    const form = await request.formData()
+    const file = form.get("file")
+    const productId = form.get("productId") as string
+    const isThumbnail = form.get("isThumbnail") === "true"
+    const order = parseInt((form.get("order") as string) || "0")
 
-    const product = await prisma.product.findUnique({
-      where: { id: validated.productId },
-    })
-
-    if (!product) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
-      )
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    }
+    if (!productId) {
+      return NextResponse.json({ error: "productId is required" }, { status: 400 })
     }
 
+    const product = await prisma.product.findUnique({ where: { id: productId } })
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
     if (product.creatorId !== user.id && user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const media = await prisma.productMedia.create({
-      data: {
-        productId: validated.productId,
-        url: validated.url,
-        type: validated.type,
-        order: validated.order,
-        isThumbnail: validated.isThumbnail,
-      },
-    })
+    const type = (file.type.startsWith("video") ? "video" : "image") as "image" | "video"
+    const result = await uploadFile(
+      file,
+      { folder: "products", userId: user.id, validation: "productMedia" },
+      request,
+    )
+
+    if (isThumbnail) {
+      await prisma.productMedia.updateMany({
+        where: { productId, isThumbnail: true },
+        data: { isThumbnail: false },
+      })
+    }
+
+    const media = await saveMediaRecord(productId, result, type, isThumbnail, order)
 
     return NextResponse.json({ media }, { status: 201 })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
-        { status: 400 }
-      )
-    }
-
-    console.error("Upload media error:", error)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    )
+    const message = error instanceof Error ? error.message : "Upload failed"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

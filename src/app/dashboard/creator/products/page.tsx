@@ -71,7 +71,7 @@ export default async function CreatorProductsPage() {
               <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
               <h3 className="text-xl font-semibold mb-2">No products yet</h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Create your first product to start selling on PawMart
+                Create your first product to start selling on PawVault
               </p>
               <Button className="gradient-bg text-white" asChild>
                 <Link href="/dashboard/creator/products/new">

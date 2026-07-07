@@ -17,6 +17,7 @@ const createProductSchema = z.object({
   isOnSale: z.boolean().default(false),
   isPublished: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
+  slug: z.string().optional(),
   version: z.string().optional(),
   unityVersion: z.string().optional(),
   vrcSdkVersion: z.string().optional(),
@@ -177,6 +178,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {
+      return NextResponse.json({ error: "Creator account required" }, { status: 403 })
+    }
+
     const body = await request.json()
     const validated = createProductSchema.parse(body)
 
@@ -184,9 +189,16 @@ export async function POST(request: Request) {
       where: { userId: user.id },
     })
 
-    const slug = `${validated.title.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "")}-${Date.now()}`
+    const baseSlug = (validated.slug?.trim() || validated.title)
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+    let slug = baseSlug || `product-${Date.now()}`
+    const clash = await prisma.product.findUnique({ where: { slug } })
+    if (clash) slug = `${baseSlug}-${Date.now()}`
 
-    const { tags, ...productData } = validated
+    const { tags, slug: _slug, ...productData } = validated
 
     const product = await prisma.product.create({
       data: {

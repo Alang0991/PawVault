@@ -8,9 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Star, ShoppingCart, Heart, Download, FileText, AlertCircle } from "lucide-react"
+import { Star, Download, FileText, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { ProductActions } from "@/components/product-actions"
 
 async function getProduct(slug: string) {
   const product = await prisma.product.findUnique({
@@ -67,7 +68,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const product = await getProduct(params.slug)
   return {
     title: product.title,
-    description: product.description || `Buy ${product.title} on Furmarket`,
+      description: product.description || `Buy ${product.title} on PawVault`,
   }
 }
 
@@ -141,13 +142,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
             </div>
 
             <div className="flex gap-2">
-              <Button size="lg" className="flex-1">
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Import Queue
-              </Button>
-              <Button size="lg" variant="outline">
-                <Heart className="h-5 w-5" />
-              </Button>
+              <ProductActions productId={product.id} isFree={product.isFree} />
             </div>
 
             <Separator />
@@ -188,7 +183,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
             <Separator />
 
             <div className="flex items-center gap-4">
-              <Link href={`/store/${product.creator.id}`}>
+              <Link href={`/profile/${product.creator.username}`}>
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={product.creator.avatar || ""} alt={creatorName} />

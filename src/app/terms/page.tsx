@@ -11,14 +11,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">1. Acceptance of Terms</h2>
             <p className="text-muted-foreground leading-relaxed">
-              By accessing or using Furmarket, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our platform. We reserve the right to modify these terms at any time, and your continued use constitutes acceptance of modified terms.
+              By accessing or using PawVault, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our platform. We reserve the right to modify these terms at any time, and your continued use constitutes acceptance of modified terms.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold mb-4">2. Description of Service</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Furmarket is a VRChat-focused digital marketplace that enables creators to sell VRChat assets directly to customers. We provide platform infrastructure, payment processing, download delivery, and customer support tools. Creators retain full ownership of their content and are independent contractors, not employees of Furmarket.
+              PawVault is a VRChat-focused digital marketplace that enables creators to sell VRChat assets directly to customers. We provide platform infrastructure, payment processing, download delivery, and customer support tools. Creators retain full ownership of their content and are independent contractors, not employees of PawVault.
             </p>
           </section>
 
@@ -43,7 +43,7 @@ export default function TermsPage() {
               <div>
                 <h3 className="text-xl font-semibold mb-2">Commission Structure</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Furmarket charges a platform commission on all sales:
+                  PawVault charges a platform commission on all sales:
                 </p>
                 <ul className="list-disc pl-6 mt-2 space-y-1 text-muted-foreground">
                   <li>Standard creators: 15% commission</li>
@@ -54,7 +54,7 @@ export default function TermsPage() {
               <div>
                 <h3 className="text-xl font-semibold mb-2">Content Ownership</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Creators retain full ownership of their content. By uploading content, you grant Furmarket a worldwide, non-exclusive, royalty-free license to use, display, and distribute your content exclusively for the purpose of operating and promoting the platform.
+                  Creators retain full ownership of their content. By uploading content, you grant PawVault a worldwide, non-exclusive, royalty-free license to use, display, and distribute your content exclusively for the purpose of operating and promoting the platform.
                 </p>
               </div>
               <div>
@@ -100,14 +100,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">8. Intellectual Property</h2>
             <p className="text-muted-foreground leading-relaxed">
-              The Furmarket platform, including its design, code, and branding, is protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works without our express written permission.
+              The PawVault platform, including its design, code, and branding, is protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works without our express written permission.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold mb-4">9. Limitation of Liability</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Furmarket shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of our services. Our total liability shall not exceed the amount paid by you in the past six months.
+              PawVault shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of our services. Our total liability shall not exceed the amount paid by you in the past six months.
             </p>
           </section>
 
@@ -121,14 +121,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">11. Governing Law</h2>
             <p className="text-muted-foreground leading-relaxed">
-              These terms are governed by the laws of the jurisdiction in which Furmarket operates. Any disputes shall be resolved through arbitration or in the courts of competent jurisdiction.
+              These terms are governed by the laws of the jurisdiction in which PawVault operates. Any disputes shall be resolved through arbitration or in the courts of competent jurisdiction.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold mb-4">12. Contact Information</h2>
             <div className="mt-4 p-4 bg-muted rounded-lg">
-              <p className="font-medium">Furmarket Legal Team</p>
+              <p className="font-medium">PawVault Legal Team</p>
               <p className="text-muted-foreground">Email: legal@pawvault.com</p>
               <p className="text-muted-foreground">Support: <Link href="/support" className="text-blue-600 hover:underline">Submit a ticket</Link></p>
             </div>
@@ -137,7 +137,7 @@ export default function TermsPage() {
 
         <div className="mt-12 pt-8 border-t">
           <Link href="/" className="text-blue-600 hover:underline">
-            ← Back to Furmarket
+            ← Back to PawVault
           </Link>
         </div>
       </div>

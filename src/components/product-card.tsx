@@ -27,6 +27,8 @@ interface ProductCardProps {
     }
     rating?: number
     reviewCount?: number
+    category?: { name: string; slug: string } | null
+    tags?: { tag: { name: string; slug: string } }[]
     _count?: {
       favorites: number
     }
@@ -99,15 +101,20 @@ export function ProductCard({ product }: ProductCardProps) {
           <CardTitle className="text-base line-clamp-1 group-hover:text-rose-600 transition-colors">
             {product.title}
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={product.creator.avatar || ""} alt={creatorName} />
-              <AvatarFallback className="text-xs bg-gradient-to-br from-rose-600 to-orange-500 text-white">
-                {creatorName[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <p className="text-sm text-muted-foreground truncate">{creatorName}</p>
-          </div>
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={product.creator.avatar || ""} alt={creatorName} />
+                <AvatarFallback className="text-xs bg-gradient-to-br from-rose-600 to-orange-500 text-white">
+                  {creatorName[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <p className="text-sm text-muted-foreground truncate">{creatorName}</p>
+              {product.category && (
+                <span className="ml-auto text-xs text-muted-foreground truncate max-w-[40%]">
+                  {product.category.name}
+                </span>
+              )}
+            </div>
         </CardHeader>
         <CardContent className="pb-2">
           <div className="flex items-center gap-2">
@@ -121,6 +128,18 @@ export function ProductCard({ product }: ProductCardProps) {
               ({product.reviewCount || 0} reviews)
             </span>
           </div>
+          {product.tags && product.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {product.tags.slice(0, 3).map((t) => (
+                <span
+                  key={t.tag.slug}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+                >
+                  {t.tag.name}
+                </span>
+              ))}
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <div className="flex items-baseline gap-2">

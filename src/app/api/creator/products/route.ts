@@ -1,75 +1,74 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getServerUser } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
+import { z } from "zod"
+
+const createProductSchema = z.object({
+  title: z.string().min(1).max(200),
+  subtitle: z.string().max(200).optional(),
+  description: z.string().optional(),
+  price: z.number().positive(),
+  categoryId: z.string().optional(),
+  isFree: z.boolean().default(false),
+  isPublished: z.boolean().default(false),
+  unityVersion: z.string().optional(),
+  vrcSdkVersion: z.string().optional(),
+})
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
+    const user = await getServerUser()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const userId = session.user.id
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    })
-
-    if (!user || !["CREATOR", "VERIFIED_CREATOR"].includes(user.role)) {
+    if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const body = await request.json()
-    const { title, subtitle, description, price, category, unityVersion, vrcSdkVersion, isFree, isPublished } = body
+    const validated = createProductSchema.parse(body)
 
-    if (!title || !description || !category) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      )
-    }
-
-    // Generate slug from title
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-
-    // Check if slug already exists
-    const existingProduct = await prisma.product.findUnique({
-      where: { slug }
+    const store = await prisma.store.findUnique({
+      where: { userId: user.id },
     })
 
-    if (existingProduct) {
-      return NextResponse.json(
-        { error: "A product with this title already exists" },
-        { status: 400 }
-      )
-    }
+    const baseSlug = validated.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+    let slug = baseSlug || `product-${Date.now()}`
+    const clash = await prisma.product.findUnique({ where: { slug } })
+    if (clash) slug = `${baseSlug}-${Date.now()}`
 
-    // Create product
     const product = await prisma.product.create({
       data: {
         creatorId: user.id,
-        title,
-        subtitle,
-        description,
-        price: isFree ? 0 : price,
-        category,
-        unityVersion,
-        vrcSdkVersion,
-        isFree,
-        isPublished,
-        slug
-      }
+        storeId: store?.id,
+        title: validated.title,
+        subtitle: validated.subtitle,
+        description: validated.description,
+        price: validated.isFree ? 0 : validated.price,
+        categoryId: validated.categoryId,
+        isFree: validated.isFree,
+        isPublished: validated.isPublished,
+        unityVersion: validated.unityVersion,
+        vrcSdkVersion: validated.vrcSdkVersion,
+        slug,
+      },
     })
 
     return NextResponse.json(product, { status: 201 })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation failed", details: error.errors },
+        { status: 400 }
+      )
+    }
     console.error("Error creating product:", error)
     return NextResponse.json(
       { error: "Internal server error" },
@@ -80,16 +79,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
+    const user = await getServerUser()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const userId = session.user.id
-
     const products = await prisma.product.findMany({
-      where: { creatorId: userId },
+      where: { creatorId: user.id },
       include: {
         _count: {
           select: {

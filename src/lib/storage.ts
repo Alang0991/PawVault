@@ -2,10 +2,13 @@ import { validateFile, VALIDATION_OPTIONS } from './file-validation'
 import { createAuditLog, AuditActions } from './audit-logger'
 import { prisma } from './prisma'
 import crypto from 'crypto'
+import fs from 'fs/promises'
+import path from 'path'
 
 export interface StorageOptions {
   folder: string
   userId?: string
+  validation?: keyof typeof VALIDATION_OPTIONS
 }
 
 export interface UploadResult {
@@ -23,10 +26,26 @@ export interface StorageConfig {
   secretAccessKey?: string
 }
 
-// Get storage configuration from environment
+/**
+ * Storage configuration.
+ *
+ * By default uploads are written to the local `public/uploads` directory and
+ * served statically from `/uploads/...`. This works in development and on a
+ * long-running Node server.
+ *
+ * For serverless / Vercel deployments the filesystem is read-only at runtime,
+ * so configure an object store instead:
+ *   STORAGE_PROVIDER=s3        (or "r2")
+ *   STORAGE_BUCKET=my-bucket
+ *   STORAGE_REGION=us-east-1
+ *   STORAGE_ACCESS_KEY_ID=...
+ *   STORAGE_SECRET_ACCESS_KEY=...
+ *   STORAGE_PUBLIC_BASE_URL=https://cdn.example.com
+ * (S3/R2 upload requires the AWS SDK to be installed; local disk is the
+ *  zero-dependency default.)
+ */
 function getStorageConfig(): StorageConfig {
   const provider = (process.env.STORAGE_PROVIDER || 'local') as 'local' | 's3' | 'r2'
-  
   return {
     provider,
     bucket: process.env.STORAGE_BUCKET,
@@ -36,165 +55,144 @@ function getStorageConfig(): StorageConfig {
   }
 }
 
-// Generate a unique key for the file
 function generateKey(folder: string, filename: string): string {
   const timestamp = Date.now()
   const random = crypto.randomBytes(8).toString('hex')
-  const ext = filename.split('.').pop()
-  const baseName = filename.replace(`.${ext}`, '').replace(/[^a-zA-Z0-9-_]/g, '')
+  const ext = filename.includes('.') ? filename.split('.').pop() : 'bin'
+  const baseName = filename
+    .replace(`.${ext}`, '')
+    .replace(/[^a-zA-Z0-9-_]/g, '')
+    .slice(0, 40)
   return `${folder}/${timestamp}-${random}-${baseName}.${ext}`
 }
 
-// Local storage implementation (for development)
+function getBaseUrl(request?: Request): string {
+  if (process.env.STORAGE_PUBLIC_BASE_URL) return process.env.STORAGE_PUBLIC_BASE_URL.replace(/\/$/, '')
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')
+  if (request) return new URL(request.url).origin
+  return 'http://localhost:3000'
+}
+
 async function uploadToLocal(
-  file: File,
-  key: string
-): Promise<UploadResult> {
-  // In production, this would upload to S3 or R2
-  // For now, we'll return a mock URL
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const url = `${baseUrl}/uploads/${key}`
-  
-  return {
-    url,
-    key,
-    size: file.size,
-    contentType: file.type,
-  }
-}
-
-// S3 storage implementation
-async function uploadToS3(
-  file: File,
+  buffer: Buffer,
   key: string,
-  config: StorageConfig
+  request?: Request,
 ): Promise<UploadResult> {
-  // TODO: Implement S3 upload using AWS SDK
-  // This is a placeholder for the actual implementation
-  const url = `https://${config.bucket}.s3.${config.region}.amazonaws.com/${key}`
-  
+  const fullPath = path.join(process.cwd(), 'public', 'uploads', key)
+  await fs.mkdir(path.dirname(fullPath), { recursive: true })
+  await fs.writeFile(fullPath, buffer)
+  const url = `${getBaseUrl(request)}/uploads/${key}`
+  const dotExt = key.includes('.') ? `.${key.split('.').pop()}` : ''
   return {
     url,
     key,
-    size: file.size,
-    contentType: file.type,
+    size: buffer.length,
+    contentType: mimeFromExt(dotExt),
   }
 }
 
-// Cloudflare R2 storage implementation
-async function uploadToR2(
-  file: File,
-  key: string,
-  config: StorageConfig
-): Promise<UploadResult> {
-  // TODO: Implement R2 upload using AWS S3 compatible API
-  const url = `https://${config.bucket}.r2.cloudflarestorage.com/${key}`
-  
-  return {
-    url,
-    key,
-    size: file.size,
-    contentType: file.type,
+function mimeFromExt(ext: string): string {
+  const map: Record<string, string> = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+    '.avif': 'image/avif',
+    '.mp4': 'video/mp4',
+    '.mov': 'video/quicktime',
+    '.webm': 'video/webm',
+    '.zip': 'application/zip',
+    '.rar': 'application/x-rar-compressed',
+    '.7z': 'application/x-7z-compressed',
+    '.pdf': 'application/pdf',
   }
+  return map[ext.toLowerCase()] || 'application/octet-stream'
 }
 
-// Main upload function
+/**
+ * Upload a file (web File/Blob from a multipart form) to the configured store.
+ * Returns a real, reachable URL and persists an audit log entry.
+ */
 export async function uploadFile(
   file: File,
   options: StorageOptions,
-  validationOptions?: keyof typeof VALIDATION_OPTIONS
+  request?: Request,
 ): Promise<UploadResult> {
-  // Validate file if validation options provided
-  if (validationOptions) {
-    const validation = await validateFile(file, VALIDATION_OPTIONS[validationOptions])
+  if (options.validation) {
+    const validation = await validateFile(file, VALIDATION_OPTIONS[options.validation])
     if (!validation.valid) {
-      throw new Error(validation.error)
+      throw new Error(validation.error || 'File validation failed')
     }
   }
 
   const config = getStorageConfig()
   const key = generateKey(options.folder, file.name)
+  const buffer = Buffer.from(await file.arrayBuffer())
 
-  let result: UploadResult
-
-  switch (config.provider) {
-    case 's3':
-      result = await uploadToS3(file, key, config)
-      break
-    case 'r2':
-      result = await uploadToR2(file, key, config)
-      break
-    case 'local':
-    default:
-      result = await uploadToLocal(file, key)
-      break
+  if (config.provider === 'local') {
+    const result = await uploadToLocal(buffer, key, request)
+    await createAuditLog({
+      userId: options.userId,
+      action: AuditActions.SECURITY_FILE_UPLOAD_REJECTED,
+      details: {
+        fileName: file.name,
+        fileSize: file.size,
+        contentType: file.type,
+        key,
+        folder: options.folder,
+        provider: 'local',
+      },
+    })
+    return result
   }
 
-  // Log the upload
-  await createAuditLog({
-    userId: options.userId,
-    action: AuditActions.SECURITY_FILE_UPLOAD_REJECTED,
-    details: {
-      fileName: file.name,
-      fileSize: file.size,
-      contentType: file.type,
-      key,
-      folder: options.folder,
-    },
-  })
-
-  return result
+  // s3 / r2 are configured in env but require an S3-compatible SDK to write.
+  throw new Error(
+    `Storage provider "${config.provider}" is not implemented. Set STORAGE_PROVIDER=local for filesystem uploads, or install and configure an S3-compatible client with STORAGE_BUCKET/STORAGE_REGION/STORAGE_ACCESS_KEY_ID/STORAGE_SECRET_ACCESS_KEY.`,
+  )
 }
 
-// Delete file from storage
+/** Delete a stored file (best-effort; safe if missing). */
 export async function deleteFile(key: string): Promise<void> {
   const config = getStorageConfig()
-
-  // TODO: Implement deletion based on provider
-  // For now, this is a placeholder
-  console.log(`Deleting file: ${key} from ${config.provider}`)
-}
-
-// Generate a signed URL for temporary access
-export async function getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
-  const config = getStorageConfig()
-
-  // TODO: Implement signed URL generation based on provider
-  // For now, return a mock URL
-  if (config.provider === 'local') {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    return `${baseUrl}/uploads/${key}`
+  if (config.provider !== 'local') return
+  try {
+    await fs.unlink(path.join(process.cwd(), 'public', 'uploads', key))
+  } catch {
+    // ignore missing file
   }
-
-  return key
 }
 
-// Save file record to database
+/** Save a product file record to the database. */
 export async function saveFileRecord(
-  userId: string,
+  userId: string | undefined,
   productId: string,
   uploadResult: UploadResult,
-  filename: string
+  filename: string,
+  extra?: { version?: string; platform?: string },
 ) {
-  await prisma.productFile.create({
+  return prisma.productFile.create({
     data: {
       productId,
       filename,
       url: uploadResult.url,
       size: uploadResult.size,
+      version: extra?.version,
+      platform: extra?.platform,
     },
   })
 }
 
-// Save media record to database
+/** Save a product media record to the database. */
 export async function saveMediaRecord(
   productId: string,
   uploadResult: UploadResult,
   type: 'image' | 'video',
   isThumbnail: boolean = false,
-  order: number = 0
+  order: number = 0,
 ) {
-  await prisma.productMedia.create({
+  return prisma.productMedia.create({
     data: {
       productId,
       type,

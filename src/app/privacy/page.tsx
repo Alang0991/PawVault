@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">1. Introduction</h2>
             <p className="text-muted-foreground leading-relaxed">
-              At Furmarket, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.
+              At PawVault, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the site.
             </p>
           </section>
 
@@ -125,8 +125,8 @@ export default function PrivacyPolicyPage() {
               If you have questions about this Privacy Policy or how we handle your data, please contact us at:
             </p>
             <div className="mt-4 p-4 bg-muted rounded-lg">
-              <p className="font-medium">Furmarket Support Team</p>
-              <p className="text-muted-foreground">Email: privacy@pawmart.com</p>
+              <p className="font-medium">PawVault Support Team</p>
+              <p className="text-muted-foreground">Email: privacy@PawVault.com</p>
               <p className="text-muted-foreground">Support: <Link href="/support" className="text-blue-600 hover:underline">Submit a ticket</Link></p>
             </div>
           </section>
@@ -134,7 +134,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="mt-12 pt-8 border-t">
           <Link href="/" className="text-blue-600 hover:underline">
-            ← Back to Furmarket
+            ← Back to PawVault
           </Link>
         </div>
       </div>

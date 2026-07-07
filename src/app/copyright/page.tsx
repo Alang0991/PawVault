@@ -6,7 +6,7 @@ export default function CopyrightPage() {
       <div className="container mx-auto px-4 max-w-3xl">
         <h1 className="text-3xl font-bold mb-8">Copyright / DMCA</h1>
         <div className="prose dark:prose-invert">
-          <p>Furmarket respects intellectual property rights. If you believe your copyrighted work has been infringed, please submit a DMCA notice.</p>
+          <p>PawVault respects intellectual property rights. If you believe your copyrighted work has been infringed, please submit a DMCA notice.</p>
           <p>To submit a DMCA notice, please contact us with the following information:</p>
           <ul>
             <li>Description of the copyrighted work</li>

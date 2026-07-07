@@ -82,20 +82,22 @@ export default async function BrowsePage({
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       include: {
-        creator: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatar: true,
-          },
+      creator: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatar: true,
         },
-        media: {
-          where: { isThumbnail: true },
-          take: 1,
-        },
-        reviews: { select: { rating: true } },
-        _count: { select: { favorites: true, reviews: true } },
+      },
+      category: true,
+      media: {
+        where: { isThumbnail: true },
+        take: 1,
+      },
+      reviews: { select: { rating: true } },
+      tags: { include: { tag: true } },
+      _count: { select: { favorites: true, reviews: true } },
       },
     }),
     prisma.product.count({ where }),

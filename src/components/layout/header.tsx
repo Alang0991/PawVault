@@ -43,7 +43,7 @@ export function Header() {
               P
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-700 bg-clip-text text-transparent hidden sm:block">
-              Furmarket
+              PawVault
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">

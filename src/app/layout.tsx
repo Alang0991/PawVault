@@ -8,7 +8,7 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PawMart - Creator Marketplace for Digital Products",
+  title: "PawVault - Creator Marketplace for Digital Products",
   description: "Discover and buy amazing digital products from talented creators worldwide. 3D models, textures, plugins, and more.",
 };
 
