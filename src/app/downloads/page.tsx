@@ -118,10 +118,14 @@ export default async function DownloadsPage() {
                   )}
 
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1 gradient-bg text-white">
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </Button>
+                    {product.files && product.files.length > 0 && (
+                      <Button size="sm" className="flex-1 gradient-bg text-white" asChild>
+                        <a href={`/api/products/files/${product.files[0].id}/download`}>
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </a>
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" asChild>
                       <Link href={`/products/${product.slug}`}>
                         <ExternalLink className="h-4 w-4" />

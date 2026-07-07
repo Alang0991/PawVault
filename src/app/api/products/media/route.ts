@@ -37,7 +37,6 @@ export async function POST(request: Request) {
     const result = await uploadFile(
       file,
       { folder: "products", userId: user.id, validation: "productMedia" },
-      request,
     )
 
     if (isThumbnail) {

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star, ShoppingCart, Heart, Download, Share2 } from "lucide-react"
 import Link from "next/link"
+import { getServerUser } from "@/lib/session"
 
 export const dynamic = "force-dynamic"
 
@@ -31,6 +32,17 @@ export default async function ProductPage({ params }: { params: { slug: string }
   if (!product) {
     notFound()
   }
+
+  const user = await getServerUser()
+  const isCreator = user?.id === product.creatorId
+  const hasPurchased = user ? await prisma.order.findFirst({
+    where: {
+      buyerId: user.id,
+      status: "COMPLETED",
+      items: { some: { productId: product.id } },
+    },
+  }) : null
+  const canDownload = isCreator || !!hasPurchased
 
   const avgRating = product.reviews.length > 0
     ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
@@ -60,88 +72,61 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 <div key={media.id} className="aspect-square bg-gray-200 dark:bg-gray-800 rounded overflow-hidden">
                   <img
                     src={media.url}
-                    alt={product.title}
-                    className="w-full h-full object-cover hover:opacity-75 transition-opacity cursor-pointer"
+                    alt=""
+                    className="w-full h-full object-cover"
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Product Info */}
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                {product.category && (
-                  <Badge variant="outline">{product.category.name}</Badge>
-                )}
-                {product.isFeatured && (
-                  <Badge className="gradient-bg text-white">Featured</Badge>
-                )}
+          {/* Product Details */}
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{product.title}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              by {product.creator.displayName || product.creator.username}
+            </p>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-5 w-5 ${
+                      i < avgRating
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                  />
+                ))}
+                <span className="ml-2 text-sm text-gray-600">
+                  {avgRating.toFixed(1)} ({product.reviews.length} reviews)
+                </span>
               </div>
-              <h1 className="text-3xl font-bold mb-2">{product.title}</h1>
-              {product.subtitle && (
-                <p className="text-gray-600 dark:text-gray-400">{product.subtitle}</p>
+            </div>
+
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-3xl font-bold">
+                {product.isFree ? "Free" : `$${product.price.toFixed(2)}`}
+              </span>
+              {product.isOnSale && product.salePrice && (
+                <span className="text-xl text-gray-500 line-through">
+                  ${product.salePrice.toFixed(2)}
+                </span>
               )}
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold">{avgRating.toFixed(1)}</span>
-                <span className="text-gray-500">({product.reviews.length} reviews)</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={product.creator.avatar || undefined} />
-                <AvatarFallback>
-                  {product.creator.username.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="font-semibold">
-                  {product.creator.displayName || product.creator.username}
-                </div>
-                <div className="text-sm text-gray-500">@{product.creator.username}</div>
-              </div>
-              <Link href={`/creators/${product.creator.username}`}>
-                <Button variant="outline" size="sm">View Profile</Button>
-              </Link>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-baseline gap-4">
-                {product.isOnSale && product.salePrice ? (
-                  <>
-                    <span className="text-4xl font-bold text-purple-600">
-                      ${product.salePrice.toFixed(2)}
-                    </span>
-                    <span className="text-xl text-gray-500 line-through">
-                      ${product.price.toFixed(2)}
-                    </span>
-                    <Badge className="bg-red-500">Sale</Badge>
-                  </>
-                ) : product.isFree ? (
-                  <span className="text-4xl font-bold text-green-600">Free</span>
-                ) : (
-                  <span className="text-4xl font-bold">${product.price.toFixed(2)}</span>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <Button size="lg" className="flex-1 gradient-bg text-white">
-                  <ShoppingCart className="h-5 w-5 mr-2" />
-                  Add to Cart
-                </Button>
-                <Button size="lg" variant="outline">
-                  <Heart className="h-5 w-5" />
-                </Button>
-                <Button size="lg" variant="outline">
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              </div>
+            <div className="flex gap-4 mb-6">
+              <Button size="lg" className="flex-1 gradient-bg text-white">
+                <ShoppingCart className="h-5 w-5 mr-2" />
+                Add to Cart
+              </Button>
+              <Button size="lg" variant="outline">
+                <Heart className="h-5 w-5" />
+              </Button>
+              <Button size="lg" variant="outline">
+                <Share2 className="h-5 w-5" />
+              </Button>
             </div>
 
             {product.description && (
@@ -154,7 +139,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
             )}
 
             {product.files.length > 0 && (
-              <div>
+              <div className="mt-6">
                 <h3 className="font-semibold mb-2">Included Files</h3>
                 <div className="space-y-2">
                   {product.files.map((file) => (
@@ -163,9 +148,23 @@ export default async function ProductPage({ params }: { params: { slug: string }
                         <Download className="h-4 w-4 text-gray-500" />
                         <span className="text-sm">{file.filename}</span>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                        {canDownload ? (
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={`/api/products/files/${file.id}/download`}>
+                              <Download className="h-4 w-4 mr-1" />
+                              Download
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" disabled>
+                            Purchase to download
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -173,7 +172,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
             )}
 
             {product.unityVersion && (
-              <div className="flex gap-4">
+              <div className="flex gap-4 mt-6">
                 <Badge variant="outline">Unity {product.unityVersion}</Badge>
                 {product.vrcSdkVersion && (
                   <Badge variant="outline">VRChat SDK {product.vrcSdkVersion}</Badge>

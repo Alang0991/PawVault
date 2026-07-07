@@ -24,7 +24,7 @@ async function updateStoreImage(field: "logo" | "banner", validation: "avatar" |
     return NextResponse.json({ error: "Store not found. Create a store first." }, { status: 404 })
   }
 
-  const result = await uploadFile(file, { folder: "stores", userId: user.id, validation }, request)
+  const result = await uploadFile(file, { folder: "stores", userId: user.id, validation })
 
   const updated = await prisma.store.update({
     where: { id: store.id },

@@ -23,7 +23,6 @@ export async function POST(request: Request) {
     const result = await uploadFile(
       file,
       { folder: "avatars", userId: user.id, validation: "avatar" },
-      request,
     )
 
     await prisma.user.update({

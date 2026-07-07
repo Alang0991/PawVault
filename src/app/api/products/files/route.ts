@@ -36,7 +36,6 @@ export async function POST(request: Request) {
     const result = await uploadFile(
       file,
       { folder: "files", userId: user.id, validation: "productFile" },
-      request,
     )
 
     const saved = await saveFileRecord(user.id, productId, result, file.name, {

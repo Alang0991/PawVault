@@ -27,9 +27,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // Best-effort delete from storage (key is the path after /uploads/)
-    const match = media.url.match(/\/uploads\/(.+)$/)
-    if (match) await deleteFile(match[1])
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'pawvault-uploads'
+    const match = media.url.match(new RegExp(`${bucket.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/(.+)$`))
+    if (match) {
+      await deleteFile(match[1])
+    } else {
+      console.warn('Could not extract storage key from media URL:', media.url)
+    }
 
     await prisma.productMedia.delete({ where: { id: params.id } })
 
