@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { validateFile, VALIDATION_OPTIONS } from './file-validation'
+import { createAuditLog, AuditActions } from './audit-logger'
 import { prisma } from './prisma'
 
 export type StorageProvider = 'supabase'
@@ -60,6 +62,13 @@ export async function uploadFile(
   file: File,
   options: StorageOptions,
 ): Promise<UploadResult> {
+  if (options.validation) {
+    const validation = await validateFile(file, VALIDATION_OPTIONS[options.validation])
+    if (!validation.valid) {
+      throw new Error(validation.error || 'File validation failed')
+    }
+  }
+
   const supabase = getSupabaseClient()
   const bucket = getBucket()
   const key = generateKey(options.folder, file.name)
@@ -81,6 +90,19 @@ export async function uploadFile(
     .getPublicUrl(key)
 
   const url = publicUrlData.publicUrl
+
+  await createAuditLog({
+    userId: options.userId,
+    action: AuditActions.FILE_UPLOADED,
+    details: {
+      fileName: file.name,
+      fileSize: file.size,
+      contentType: file.type,
+      key,
+      folder: options.folder,
+      provider: 'supabase',
+    },
+  })
 
   return {
     url,
