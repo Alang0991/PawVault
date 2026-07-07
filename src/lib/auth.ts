@@ -18,18 +18,30 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
+        let user
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          })
+        } catch (error) {
+          console.error("Login database error:", error)
+          return null
+        }
 
         if (!user) {
           return null
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        )
+        let isPasswordValid = false
+        try {
+          isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.passwordHash
+          )
+        } catch (error) {
+          console.error("Password compare error:", error)
+          return null
+        }
 
         if (!isPasswordValid) {
           return null
