@@ -39,6 +39,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ avatar: result.url })
   } catch (error) {
+    console.error("Avatar upload error:", error)
     const message = error instanceof Error ? error.message : "Upload failed"
     return NextResponse.json({ error: message }, { status: 500 })
   }

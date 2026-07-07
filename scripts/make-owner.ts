@@ -1,13 +1,13 @@
 import { prisma } from "../src/lib/prisma"
 
 async function main() {
-  const ownerEmail = process.env.OWNER_EMAIL
+  const ownerEmail = process.argv[2] || process.env.OWNER_EMAIL
 
   if (!ownerEmail) {
-    console.error("ERROR: OWNER_EMAIL environment variable is required.")
+    console.error("ERROR: Email is required.")
     console.log("Usage:")
-    console.log('  Windows PowerShell: $env:OWNER_EMAIL="myemail@example.com"; npm run make-owner')
-    console.log('  macOS/Linux: OWNER_EMAIL="myemail@example.com" npm run make-owner')
+    console.log('  npm run make-owner -- alansewells9@gmail.com')
+    console.log('  Or: $env:OWNER_EMAIL="alansewells9@gmail.com"; npm run make-owner')
     process.exit(1)
   }
 

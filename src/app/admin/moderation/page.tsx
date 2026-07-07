@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -25,24 +27,34 @@ interface Report {
 }
 
 export default function ModerationPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('pending')
 
   useEffect(() => {
+    if (status === 'loading') return
+    if (!session || session.user?.role !== 'ADMIN') {
+      router.replace('/auth/signin')
+      return
+    }
+
     async function fetchReports() {
       try {
         const res = await fetch('/api/admin/moderation')
         if (res.ok) {
           const data = await res.json()
           setReports(data.reports || [])
+        } else if (res.status === 401 || res.status === 403) {
+          router.replace('/auth/signin')
         }
       } finally {
         setLoading(false)
       }
     }
     fetchReports()
-  }, [])
+  }, [session, status, router])
 
   const handleAction = async (reportId: string, action: 'approve' | 'remove' | 'warn' | 'ban') => {
     try {

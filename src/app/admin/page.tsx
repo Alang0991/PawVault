@@ -16,7 +16,7 @@ export default async function AdminPage() {
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2 mb-8">
           <Card>
             <CardContent className="p-6">
               <CardTitle className="text-lg">Users</CardTitle>
@@ -28,28 +28,10 @@ export default async function AdminPage() {
           </Card>
           <Card>
             <CardContent className="p-6">
-              <CardTitle className="text-lg">Assets</CardTitle>
-              <p className="text-2xl font-bold mt-2">Moderate assets</p>
+              <CardTitle className="text-lg">Moderation</CardTitle>
+              <p className="text-2xl font-bold mt-2">Review reports</p>
               <Button asChild className="mt-4" variant="outline">
-                <Link href="/admin/assets">View Assets</Link>
-              </Button>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <CardTitle className="text-lg">Licenses</CardTitle>
-              <p className="text-2xl font-bold mt-2">Manage licenses</p>
-              <Button asChild className="mt-4" variant="outline">
-                <Link href="/admin/licenses">View Licenses</Link>
-              </Button>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <CardTitle className="text-lg">Reports</CardTitle>
-              <p className="text-2xl font-bold mt-2">Platform reports</p>
-              <Button asChild className="mt-4" variant="outline">
-                <Link href="/admin/reports">View Reports</Link>
+                <Link href="/moderation">Open Moderation</Link>
               </Button>
             </CardContent>
           </Card>

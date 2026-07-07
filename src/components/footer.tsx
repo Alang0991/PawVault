@@ -69,33 +69,6 @@ export default function Footer() {
                   Help Center
                 </Link>
               </li>
-              <li>
-                <Link href="/blog" className="text-gray-600 hover:text-purple-600 transition-colors">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/tutorials" className="text-gray-600 hover:text-purple-600 transition-colors">
-                  Tutorials
-                </Link>
-              </li>
-              <li>
-                <Link href="/api-docs" className="text-gray-600 hover:text-purple-600 transition-colors">
-                  API Docs
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Admin */}
-          <div>
-            <h3 className="font-semibold mb-4">Admin</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/moderation" className="text-gray-600 hover:text-purple-600 transition-colors">
-                  Moderation
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -114,13 +87,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/refund" className="text-gray-600 hover:text-purple-600 transition-colors">
+                <Link href="/refunds" className="text-gray-600 hover:text-purple-600 transition-colors">
                   Refund Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/license" className="text-gray-600 hover:text-purple-600 transition-colors">
-                  License Agreement
                 </Link>
               </li>
             </ul>
