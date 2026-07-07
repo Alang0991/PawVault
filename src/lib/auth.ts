@@ -44,7 +44,9 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ...(process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" &&
+      process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET
       ? [
           GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -53,11 +55,16 @@ export const authOptions: NextAuthOptions = {
         ]
       : []),
 
-    ...(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
+    ...(process.env.NEXT_PUBLIC_DISCORD_AUTH_ENABLED === "true" &&
+      process.env.DISCORD_CLIENT_ID &&
+      process.env.DISCORD_CLIENT_SECRET
       ? [
           DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
+            ...(process.env.DISCORD_CALLBACK_URL
+              ? { callbackUrl: process.env.DISCORD_CALLBACK_URL }
+              : {}),
           }),
         ]
       : []),
