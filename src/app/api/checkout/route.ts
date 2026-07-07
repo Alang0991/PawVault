@@ -93,7 +93,16 @@ export async function POST(request: Request) {
       },
     })
 
-    const stripeSession = await stripe().checkout.sessions.create({
+    const stripeClient = stripe()
+
+    if (!stripeClient) {
+      return NextResponse.json(
+        { error: "Stripe is not configured" },
+        { status: 500 }
+      )
+    }
+
+    const stripeSession = await stripeClient.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: cart.items.map((item) => ({
         price_data: {
