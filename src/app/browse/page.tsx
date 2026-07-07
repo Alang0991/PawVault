@@ -75,8 +75,13 @@ export default async function BrowsePage({
       rating: { reviews: { _count: "desc" } },
     }[searchParams.sort || "newest"] || { createdAt: "desc" }
 
-  const [products, total, categories, popularTags] = await Promise.all([
-    prisma.product.findMany({
+  let products: any[] = []
+  let total = 0
+  let categories: any[] = []
+  let popularTags: any[] = []
+
+  try {
+    products = await prisma.product.findMany({
       where,
       orderBy,
       skip: (page - 1) * PAGE_SIZE,
@@ -99,18 +104,28 @@ export default async function BrowsePage({
       tags: { include: { tag: true } },
       _count: { select: { favorites: true, reviews: true } },
       },
-    }),
-    prisma.product.count({ where }),
-    prisma.category.findMany({
+    })
+    total = await prisma.product.count({ where })
+    categories = await prisma.category.findMany({
       include: { _count: { select: { products: true } } },
       orderBy: { name: "asc" },
-    }),
-    prisma.tag.findMany({
+    })
+    popularTags = await prisma.tag.findMany({
       include: { _count: { select: { products: true } } },
       orderBy: { products: { _count: "desc" } },
       take: 15,
-    }),
-  ])
+    })
+  } catch (error) {
+    console.error("Browse page error:", error)
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold mb-2 gradient-text">Browse Products</h1>
+          <p className="text-muted-foreground">Unable to load products. Please try again later.</p>
+        </div>
+      </div>
+    )
+  }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
@@ -118,7 +133,7 @@ export default async function BrowsePage({
     ...p,
     rating:
       p.reviews.length > 0
-        ? p.reviews.reduce((s, r) => s + r.rating, 0) / p.reviews.length
+        ? p.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / p.reviews.length
         : 0,
     reviewCount: p.reviews.length,
   }))

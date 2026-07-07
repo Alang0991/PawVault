@@ -20,19 +20,19 @@ export async function GET() {
       select: { id: true, name: true, slug: true, logo: true, banner: true },
     })
 
-    const [
-      totalProducts,
-      publishedProducts,
-      draftProducts,
-      reviews,
-      licenses,
-      recentOrders,
-      products,
-    ] = await Promise.all([
-      prisma.product.count({ where: { creatorId: user.id } }),
-      prisma.product.count({ where: { creatorId: user.id, isPublished: true } }),
-      prisma.product.count({ where: { creatorId: user.id, isPublished: false } }),
-      prisma.review.findMany({
+    let totalProducts = 0
+    let publishedProducts = 0
+    let draftProducts = 0
+    let reviews: any[] = []
+    let licenses: any[] = []
+    let recentOrders: any[] = []
+    let products: any[] = []
+
+    try {
+      totalProducts = await prisma.product.count({ where: { creatorId: user.id } })
+      publishedProducts = await prisma.product.count({ where: { creatorId: user.id, isPublished: true } })
+      draftProducts = await prisma.product.count({ where: { creatorId: user.id, isPublished: false } })
+      reviews = await prisma.review.findMany({
         where: { product: { creatorId: user.id } },
         orderBy: { createdAt: "desc" },
         take: 5,
@@ -40,14 +40,14 @@ export async function GET() {
           user: { select: { id: true, username: true, displayName: true, avatar: true } },
           product: { select: { id: true, title: true, slug: true } },
         },
-      }),
-      prisma.license.findMany({
+      })
+      licenses = await prisma.license.findMany({
         where: { product: { creatorId: user.id } },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: { product: { select: { id: true, title: true, slug: true } } },
-      }),
-      prisma.order.findMany({
+      })
+      recentOrders = await prisma.order.findMany({
         where: { items: { some: { product: { creatorId: user.id } } } },
         orderBy: { createdAt: "desc" },
         take: 5,
@@ -55,8 +55,8 @@ export async function GET() {
           items: { include: { product: { select: { id: true, title: true, slug: true } } } },
           buyer: { select: { id: true, displayName: true, username: true, email: true } },
         },
-      }),
-      prisma.product.findMany({
+      })
+      products = await prisma.product.findMany({
         where: { creatorId: user.id },
         orderBy: { createdAt: "desc" },
         take: 8,
@@ -65,8 +65,14 @@ export async function GET() {
           media: { where: { isThumbnail: true }, take: 1 },
           _count: { select: { reviews: true, favorites: true } },
         },
-      }),
-    ])
+      })
+    } catch (error) {
+      console.error("Creator dashboard query error:", error)
+      return NextResponse.json(
+        { error: "Database error. Please try again later." },
+        { status: 500 }
+      )
+    }
 
     const completedOrders = await prisma.order.findMany({
       where: {

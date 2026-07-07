@@ -90,11 +90,19 @@ async function searchCollections(query: string) {
 
 export default async function SearchPage({ searchParams }: { searchParams: { q?: string; tab?: string } }) {
   const query = searchParams.q || ""
-  const [products, creators, collections] = query.length > 0 ? await Promise.all([
-    searchProducts(query),
-    searchCreators(query),
-    searchCollections(query),
-  ]) : [[], [], []]
+  let products: any[] = []
+  let creators: any[] = []
+  let collections: any[] = []
+
+  if (query.length > 0) {
+    try {
+      products = await searchProducts(query)
+      creators = await searchCreators(query)
+      collections = await searchCollections(query)
+    } catch (error) {
+      console.error("Search page error:", error)
+    }
+  }
 
   const totalResults = products.length + creators.length + collections.length
 
@@ -123,9 +131,9 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
               ) : (
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {products.map((product) => {
-                    const avgRating = product.reviews.length > 0
-                      ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
-                      : 0
+                     const avgRating = product.reviews.length > 0
+                       ? product.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / product.reviews.length
+                       : 0
 
                     return (
                       <ProductCard

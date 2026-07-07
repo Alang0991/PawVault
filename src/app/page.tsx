@@ -14,15 +14,10 @@ export default async function Home() {
   let hasReviews = false
 
   try {
-    const [creatorCountResult, productCountResult, downloadCountResult, reviewAvg] = await Promise.all([
-      prisma.user.count({ where: { role: { in: ["CREATOR", "VERIFIED_CREATOR"] } } }),
-      prisma.product.count({ where: { isPublished: true } }),
-      prisma.download.count(),
-      prisma.review.aggregate({ _avg: { rating: true } }),
-    ])
-    creatorCount = creatorCountResult
-    productCount = productCountResult
-    downloadCount = downloadCountResult
+    creatorCount = await prisma.user.count({ where: { role: { in: ["CREATOR", "VERIFIED_CREATOR"] } } })
+    productCount = await prisma.product.count({ where: { isPublished: true } })
+    downloadCount = await prisma.download.count()
+    const reviewAvg = await prisma.review.aggregate({ _avg: { rating: true } })
     avgRating = reviewAvg._avg.rating ?? 0
     hasReviews = avgRating > 0
   } catch (error) {
