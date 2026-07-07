@@ -20,13 +20,19 @@ export default async function ProductUploadsPage({ params }: UploadsPageProps) {
     redirect("/auth/signin")
   }
 
-  const product = await prisma.product.findUnique({
-    where: { id: params.id },
-    include: {
-      media: { orderBy: { order: "asc" } },
-      files: { orderBy: { createdAt: "asc" } },
-    },
-  })
+  let product
+  try {
+    product = await prisma.product.findUnique({
+      where: { id: params.id },
+      include: {
+        media: { orderBy: { order: "asc" } },
+        files: { orderBy: { createdAt: "asc" } },
+      },
+    })
+  } catch (error) {
+    console.error("Uploads page data error:", error)
+    redirect("/creator/products")
+  }
 
   if (!product || (product.creatorId !== user.id && user.role !== "ADMIN")) {
     redirect("/creator/products")

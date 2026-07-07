@@ -7,15 +7,27 @@ import { ArrowRight, Sparkles, TrendingUp, Shield, Zap, Users, Star } from "luci
 export const dynamic = "force-dynamic"
 
 export default async function Home() {
-  const [creatorCount, productCount, downloadCount, reviewAvg] = await Promise.all([
-    prisma.user.count({ where: { role: { in: ["CREATOR", "VERIFIED_CREATOR"] } } }),
-    prisma.product.count({ where: { isPublished: true } }),
-    prisma.download.count(),
-    prisma.review.aggregate({ _avg: { rating: true } }),
-  ])
+  let creatorCount = 0
+  let productCount = 0
+  let downloadCount = 0
+  let avgRating = 0
+  let hasReviews = false
 
-  const avgRating = reviewAvg._avg.rating ?? 0
-  const hasReviews = avgRating > 0
+  try {
+    const [creatorCountResult, productCountResult, downloadCountResult, reviewAvg] = await Promise.all([
+      prisma.user.count({ where: { role: { in: ["CREATOR", "VERIFIED_CREATOR"] } } }),
+      prisma.product.count({ where: { isPublished: true } }),
+      prisma.download.count(),
+      prisma.review.aggregate({ _avg: { rating: true } }),
+    ])
+    creatorCount = creatorCountResult
+    productCount = productCountResult
+    downloadCount = downloadCountResult
+    avgRating = reviewAvg._avg.rating ?? 0
+    hasReviews = avgRating > 0
+  } catch (error) {
+    console.error("Homepage stats error:", error)
+  }
 
   return (
     <div className="min-h-screen">

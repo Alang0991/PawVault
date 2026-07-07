@@ -13,17 +13,23 @@ export default async function SettingsPage() {
     redirect("/auth/signin")
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      avatar: true,
-      displayName: true,
-      username: true,
-      bio: true,
-      website: true,
-      location: true,
-    },
-  })
+  let user
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        avatar: true,
+        displayName: true,
+        username: true,
+        bio: true,
+        website: true,
+        location: true,
+      },
+    })
+  } catch (error) {
+    console.error("Settings data error:", error)
+    redirect("/auth/signin")
+  }
 
   if (!user) {
     redirect("/auth/signin")
