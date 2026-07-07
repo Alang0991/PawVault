@@ -25,6 +25,9 @@ export const authOptions: NextAuthOptions = {
           })
         } catch (error) {
           console.error("Login database error:", error)
+          console.error("Login database error name:", error instanceof Error ? error.name : "unknown")
+          console.error("Login database error message:", error instanceof Error ? error.message : String(error))
+          console.error("Login database error stack:", error instanceof Error ? error.stack : "no stack")
           return null
         }
 

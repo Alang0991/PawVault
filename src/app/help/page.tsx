@@ -53,7 +53,7 @@ const categories = [
     icon: ShieldCheck,
     title: "Security & Account",
     href: "#security",
-    desc: "Passwords, MFA, and keeping your account safe.",
+    desc: "Passwords, sessions, and keeping your account safe.",
   },
 ]
 
@@ -64,7 +64,7 @@ const faqs = [
     items: [
       {
         q: "How do I create a PawVault account?",
-        a: "Click “Sign In” in the top navigation and choose “Create account”, or use Google/Discord to register in one click. You’ll need to verify your email address before you can make purchases or publish products.",
+        a: "Click Sign In in the top navigation and choose Create account, or use Google or Discord to register in one click. You will need to verify your email address before you can make purchases or publish products.",
       },
       {
         q: "Do I need to be a creator to browse and buy?",
@@ -72,7 +72,7 @@ const faqs = [
       },
       {
         q: "How do I become a verified creator?",
-        a: "Verified status is granted after our team reviews your identity and portfolio. Verified creators benefit from a lower 12% platform commission (vs. the standard 15%). Reach out via Support to start the review.",
+        a: "Verified status is granted after our team reviews your identity and portfolio. Verified creators benefit from a lower platform commission. Reach out via Support to start the review.",
       },
     ],
   },
@@ -82,15 +82,15 @@ const faqs = [
     items: [
       {
         q: "Where do I find my purchased files?",
-        a: "After checkout, go to Dashboard → Downloads. Every product you’ve bought appears there with its current version and a secure download link.",
+        a: "After checkout, go to Dashboard → Downloads. Every product you have bought appears there with its current version and a secure download link.",
       },
       {
         q: "Do I get future updates for free?",
-        a: "Yes. Purchased products include update access for the life of the listing. When a creator publishes a new version you’ll see it on your Downloads page and receive a product-update notification.",
+        a: "Yes. Purchased products include update access for the life of the listing. When a creator publishes a new version you will see it on your Downloads page and receive a product-update notification.",
       },
       {
         q: "Can I request a refund?",
-        a: "Refunds are handled per our Refund Policy. Open the order from Dashboard → Purchases, choose “Request refund”, and describe the reason. The creator or an admin reviews the request; approved refunds revoke the license and process the Stripe refund.",
+        a: "Refunds are handled per our Refund Policy. Open the order from Dashboard → Purchases, choose Request refund, and describe the reason. The creator or an admin reviews the request; approved refunds revoke the license and process the refund.",
       },
     ],
   },
@@ -100,7 +100,7 @@ const faqs = [
     items: [
       {
         q: "How do I open a creator storefront?",
-        a: "From your dashboard choose “Create store”, set a name, slug, description, and upload a logo/banner. Once published, your store gets a public URL at /store/[your-slug].",
+        a: "From your dashboard choose Create store, set a name, slug, description, and upload a logo and banner. Once published, your store gets a public URL at /store/your-slug.",
       },
       {
         q: "What file types can I sell?",
@@ -122,7 +122,7 @@ const faqs = [
       },
       {
         q: "When is a license revoked?",
-        a: "Licenses are revoked automatically on refund or chargeback. Revoked licenses immediately block new downloads. You can view all your keys under Dashboard → Licenses.",
+        a: "Licenses are revoked automatically on refund or chargeback. Once revoked, new downloads are blocked immediately, though already-downloaded files remain on the buyer's machine.",
       },
       {
         q: "Can I transfer a license to someone else?",
@@ -136,15 +136,15 @@ const faqs = [
     items: [
       {
         q: "What are the platform fees?",
-        a: "PawVault is the merchant of record. We take a 15% commission on standard sales, 12% for verified creators, and 10% for premium partners. The remainder is paid to you as the creator.",
+        a: "PawVault is the merchant of record. We take a platform commission on all sales. Verified creators benefit from a lower commission rate. Reach out via Support for current rates.",
       },
       {
         q: "When and how do creators get paid?",
-        a: "Payouts are processed monthly on the 15th, with a $50 minimum threshold. PawVault handles VAT/sales tax collection and remittance on your behalf.",
+        a: "Payouts are processed according to the schedule displayed in your creator dashboard. PawVault handles tax collection and remittance on your behalf.",
       },
       {
         q: "Are taxes included in the price?",
-        a: "Taxes are calculated at checkout based on the buyer’s location and remitted by PawVault. Creators don’t need to manage tax compliance for marketplace sales.",
+        a: "Taxes are calculated at checkout based on the buyer's location and remitted by PawVault. Creators do not need to manage tax compliance for marketplace sales.",
       },
     ],
   },
