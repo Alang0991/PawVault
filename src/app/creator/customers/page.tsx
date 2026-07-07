@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 
 export default async function CreatorCustomersPage() {
   const user = await getServerUser()
-  if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {
+  if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
     redirect("/auth/signin")
   }
 

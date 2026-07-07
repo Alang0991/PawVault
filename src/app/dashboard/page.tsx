@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Settings,
   Store,
+  Shield,
 } from "lucide-react"
 
 async function getDashboardData(userId: string) {
@@ -104,7 +105,8 @@ export default async function DashboardPage() {
 
   const { recentOrders, wishlistItems, licenses, products } = await getDashboardData(user.id)
 
-  const isCreator = ["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)
+  const isCreator = ["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)
+  const isAdmin = ["ADMIN", "OWNER"].includes(user.role)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -114,14 +116,24 @@ export default async function DashboardPage() {
             <h1 className="text-3xl font-bold mb-2 gradient-text">Welcome back, {user.displayName || user.username}</h1>
             <p className="text-gray-600 dark:text-gray-400">Here&apos;s what&apos;s happening with your account</p>
           </div>
-          {isCreator && (
-            <Button asChild className="gradient-bg text-white">
-              <Link href="/creator/dashboard">
-                <Store className="h-4 w-4 mr-2" />
-                Creator Hub
-              </Link>
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {isCreator && (
+              <Button asChild className="gradient-bg text-white">
+                <Link href="/creator/dashboard">
+                  <Store className="h-4 w-4 mr-2" />
+                  Creator Hub
+                </Link>
+              </Button>
+            )}
+            {isAdmin && (
+              <Button asChild variant="outline">
+                <Link href="/moderation">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Moderation
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">

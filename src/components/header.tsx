@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, ShoppingCart, User, Menu, Heart, Settings, LogOut, LayoutDashboard, Bell, Store } from "lucide-react"
+import { Search, ShoppingCart, User, Menu, Heart, Settings, LogOut, LayoutDashboard, Bell, Store, Shield } from "lucide-react"
 import { useState } from "react"
 
 export default function Header() {
@@ -118,11 +118,19 @@ export default function Header() {
                       Notifications
                     </Link>
                   </DropdownMenuItem>
-                  {session.user?.role && ["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(session.user.role) && (
+                  {session.user?.role && ["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(session.user.role) && (
                     <DropdownMenuItem asChild>
                       <Link href="/creator/dashboard">
                         <Store className="h-4 w-4 mr-2" />
                         Creator Hub
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {session.user?.role && ["ADMIN", "OWNER"].includes(session.user.role) && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/moderation">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Moderation
                       </Link>
                     </DropdownMenuItem>
                   )}

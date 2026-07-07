@@ -9,7 +9,7 @@ async function updateStoreImage(field: "logo" | "banner", validation: "avatar" |
   const user = await getServerUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {
+  if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
     return NextResponse.json({ error: "Creator account required" }, { status: 403 })
   }
 

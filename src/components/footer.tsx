@@ -87,6 +87,18 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Admin */}
+          <div>
+            <h3 className="font-semibold mb-4">Admin</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/moderation" className="text-gray-600 hover:text-purple-600 transition-colors">
+                  Moderation
+                </Link>
+              </li>
+            </ul>
+          </div>
+
           {/* Legal */}
           <div>
             <h3 className="font-semibold mb-4">Legal</h3>

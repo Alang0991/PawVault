@@ -19,7 +19,7 @@ export default async function CreatorLayout({
     redirect("/auth/signin")
   }
 
-  if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {
+  if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-16">
         <div className="container mx-auto px-4 max-w-xl">
