@@ -24,18 +24,14 @@ export async function GET() {
       totalProducts,
       publishedProducts,
       draftProducts,
-      productIds,
       reviews,
       licenses,
       recentOrders,
+      products,
     ] = await Promise.all([
       prisma.product.count({ where: { creatorId: user.id } }),
       prisma.product.count({ where: { creatorId: user.id, isPublished: true } }),
       prisma.product.count({ where: { creatorId: user.id, isPublished: false } }),
-      prisma.product.findMany({
-        where: { creatorId: user.id },
-        select: { id: true },
-      }),
       prisma.review.findMany({
         where: { product: { creatorId: user.id } },
         orderBy: { createdAt: "desc" },
@@ -60,11 +56,19 @@ export async function GET() {
           buyer: { select: { id: true, displayName: true, username: true, email: true } },
         },
       }),
+      prisma.product.findMany({
+        where: { creatorId: user.id },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        include: {
+          category: true,
+          media: { where: { isThumbnail: true }, take: 1 },
+          _count: { select: { reviews: true, favorites: true } },
+        },
+      }),
     ])
 
-    const ids = productIds.map((p) => p.id)
-
-    const orders = await prisma.order.findMany({
+    const completedOrders = await prisma.order.findMany({
       where: {
         items: { some: { product: { creatorId: user.id } } },
         status: "COMPLETED",
@@ -72,7 +76,7 @@ export async function GET() {
       select: { total: true },
     })
 
-    const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0)
+    const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0)
     const customerIds = new Set(
       recentOrders.map((o) => o.buyer?.id).filter(Boolean) as string[],
     )
@@ -124,21 +128,13 @@ export async function GET() {
       })),
       recentReviews,
       recentLicenses,
-      products: await prisma.product.findMany({
-        where: { creatorId: user.id },
-        orderBy: { createdAt: "desc" },
-        take: 8,
-        include: {
-          category: true,
-          media: { where: { isThumbnail: true }, take: 1 },
-          _count: { select: { reviews: true, favorites: true } },
-        },
-      }),
+      products,
     })
   } catch (error) {
     console.error("Creator dashboard error:", error)
+    const message = error instanceof Error ? error.message : "Something went wrong"
     return NextResponse.json(
-      { error: "Something went wrong" },
+      { error: message },
       { status: 500 },
     )
   }

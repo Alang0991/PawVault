@@ -131,6 +131,11 @@ export async function uploadFile(
   const buffer = Buffer.from(await file.arrayBuffer())
 
   if (config.provider === 'local') {
+    if (process.env.VERCEL) {
+      throw new Error(
+        'Local file uploads are not supported on Vercel. Set STORAGE_PROVIDER=s3 (or r2) and configure STORAGE_BUCKET, STORAGE_REGION, STORAGE_ACCESS_KEY_ID, STORAGE_SECRET_ACCESS_KEY. See .env.example for required env vars.',
+      )
+    }
     const result = await uploadToLocal(buffer, key, request)
     await createAuditLog({
       userId: options.userId,

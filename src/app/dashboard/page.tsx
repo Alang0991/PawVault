@@ -14,11 +14,12 @@ import {
   Heart,
   TrendingUp,
   Settings,
+  Store,
 } from "lucide-react"
 
 async function getDashboardData(userId: string) {
-  const [recentOrders, wishlistItems, licenses, products] = await Promise.all([
-    prisma.order.findMany({
+  try {
+    const recentOrders = await prisma.order.findMany({
       where: { buyerId: userId },
       take: 5,
       orderBy: { createdAt: "desc" },
@@ -31,8 +32,9 @@ async function getDashboardData(userId: string) {
           },
         },
       },
-    }),
-    prisma.wishlistItem.findMany({
+    })
+
+    const wishlistItems = await prisma.wishlistItem.findMany({
       where: { userId },
       take: 4,
       include: {
@@ -40,8 +42,9 @@ async function getDashboardData(userId: string) {
           select: { id: true, title: true, slug: true, price: true, media: { where: { isThumbnail: true }, take: 1 } },
         },
       },
-    }),
-    prisma.license.findMany({
+    })
+
+    const licenses = await prisma.license.findMany({
       where: { userId },
       take: 5,
       include: {
@@ -49,8 +52,9 @@ async function getDashboardData(userId: string) {
           select: { id: true, title: true, slug: true },
         },
       },
-    }),
-    prisma.product.findMany({
+    })
+
+    const products = await prisma.product.findMany({
       where: { creatorId: userId },
       take: 5,
       include: {
@@ -58,10 +62,13 @@ async function getDashboardData(userId: string) {
         _count: { select: { reviews: true } },
       },
       orderBy: { createdAt: "desc" },
-    }),
-  ])
+    })
 
-  return { recentOrders, wishlistItems, licenses, products }
+    return { recentOrders, wishlistItems, licenses, products }
+  } catch (error) {
+    console.error("Dashboard data error:", error)
+    return { recentOrders: [], wishlistItems: [], licenses: [], products: [] }
+  }
 }
 
 export default async function DashboardPage() {
@@ -71,19 +78,25 @@ export default async function DashboardPage() {
     redirect("/auth/signin")
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      displayName: true,
-      role: true,
-      avatar: true,
-      bio: true,
-      isVerified: true,
-    },
-  })
+  let user
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        role: true,
+        avatar: true,
+        bio: true,
+        isVerified: true,
+      },
+    })
+  } catch (error) {
+    console.error("User fetch error:", error)
+    user = null
+  }
 
   if (!user) {
     redirect("/auth/signin")
@@ -91,11 +104,25 @@ export default async function DashboardPage() {
 
   const { recentOrders, wishlistItems, licenses, products } = await getDashboardData(user.id)
 
+  const isCreator = ["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-2 gradient-text">Welcome back, {user.displayName || user.username}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">Here's what's happening with your account</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2 gradient-text">Welcome back, {user.displayName || user.username}</h1>
+            <p className="text-gray-600 dark:text-gray-400">Here&apos;s what&apos;s happening with your account</p>
+          </div>
+          {isCreator && (
+            <Button asChild className="gradient-bg text-white">
+              <Link href="/creator/dashboard">
+                <Store className="h-4 w-4 mr-2" />
+                Creator Hub
+              </Link>
+            </Button>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card className="hover:shadow-lg transition-all">
@@ -250,11 +277,19 @@ export default async function DashboardPage() {
                     <Link href="/downloads">Downloads</Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full justify-start">
-                    <Link href="/settings">
+                    <Link href="/account/settings">
                       <Settings className="h-4 w-4 mr-2" />
                       Account Settings
                     </Link>
                   </Button>
+                  {isCreator && (
+                    <Button asChild variant="ghost" className="w-full justify-start">
+                      <Link href="/creator/dashboard">
+                        <Store className="h-4 w-4 mr-2" />
+                        Creator Hub
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
