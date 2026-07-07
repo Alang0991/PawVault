@@ -62,12 +62,41 @@ async function searchCreators(query: string) {
   })
 }
 
-export default async function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
+async function searchCollections(query: string) {
+  return prisma.collection.findMany({
+    where: {
+      OR: [
+        { name: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatar: true,
+        },
+      },
+      _count: {
+        select: { items: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  })
+}
+
+export default async function SearchPage({ searchParams }: { searchParams: { q?: string; tab?: string } }) {
   const query = searchParams.q || ""
-  const [products, creators] = query.length > 0 ? await Promise.all([
+  const [products, creators, collections] = query.length > 0 ? await Promise.all([
     searchProducts(query),
     searchCreators(query),
-  ]) : [[], []]
+    searchCollections(query),
+  ]) : [[], [], []]
+
+  const totalResults = products.length + creators.length + collections.length
 
   return (
     <div className="min-h-screen">
@@ -76,16 +105,17 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           {query ? `Search results for "${query}"` : "Search"}
         </h1>
         <p className="text-muted-foreground mb-8">
-          {products.length + creators.length} results found
+          {totalResults} results found
         </p>
 
         {query.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">Enter a search term to find products and creators.</p>
+          <p className="text-center text-muted-foreground py-12">Enter a search term to find products, creators, and collections.</p>
         ) : (
-          <Tabs defaultValue="products">
+          <Tabs defaultValue={searchParams.tab || "products"}>
             <TabsList>
               <TabsTrigger value="products">Products ({products.length})</TabsTrigger>
               <TabsTrigger value="creators">Creators ({creators.length})</TabsTrigger>
+              <TabsTrigger value="collections">Collections ({collections.length})</TabsTrigger>
             </TabsList>
             <TabsContent value="products" className="mt-6">
               {products.length === 0 ? (
@@ -133,6 +163,52 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                               <span>{creator.salesCount} sales</span>
                             </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="collections" className="mt-6">
+              {collections.length === 0 ? (
+                <p className="text-center text-muted-foreground py-12">No collections found.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {collections.map((collection) => (
+                    <Link
+                      key={collection.id}
+                      href={`/collections/${collection.slug}`}
+                    >
+                      <Card className="h-full hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex items-center gap-3 mb-2">
+                            {collection.coverImage ? (
+                              <img
+                                src={collection.coverImage}
+                                alt=""
+                                className="h-12 w-12 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                                📚
+                              </div>
+                            )}
+                            <div>
+                              <h3 className="font-semibold line-clamp-1">{collection.name}</h3>
+                              <p className="text-xs text-muted-foreground">
+                                by {collection.user.displayName || collection.user.username}
+                              </p>
+                            </div>
+                          </div>
+                          {collection.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {collection.description}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {collection._count.items} items
+                          </p>
                         </CardContent>
                       </Card>
                     </Link>

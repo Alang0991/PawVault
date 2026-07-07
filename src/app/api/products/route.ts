@@ -41,17 +41,52 @@ export async function GET(request: Request) {
     const featured = searchParams.get("featured")
     const search = searchParams.get("search")
     const sort = searchParams.get("sort") || "newest"
+    const priceMin = searchParams.get("priceMin")
+    const priceMax = searchParams.get("priceMax")
+    const rating = searchParams.get("rating")
+    const tags = searchParams.get("tags")
+    const free = searchParams.get("free")
+    const onSale = searchParams.get("onSale")
+    const creator = searchParams.get("creator")
+
+    const tagList = tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : []
+
+    const price: any = {}
+    if (priceMin) price.gte = parseFloat(priceMin)
+    if (priceMax) price.lte = parseFloat(priceMax)
 
     const where: any = {
       isPublished: true,
       ...(category && { category: { slug: category } }),
       ...(featured === "true" && { isFeatured: true }),
+      ...(creator && { creator: { username: creator } }),
       ...(search && {
-OR: [
-           { title: { contains: search } },
-           { description: { contains: search } },
-         ],
+        OR: [
+          { title: { contains: search } },
+          { description: { contains: search } },
+        ],
       }),
+      ...(free === "true" && { isFree: true }),
+      ...(onSale === "true" && { isOnSale: true }),
+      ...(Object.keys(price).length > 0 && { price }),
+      ...(tagList.length > 0 && {
+        tags: {
+          some: {
+            tag: { slug: { in: tagList } },
+          },
+        },
+      }),
+    }
+
+
+    if (rating) {
+      const min = parseFloat(rating)
+      const rated = await prisma.review.groupBy({
+        by: ["productId"],
+        _avg: { rating: true },
+        having: { rating: { _avg: { gte: min } } },
+      })
+      where.id = { in: rated.map((r) => r.productId) }
     }
 
     const orderBy: any = {
@@ -59,7 +94,9 @@ OR: [
       oldest: { createdAt: "asc" },
       "price-asc": { price: "asc" },
       "price-desc": { price: "desc" },
-      popular: { createdAt: "desc" },
+      popular: { favorites: { _count: "desc" } },
+      "best-selling": { favorites: { _count: "desc" } },
+      rating: { reviews: { _count: "desc" } },
     }[sort] || { createdAt: "desc" }
 
     const [products, total] = await Promise.all([

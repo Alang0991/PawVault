@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, ShoppingCart, User, Menu, Heart, Settings, LogOut, LayoutDashboard } from "lucide-react"
+import { Search, ShoppingCart, User, Menu, Heart, Settings, LogOut, LayoutDashboard, Bell } from "lucide-react"
 import { useState } from "react"
 
 export default function Header() {
@@ -61,6 +61,11 @@ export default function Header() {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <Heart className="h-5 w-5" />
             </Button>
+            <Button variant="ghost" size="icon" className="hidden md:flex" asChild>
+              <Link href="/notifications" aria-label="Notifications">
+                <Bell className="h-5 w-5" />
+              </Link>
+            </Button>
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <ShoppingCart className="h-5 w-5" />
             </Button>
@@ -105,6 +110,12 @@ export default function Header() {
                     <Link href="/settings">
                       <Settings className="h-4 w-4 mr-2" />
                       Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/notifications">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notifications
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
