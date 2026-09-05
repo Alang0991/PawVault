@@ -8,9 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Star, Download, FileText, AlertCircle } from "lucide-react"
+import { Star, Download, FileText, AlertCircle, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { ProductCard } from "@/components/product-card"
 import { ProductActions } from "@/components/product-actions"
 import { getServerUser } from "@/lib/session"
 import { ShareButton } from "@/components/share-button"
@@ -107,6 +108,25 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   const thumbnail = product.media.find((m) => m.isThumbnail) || product.media[0]
   const gallery = product.media.filter((m) => m !== thumbnail)
+
+  const moreFromCreator = product.creator.id
+    ? await prisma.product.findMany({
+        where: { creatorId: product.creator.id, isPublished: true, id: { not: product.id } },
+        take: 4,
+        include: {
+          creator: { select: { id: true, username: true, displayName: true, avatar: true } },
+          media: { where: { isThumbnail: true }, take: 1 },
+          reviews: { select: { rating: true } },
+          _count: { select: { favorites: true, reviews: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    : []
+
+  const moreWithRating = moreFromCreator.map((p: any) => {
+    const avgRating = p.reviews.length > 0 ? p.reviews.reduce((s: number, r: any) => s + r.rating, 0) / p.reviews.length : 0
+    return { ...p, rating: avgRating, reviewCount: p.reviews.length }
+  })
 
   return (
     <div className="min-h-screen">
@@ -338,6 +358,22 @@ export default async function ProductPage({ params }: { params: { slug: string }
             </Card>
           </TabsContent>
         </Tabs>
+
+        {moreWithRating.length > 0 && (
+          <div className="mt-16">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl md:text-2xl font-bold">More from {creatorName}</h2>
+              <Link href={`/store/${product.creator.username}`} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+                View store <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {moreWithRating.map((p: any) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
