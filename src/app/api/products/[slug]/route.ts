@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { z } from "zod"
+import { rateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
 
 const updateProductSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -31,11 +32,52 @@ const updateProductSchema = z.object({
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: { slug: string } },
 ) {
   try {
+    const rateLimitResult = rateLimit(request, 30, 60_000)
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      )
+    }
+    const currentUser = await getServerUser()
+
+    const baseWhere: any = {
+      slug: params.slug,
+    }
+
+    if (!currentUser) {
+      baseWhere.isPublished = true
+    } else {
+      const product = await prisma.product.findUnique({
+        where: { slug: params.slug },
+        select: { creatorId: true, isPublished: true },
+      })
+
+      if (!product) {
+        return NextResponse.json(
+          { error: "Product not found" },
+          { status: 404 }
+        )
+      }
+
+      const isOwner = product.creatorId === currentUser.id || currentUser.role === "ADMIN"
+      if (!isOwner && !product.isPublished) {
+        return NextResponse.json(
+          { error: "Product not found" },
+          { status: 404 }
+        )
+      }
+
+      if (!isOwner) {
+        baseWhere.isPublished = true
+      }
+    }
+
     const product = await prisma.product.findUnique({
-      where: { slug: params.slug },
+      where: baseWhere,
       include: {
         creator: {
           select: {
@@ -46,8 +88,18 @@ export async function GET(
           },
         },
         category: true,
-        media: true,
-        files: true,
+        media: {
+          orderBy: { order: "asc" },
+        },
+        files: {
+          select: {
+            id: true,
+            filename: true,
+            size: true,
+            platform: true,
+            version: true,
+          },
+        },
         tags: {
           include: { tag: true },
         },
@@ -61,7 +113,7 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ product })
+    return NextResponse.json({ product }, { headers: getRateLimitHeaders(rateLimitResult) })
   } catch (error) {
     console.error("Get product error:", error)
     return NextResponse.json(

@@ -12,6 +12,7 @@ export interface StorageOptions {
   storeId?: string
   validation?: keyof typeof VALIDATION_OPTIONS
   contentType?: string
+  subPath?: string
 }
 
 export interface UploadResult {
@@ -62,32 +63,48 @@ function sanitizeFilename(filename: string): string {
   return ext ? `${sanitized}.${ext}` : sanitized
 }
 
+function safeSubPath(sub: string | undefined): string {
+  if (!sub) return ""
+  return sub
+    .replace(/\\/g, "/")
+    .split("/")
+    .map((p) =>
+      p
+        .replace(/[^a-zA-Z0-9._-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, ""),
+    )
+    .filter(Boolean)
+    .join("/")
+}
+
 function generateKey(options: StorageOptions, filename: string): string {
   const timestamp = Date.now()
   const random = Math.random().toString(36).slice(2, 8)
   const safeName = sanitizeFilename(filename)
-  const filePart = `${timestamp}-${random}-${safeName}`
+  const sub = safeSubPath(options.subPath)
+  const tail = sub ? `${sub}/${timestamp}-${random}-${safeName}` : `${timestamp}-${random}-${safeName}`
 
   if (options.folder === 'avatars' && options.userId) {
-    return `avatars/${options.userId}/${filePart}`
+    return `avatars/${options.userId}/${tail}`
   }
 
   if (options.folder === 'stores' && options.userId) {
-    return `stores/${options.userId}/${filePart}`
+    return `stores/${options.userId}/${tail}`
   }
 
   if (options.folder === 'products' && options.productId) {
     if (options.contentType?.startsWith('video/')) {
-      return `products/${options.productId}/files/${filePart}`
+      return `products/${options.productId}/files/${tail}`
     }
-    return `products/${options.productId}/images/${filePart}`
+    return `products/${options.productId}/images/${tail}`
   }
 
   if (options.folder === 'files' && options.productId) {
-    return `products/${options.productId}/files/${filePart}`
+    return `products/${options.productId}/files/${tail}`
   }
 
-  return `${options.folder}/${filePart}`
+  return `${options.folder}/${tail}`
 }
 
 export async function uploadFile(
@@ -105,12 +122,9 @@ export async function uploadFile(
   const bucket = getBucket()
   const key = generateKey(options, file.name)
 
-  const arrayBuffer = await file.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
-
   const { error } = await supabase.storage
     .from(bucket)
-    .upload(key, buffer, {
+    .upload(key, file, {
       contentType: options.contentType || file.type || 'application/octet-stream',
       upsert: false,
     })
@@ -151,7 +165,7 @@ export async function uploadFile(
   return {
     url,
     key,
-    size: buffer.length,
+    size: file.size,
     contentType: options.contentType || file.type || 'application/octet-stream',
   }
 }
@@ -172,7 +186,7 @@ export async function saveFileRecord(
   productId: string,
   uploadResult: UploadResult,
   filename: string,
-  extra?: { version?: string; platform?: string },
+  extra?: { version?: string; platform?: string; folder?: string },
 ) {
   return prisma.productFile.create({
     data: {
@@ -182,6 +196,7 @@ export async function saveFileRecord(
       size: uploadResult.size,
       version: extra?.version,
       platform: extra?.platform,
+      folder: extra?.folder ?? "",
     },
   })
 }

@@ -34,6 +34,71 @@ export async function GET() {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const user = await getServerUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
+      return NextResponse.json({ error: "Creator account required" }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const validated = storeSettingsSchema.parse(body)
+
+    const existing = await prisma.store.findUnique({ where: { userId: user.id } })
+    if (existing) {
+      return NextResponse.json({ error: "Store already exists. Use PUT to update." }, { status: 409 })
+    }
+
+    if (validated.slug !== storeSlugFromName(validated.name)) {
+      const slugClash = await prisma.store.findUnique({ where: { slug: validated.slug } })
+      if (slugClash) {
+        return NextResponse.json({ error: "That store slug is already taken" }, { status: 409 })
+      }
+    }
+
+    const store = await prisma.store.create({
+      data: {
+        userId: user.id,
+        name: validated.name,
+        slug: validated.slug,
+        description: validated.description,
+        socialLinks: validated.socialLinks ? JSON.stringify(validated.socialLinks) : undefined,
+      },
+    })
+
+    await createAuditLog({
+      userId: user.id,
+      action: AuditActions.USER_PROFILE_UPDATED,
+      details: { storeId: store.id, slug: validated.slug, action: "store_created" },
+    })
+
+    return NextResponse.json({ store }, { status: 201 })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation failed", details: error.errors },
+        { status: 400 },
+      )
+    }
+    const message = error instanceof Error ? error.message : "Something went wrong"
+    console.error("Create store error:", error)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
+function storeSlugFromName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+
 export async function PUT(request: Request) {
   try {
     const user = await getServerUser()

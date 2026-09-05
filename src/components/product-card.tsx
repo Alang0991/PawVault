@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/helpers"
 import { Star, Heart } from "lucide-react"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
+import { AdultContentPreview } from "@/components/adult-content-preview"
 
 interface ProductCardProps {
   product: {
@@ -18,7 +19,8 @@ interface ProductCardProps {
     salePrice?: number | null
     isOnSale?: boolean
     isFree?: boolean
-    media?: { url: string }[]
+    contentRating?: "SFW" | "MATURE" | "NSFW" | string
+    media?: { id?: string; url: string }[]
     creator: {
       id: string
       username?: string
@@ -33,9 +35,10 @@ interface ProductCardProps {
       favorites: number
     }
   }
+  isOwned?: boolean
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, isOwned }: ProductCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(product._count?.favorites || 0)
   const { data: session } = useSession()
@@ -60,10 +63,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
       if (res.ok) {
         setIsLiked(!isLiked)
-        setLikesCount(isLiked ? likesCount - 1 : likesCount + 1)
+        setLikesCount((prev) => (!isLiked ? prev + 1 : prev - 1))
+      } else {
+        const data = await res.json()
       }
     } catch (error) {
-      console.error('Error toggling wishlist:', error)
     }
   }
 
@@ -72,7 +76,17 @@ export function ProductCard({ product }: ProductCardProps) {
       <Card className="h-full group hover:shadow-xl transition-all duration-300 border-0 shadow-md hover:-translate-y-1">
         <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
           {thumbnail ? (
-            <img src={thumbnail.url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <AdultContentPreview
+              mediaId={thumbnail.id}
+              directUrl={thumbnail.url}
+              contentRating={product.contentRating || "SFW"}
+              alt={product.title}
+              className="w-full h-full"
+              imgClassName="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              variant="image"
+              aspect="video"
+              showBadge
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
               <span className="text-4xl">📦</span>
@@ -85,10 +99,14 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.isFree && (
               <Badge className="bg-green-500 text-white border-0 shadow-lg">Free</Badge>
             )}
+            {isOwned && (
+              <Badge className="bg-blue-500 text-white border-0 shadow-lg">Owned</Badge>
+            )}
           </div>
           <button
             onClick={handleLike}
             className="absolute top-3 right-3 p-2 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur-sm hover:bg-white dark:hover:bg-black transition-colors"
+            aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart
               className={`h-4 w-4 transition-colors ${

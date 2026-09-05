@@ -50,7 +50,6 @@ export default function NewProductPage() {
       const data = await response.json()
       router.push(`/dashboard/creator/products/${data.id}`)
     } catch (error) {
-      console.error("Error creating product:", error)
     } finally {
       setIsLoading(false)
     }

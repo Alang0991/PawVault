@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, ShoppingCart, User, Menu, Heart, Settings, LogOut, LayoutDashboard, Bell, Store, Shield } from "lucide-react"
+import { Search, ShoppingCart, User, Menu, Heart, Settings, LogOut, LayoutDashboard, Bell, Store, Shield, ShoppingBag } from "lucide-react"
 import { useState } from "react"
 
 export default function Header() {
@@ -95,15 +95,15 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/orders">
+                    <Link href="/library">
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      Orders
+                      Library
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/downloads">
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Downloads
+                    <Link href="/orders">
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      Orders
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>

@@ -39,7 +39,6 @@ export default function CreatorDashboard() {
           setData(result)
         }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error)
       } finally {
         setLoading(false)
       }

@@ -1,22 +1,22 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { createAuditLog, AuditActions } from "@/lib/audit-logger"
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = cookies()
-    const sessionToken =
-      cookieStore.get("next-auth.session-token")?.value ||
-      cookieStore.get("__Secure-next-auth.session-token")?.value
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.id ?? null
 
-    if (sessionToken) {
-      cookieStore.delete("next-auth.session-token")
-      cookieStore.delete("__Secure-next-auth.session-token")
+    if (userId) {
+      await createAuditLog({
+        userId,
+        action: AuditActions.USER_LOGOUT,
+        details: { method: "api" },
+      })
     }
-
-    await createAuditLog({ action: AuditActions.USER_LOGOUT })
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -26,4 +26,8 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
+
+export async function GET() {
+  return new NextResponse(null, { status: 405 })
 }

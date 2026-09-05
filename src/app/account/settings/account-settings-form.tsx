@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Upload, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { ChevronRight } from "lucide-react"
 
 export interface AccountProfile {
   avatar: string
@@ -170,6 +172,22 @@ export default function AccountSettingsForm({ initial }: { initial: AccountProfi
                 {saving ? "Saving..." : "Save Changes"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Content preferences</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">
+              Control how mature and adult content is shown across PawVault.
+            </p>
+            <Button asChild variant="outline" className="w-full justify-between">
+              <Link href="/account/content-settings">
+                Manage content preferences <ChevronRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

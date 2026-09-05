@@ -12,6 +12,10 @@ import { Star, Download, FileText, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ProductActions } from "@/components/product-actions"
+import { getServerUser } from "@/lib/session"
+import { ShareButton } from "@/components/share-button"
+import { hasProductAccess } from "@/lib/ownership"
+import { AdultContentPreview } from "@/components/adult-content-preview"
 
 async function getProduct(slug: string) {
   const product = await prisma.product.findUnique({
@@ -25,11 +29,19 @@ async function getProduct(slug: string) {
           avatar: true,
         },
       },
-      category: true,
+      category: { select: { id: true, name: true, slug: true } },
       media: {
         orderBy: { order: "asc" },
       },
-      files: true,
+      files: {
+        select: {
+          id: true,
+          filename: true,
+          size: true,
+          platform: true,
+          version: true,
+        },
+      },
       tags: {
         include: {
           tag: true,
@@ -67,14 +79,34 @@ async function getProduct(slug: string) {
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const product = await getProduct(params.slug)
   return {
-    title: product.title,
-      description: product.description || `Buy ${product.title} on PawVault`,
+    title: `${product.title} | PawVault`,
+    description: product.seoDescription || product.description || `Buy ${product.title} on PawVault`,
+    alternates: {
+      canonical: `https://pawvault.com/product/${product.slug}`,
+    },
+    openGraph: {
+      title: product.title,
+      description: product.seoDescription || product.description || `Buy ${product.title} on PawVault`,
+      type: "website",
+      url: `https://pawvault.com/product/${product.slug}`,
+      images: product.media.length > 0 ? [product.media[0].url] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.title,
+      description: product.seoDescription || product.description || `Buy ${product.title} on PawVault`,
+    },
   }
 }
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product = await getProduct(params.slug)
   const creatorName = product.creator.displayName || product.creator.username
+  const currentUser = await getServerUser()
+  const ownership = currentUser ? await hasProductAccess(currentUser.id, product.id) : { hasAccess: false, isCreator: false }
+
+  const thumbnail = product.media.find((m) => m.isThumbnail) || product.media[0]
+  const gallery = product.media.filter((m) => m !== thumbnail)
 
   return (
     <div className="min-h-screen">
@@ -82,19 +114,39 @@ export default async function ProductPage({ params }: { params: { slug: string }
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           <div className="space-y-4">
             <div className="aspect-video bg-muted relative overflow-hidden rounded-lg">
-              {product.media[0] ? (
-                <img src={product.media[0].url} alt={product.title} className="w-full h-full object-cover" />
+              {thumbnail ? (
+                <AdultContentPreview
+                  mediaId={thumbnail.id}
+                  directUrl={thumbnail.url}
+                  contentRating={product.contentRating}
+                  alt={product.title}
+                  className="w-full h-full"
+                  imgClassName="w-full h-full object-cover"
+                  variant="image"
+                  aspect="video"
+                  showBadge
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   No image available
                 </div>
               )}
             </div>
-            {product.media.length > 1 && (
+            {gallery.length > 0 && (
               <div className="grid grid-cols-4 gap-2">
-                {product.media.slice(1, 5).map((media, index) => (
+                {gallery.slice(0, 4).map((media) => (
                   <div key={media.id} className="aspect-video bg-muted relative overflow-hidden rounded">
-                    <img src={media.url} alt={`${product.title} ${index + 2}`} className="w-full h-full object-cover" />
+                    <AdultContentPreview
+                      mediaId={media.id}
+                      directUrl={media.url}
+                      contentRating={product.contentRating}
+                      alt={`${product.title} ${media.order + 1}`}
+                      className="w-full h-full"
+                      imgClassName="w-full h-full object-cover"
+                      variant="image"
+                      aspect="video"
+                      showBadge={false}
+                    />
                   </div>
                 ))}
               </div>
@@ -103,12 +155,18 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
           <div className="space-y-6">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {product.isOnSale && product.salePrice && (
-                  <Badge className="bg-red-500 text-white">Sale</Badge>
+                  <Badge className="bg-red-500 text-white" aria-label="On sale">Sale</Badge>
                 )}
                 {product.isFree && (
-                  <Badge className="bg-green-500 text-white">Free</Badge>
+                  <Badge className="bg-green-500 text-white" aria-label="Free product">Free</Badge>
+                )}
+                {ownership.hasAccess && (
+                  <Badge className="bg-blue-500 text-white" aria-label="You own this product">Owned</Badge>
+                )}
+                {product.contentRating !== "SFW" && (
+                  <Badge variant="destructive" aria-label="Mature content">18+</Badge>
                 )}
               </div>
               <h1 className="text-3xl font-bold">{product.title}</h1>
@@ -143,6 +201,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
             <div className="flex gap-2">
               <ProductActions productId={product.id} isFree={product.isFree} />
+              <ShareButton url={`https://pawvault.com/product/${product.slug}`} title={product.title} />
             </div>
 
             <Separator />
@@ -154,7 +213,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
               </p>
             </div>
 
-            {product.files.length > 0 && (
+            {ownership.hasAccess && product.files.length > 0 && (
               <div>
                 <h2 className="font-semibold mb-2">Files Included</h2>
                 <div className="space-y-2">
@@ -165,6 +224,26 @@ export default async function ProductPage({ params }: { params: { slug: string }
                       <span className="text-muted-foreground">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {(!ownership.hasAccess && product.files.length > 0) && (
+              <div>
+                <h2 className="font-semibold mb-2">Files Included</h2>
+                <div className="space-y-2">
+                  {product.files.slice(0, 5).map((file) => (
+                    <div key={file.id} className="flex items-center gap-2 text-sm">
+                      <FileText className="h-4 w-4" />
+                      <span>{file.filename}</span>
+                      <span className="text-muted-foreground">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                    </div>
+                  ))}
+                  {product.files.length > 5 && (
+                    <p className="text-xs text-muted-foreground">
+                      +{product.files.length - 5} more files. Full file list available after purchase.
+                    </p>
+                  )}
                 </div>
               </div>
             )}

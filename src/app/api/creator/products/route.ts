@@ -9,12 +9,17 @@ const createProductSchema = z.object({
   title: z.string().min(1).max(200),
   subtitle: z.string().max(200).optional(),
   description: z.string().optional(),
-  price: z.number().positive(),
+  price: z.number().nonnegative(),
+  salePrice: z.number().nonnegative().optional(),
   categoryId: z.string().optional(),
+  tags: z.array(z.string()).optional(),
   isFree: z.boolean().default(false),
+  isOnSale: z.boolean().default(false),
   isPublished: z.boolean().default(false),
+  slug: z.string().optional(),
   unityVersion: z.string().optional(),
   vrcSdkVersion: z.string().optional(),
+  contentRating: z.enum(["SFW", "MATURE", "NSFW"]).default("SFW"),
 })
 
 export async function POST(request: NextRequest) {
@@ -35,7 +40,7 @@ export async function POST(request: NextRequest) {
       where: { userId: user.id },
     })
 
-    const baseSlug = validated.title
+    const baseSlug = (validated.slug?.trim() || validated.title)
       .toLowerCase()
       .replace(/[^\w\s-]/g, "")
       .replace(/[\s_-]+/g, "-")
@@ -44,22 +49,47 @@ export async function POST(request: NextRequest) {
     const clash = await prisma.product.findUnique({ where: { slug } })
     if (clash) slug = `${baseSlug}-${Date.now()}`
 
+    const { tags, ...rest } = validated
+
     const product = await prisma.product.create({
       data: {
         creatorId: user.id,
         storeId: store?.id,
-        title: validated.title,
-        subtitle: validated.subtitle,
-        description: validated.description,
-        price: validated.isFree ? 0 : validated.price,
-        categoryId: validated.categoryId,
-        isFree: validated.isFree,
-        isPublished: validated.isPublished,
-        unityVersion: validated.unityVersion,
-        vrcSdkVersion: validated.vrcSdkVersion,
+        title: rest.title,
+        subtitle: rest.subtitle,
+        description: rest.description,
+        price: rest.isFree ? 0 : rest.price,
+        salePrice: rest.salePrice,
+        categoryId: rest.categoryId,
+        isFree: rest.isFree,
+        isOnSale: rest.isOnSale,
+        isPublished: rest.isPublished,
+        unityVersion: rest.unityVersion,
+        vrcSdkVersion: rest.vrcSdkVersion,
+        contentRating: rest.contentRating,
         slug,
       },
     })
+
+    if (tags && tags.length > 0) {
+      const tagRecords = await Promise.all(
+        tags.map(async (tagName) => {
+          const tagSlug = tagName
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, "")
+            .replace(/[\s_-]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+          return prisma.tag.upsert({
+            where: { slug: tagSlug || tagName.toLowerCase() },
+            update: {},
+            create: { name: tagName, slug: tagSlug || tagName.toLowerCase() },
+          })
+        })
+      )
+      await prisma.productTag.createMany({
+        data: tagRecords.map((tag) => ({ productId: product.id, tagId: tag.id })),
+      })
+    }
 
     return NextResponse.json(product, { status: 201 })
   } catch (error) {

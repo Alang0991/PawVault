@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -28,11 +28,7 @@ export default function CreatorShopSettingsPage() {
   const [store, setStore] = useState<Store | null>(null)
   const [form, setForm] = useState({ name: "", slug: "", description: "", twitter: "", youtube: "", discord: "" })
 
-  useEffect(() => {
-    load()
-  }, [])
-
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const res = await fetch("/api/creator/store/settings")
       if (res.ok) {
@@ -54,7 +50,11 @@ export default function CreatorShopSettingsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   function parseSocial(raw: any): Record<string, string> {
     if (!raw) return {}

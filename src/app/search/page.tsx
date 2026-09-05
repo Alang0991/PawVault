@@ -65,6 +65,7 @@ async function searchCreators(query: string) {
 async function searchCollections(query: string) {
   return prisma.collection.findMany({
     where: {
+      isPublic: true,
       OR: [
         { name: { contains: query, mode: "insensitive" } },
         { description: { contains: query, mode: "insensitive" } },
@@ -155,7 +156,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {creators.map((creator) => (
-                    <Link key={creator.id} href={`/store/${creator.id}`}>
+                    <Link key={creator.id} href={`/store/${creator.username}`}>
                       <Card className="h-full hover:shadow-md transition-shadow">
                         <CardContent className="flex items-center gap-4 p-6">
                           <Avatar className="h-12 w-12">
@@ -186,7 +187,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                   {collections.map((collection) => (
                     <Link
                       key={collection.id}
-                      href={`/collections/${collection.slug}`}
+                      href={`/store/${collection.user.username}/collection/${collection.slug}`}
                     >
                       <Card className="h-full hover:shadow-md transition-shadow">
                         <CardContent className="p-6">

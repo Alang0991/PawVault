@@ -8,7 +8,7 @@ function getMailer() {
   const pass = process.env.EMAIL_SERVER_PASSWORD
 
   if (!host || !user || !pass) {
-    throw new Error('Email server configuration is incomplete')
+    return null
   }
 
   return nodemailer.createTransport({
@@ -26,10 +26,19 @@ export async function sendEmail(to: string, subject: string, html: string) {
   }
 
   const mailer = getMailer()
-  await mailer.sendMail({
-    from: process.env.EMAIL_FROM,
-    to,
-    subject,
-    html,
-  })
+  if (!mailer) {
+    console.warn('Email server configuration incomplete, skipping email send')
+    return
+  }
+
+  try {
+    await mailer.sendMail({
+      from: process.env.EMAIL_FROM,
+      to,
+      subject,
+      html,
+    })
+  } catch (error) {
+    console.error('Failed to send email:', error)
+  }
 }

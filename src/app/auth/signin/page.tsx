@@ -123,15 +123,21 @@ export default function SignInPage() {
             </div>
           )}
           <div className="mt-4 text-center text-sm">
+            <p>
+              <Link href="/auth/forgot-password" className="text-blue-600 hover:underline">
+                Forgot password?
+              </Link>
+            </p>
+          </div>
+          <div className="mt-4 text-center text-sm">
             Don't have an account?{" "}
             <Link href="/auth/signup" className="text-purple-600 hover:underline">
               Sign up
             </Link>
           </div>
-          <div className="mt-4 text-center text-sm">
-            Or use social login:{" "}
+          <div className="mt-2 text-center text-sm">
             <Link href="/auth/oauth" className="text-purple-600 hover:underline">
-              Continue with Google or Discord
+              Or continue with Google or Discord
             </Link>
           </div>
         </CardContent>

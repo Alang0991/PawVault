@@ -49,7 +49,7 @@ export default async function ShopsPage() {
             {shops.map((store) => {
               const creatorName = store.user.displayName || store.user.username
               return (
-                <Link key={store.id} href={`/store/${store.slug}`}>
+                <Link key={store.id} href={`/store/${store.user.username}`}>
                   <Card className="h-full hover:shadow-md transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4">

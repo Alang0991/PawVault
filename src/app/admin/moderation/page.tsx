@@ -71,7 +71,6 @@ export default function ModerationPage() {
         ))
       }
     } catch (error) {
-      console.error('Error updating report:', error)
     }
   }
 

@@ -53,7 +53,7 @@ export async function GET() {
         take: 5,
         include: {
           items: { include: { product: { select: { id: true, title: true, slug: true } } } },
-          buyer: { select: { id: true, displayName: true, username: true, email: true } },
+          buyer: { select: { id: true, displayName: true, username: true } },
         },
       })
       products = await prisma.product.findMany({

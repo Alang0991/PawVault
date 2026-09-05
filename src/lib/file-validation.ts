@@ -69,10 +69,13 @@ export async function validateFile(
     }
   }
 
-  // Validate magic bytes for security
-  const magicValidation = await validateMagicBytes(file, file.type)
-  if (!magicValidation.valid) {
-    return magicValidation
+  // Validate magic bytes for security (skipped for unknown / octet-stream types
+  // since many legitimate digital-product formats don't have registered magic bytes).
+  if (file.type && file.type !== 'application/octet-stream') {
+    const magicValidation = await validateMagicBytes(file, file.type)
+    if (!magicValidation.valid) {
+      return magicValidation
+    }
   }
 
   return { valid: true }
@@ -80,7 +83,7 @@ export async function validateFile(
 
 async function validateMagicBytes(file: File, expectedMime: string): Promise<ValidationResult> {
   const magicBytes = MAGIC_BYTES[expectedMime]
-  
+
   if (!magicBytes) {
     // If we don't have magic bytes for this type, skip validation
     return { valid: true }
@@ -152,12 +155,67 @@ export const VALIDATION_OPTIONS = {
       'application/x-7z-compressed',
       'application/pdf',
       'application/octet-stream',
+      'application/json',
+      'text/plain',
+      'text/csv',
+      'text/html',
+      'text/css',
+      'text/javascript',
+      'application/javascript',
+      'application/x-python',
+      'application/x-csharp',
       'image/jpeg',
       'image/png',
       'image/webp',
       'image/gif',
       'image/avif',
+      'image/svg+xml',
+      'image/tiff',
+      'image/bmp',
+      'image/vnd.adobe.photoshop',
+      'video/mp4',
+      'video/quicktime',
+      'video/webm',
+      'audio/mpeg',
+      'audio/wav',
+      'audio/ogg',
+      'audio/x-wav',
+      'audio/flac',
+      'audio/aac',
+      'audio/x-m4a',
+      'model/gltf-binary',
+      'model/gltf+json',
+      'application/octet-stream',
     ],
-    allowedExtensions: ['.zip', '.rar', '.7z', '.pdf', '.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.blend', '.fbx', '.obj', '.unitypackage', '.asset']
+    allowedExtensions: [
+      // Archives
+      '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz',
+      // Documents
+      '.pdf', '.txt', '.md', '.rtf', '.doc', '.docx', '.odt',
+      // Spreadsheets / data
+      '.csv', '.xls', '.xlsx', '.json', '.xml', '.yml', '.yaml',
+      // Code / text source
+      '.cs', '.cpp', '.c', '.h', '.hpp', '.py', '.js', '.ts', '.jsx', '.tsx', '.html', '.css', '.scss', '.sass', '.less', '.java', '.kt', '.swift', '.go', '.rs', '.rb', '.php', '.sh', '.bat', '.lua', '.gd',
+      // Images
+      '.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif', '.svg', '.bmp', '.tiff', '.tif', '.ico', '.psd', '.ai', '.eps',
+      // Video
+      '.mp4', '.mov', '.webm', '.mkv', '.avi', '.flv', '.wmv', '.m4v',
+      // Audio
+      '.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.opus',
+      // 3D / game / engine
+      '.fbx', '.obj', '.blend', '.gltf', '.glb', '.dae', '.stl', '.3ds', '.max', '.ma', '.mb', '.x', '.dxf',
+      // Unity-specific
+      '.unitypackage', '.unity', '.asset', '.prefab', '.mat', '.controller', '.shader', '.shadergraph', '.inputactions', '.uxml', '.uss', '.physicmaterial', '.physicmaterial2d', '.mixer', '.flare', '.anim', '.overridecontroller', '.mask', '.physicMaterial', '.playable',
+      // Unreal
+      '.uasset', '.umap', '.uproject', '.pak',
+      // Godot
+      '.tscn', '.tres', '.gd', '.godot',
+      // VRChat / misc
+      '.vrm', '.vrma',
+      // Subtitles / extras
+      '.srt', '.vtt', '.sub',
+      // Other
+      '.ttf', '.otf', '.woff', '.woff2',
+    ]
   }
 } as const

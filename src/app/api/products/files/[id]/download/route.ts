@@ -4,6 +4,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { getSupabaseClient, getBucket } from "@/lib/storage"
+import { hasProductAccess } from "@/lib/ownership"
+import { recordLicenseAccess } from "@/lib/ownership"
 
 export async function GET(
   request: Request,
@@ -25,16 +27,24 @@ export async function GET(
     }
 
     const isCreator = productFile.product.creatorId === user.id
-    const hasPurchased = await prisma.order.findFirst({
-      where: {
-        buyerId: user.id,
-        status: "COMPLETED",
-        items: { some: { productId: productFile.productId } },
-      },
-    })
+    if (!isCreator) {
+      const access = await hasProductAccess(user.id, productFile.productId)
+      if (!access.hasAccess) {
+        return NextResponse.json({ error: "You must purchase this product to download files" }, { status: 403 })
+      }
 
-    if (!isCreator && !hasPurchased) {
-      return NextResponse.json({ error: "You must purchase this product to download files" }, { status: 403 })
+      await recordLicenseAccess(user.id, productFile.productId)
+
+      await prisma.download.create({
+        data: {
+          userId: user.id,
+          productId: productFile.productId,
+          orderId: (await prisma.license.findFirst({
+            where: { userId: user.id, productId: productFile.productId },
+          }))?.orderId ?? '',
+          fileId: productFile.id,
+        },
+      })
     }
 
     const supabase = getSupabaseClient()

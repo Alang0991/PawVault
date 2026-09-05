@@ -16,9 +16,11 @@ const SORT_OPTIONS = [
 export function SortSelect({
   current,
   params,
+  basePath = "/browse",
 }: {
   current: string
   params: Record<string, string | undefined>
+  basePath?: string
 }) {
   const router = useRouter()
 
@@ -29,7 +31,7 @@ export function SortSelect({
     next.set("sort", value)
     next.delete("page")
     const qs = next.toString()
-    router.push(qs ? `/browse?${qs}` : "/browse")
+    router.push(qs ? `${basePath}?${qs}` : basePath)
   }
 
   return (

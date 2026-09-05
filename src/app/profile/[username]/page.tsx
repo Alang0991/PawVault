@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatDate } from "@/lib/helpers"
+import { FollowButton } from "@/components/follow-button"
+import { ProductCard } from "@/components/product-card"
 
 export const dynamic = "force-dynamic"
 
@@ -15,17 +17,39 @@ export default async function ProfilePage({ params }: { params: { username: stri
   const profileUser = await prisma.user.findFirst({
     where: { username: params.username },
     include: {
-      store: true,
+      store: {
+        select: {
+          banner: true,
+        },
+      },
       products: {
         where: { isPublished: true },
         take: 6,
         include: {
+          creator: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatar: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
           media: {
             where: { isThumbnail: true },
             take: 1,
           },
           reviews: {
             select: { rating: true },
+          },
+          _count: {
+            select: { favorites: true, reviews: true },
           },
         },
       },
@@ -70,7 +94,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
             </div>
             {!isOwnProfile && (
               <div className="flex gap-2">
-                <Button>Follow</Button>
+                <FollowButton creatorId={profileUser.id} creatorName={name} />
                 <Button variant="outline">Message</Button>
               </div>
             )}
@@ -95,22 +119,14 @@ export default async function ProfilePage({ params }: { params: { username: stri
                   : 0
 
                 return (
-                  <div key={product.id} className="border rounded-lg overflow-hidden">
-                    <div className="aspect-video bg-muted relative overflow-hidden">
-                      {product.media[0] ? (
-                        <img src={product.media[0].url} alt={product.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">No image</div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold line-clamp-1">{product.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {avgRating > 0 && `${avgRating.toFixed(1)} · `}
-                        {product.reviews.length} reviews
-                      </p>
-                    </div>
-                  </div>
+                  <ProductCard
+                    key={product.id}
+                    product={{
+                      ...product,
+                      rating: avgRating,
+                      reviewCount: product.reviews.length,
+                    }}
+                  />
                 )
               })}
             </div>

@@ -7,27 +7,103 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star, ShoppingCart, Heart, Download, Share2 } from "lucide-react"
 import Link from "next/link"
 import { getServerUser } from "@/lib/session"
+import { ProductGallery } from "./product-gallery"
+import { Metadata } from "next"
 
 export const dynamic = "force-dynamic"
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await prisma.product.findUnique({
-    where: { slug: params.slug },
-    include: {
-      creator: true,
-      media: {
-        orderBy: { order: "asc" }
-      },
-      files: true,
-      reviews: {
-        include: {
-          user: true
-        },
-        orderBy: { createdAt: "desc" }
-      },
-      category: true
-    }
+    where: { slug: params.slug, isPublished: true },
+    select: { title: true, description: true, creator: { select: { username: true, displayName: true } } },
   })
+
+  if (!product) return { title: "Product Not Found | PawVault" }
+
+  const creatorName = product.creator.displayName || product.creator.username
+  const description = product.description || `${product.title} by ${creatorName} on PawVault.`
+
+  return {
+    title: `${product.title} | PawVault`,
+    description: description.slice(0, 160),
+    openGraph: {
+      title: product.title,
+      description: description.slice(0, 160),
+      type: "website",
+      url: `https://pawvault.com/products/${params.slug}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.title,
+      description: description.slice(0, 160),
+    },
+  }
+}
+
+export default async function ProductPage({ params }: { params: { slug: string } }) {
+  let product
+  try {
+    product = await prisma.product.findUnique({
+      where: { slug: params.slug },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatar: true,
+          },
+        },
+        media: {
+          orderBy: { order: "asc" }
+        },
+        files: {
+          select: {
+            id: true,
+            filename: true,
+            size: true,
+            platform: true,
+            version: true,
+          },
+        },
+        reviews: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatar: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      }
+    })
+  } catch (error) {
+    console.error("Error fetching product:", error)
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-16">
+            <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+            <p className="text-muted-foreground mb-6">We couldn't load this product. Please try again later.</p>
+            <Button asChild>
+              <Link href="/browse">Browse Products</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!product) {
     notFound()
@@ -54,30 +130,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="aspect-square bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden">
-              {product.media[0] ? (
-                <img
-                  src={product.media[0].url}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  No image
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {product.media.slice(1, 5).map((media) => (
-                <div key={media.id} className="aspect-square bg-gray-200 dark:bg-gray-800 rounded overflow-hidden">
-                  <img
-                    src={media.url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
+            <ProductGallery media={product.media} contentRating={product.contentRating} />
           </div>
 
           {/* Product Details */}
@@ -117,14 +170,14 @@ export default async function ProductPage({ params }: { params: { slug: string }
             </div>
 
             <div className="flex gap-4 mb-6">
-              <Button size="lg" className="flex-1 gradient-bg text-white">
+              <Button size="lg" className="flex-1 gradient-bg text-white" aria-label="Add to cart">
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 Add to Cart
               </Button>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" aria-label="Add to wishlist">
                 <Heart className="h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" aria-label="Share product">
                 <Share2 className="h-5 w-5" />
               </Button>
             </div>
@@ -152,18 +205,18 @@ export default async function ProductPage({ params }: { params: { slug: string }
                         <span className="text-sm text-gray-500">
                           {(file.size / 1024 / 1024).toFixed(2)} MB
                         </span>
-                        {canDownload ? (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={`/api/products/files/${file.id}/download`}>
-                              <Download className="h-4 w-4 mr-1" />
-                              Download
-                            </a>
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline" disabled>
-                            Purchase to download
-                          </Button>
-                        )}
+                         {canDownload ? (
+                           <Button size="sm" variant="outline" asChild>
+                             <a href={`/api/products/files/${file.id}/download`} aria-label={`Download ${file.filename}`}>
+                               <Download className="h-4 w-4 mr-1" />
+                               Download
+                             </a>
+                           </Button>
+                         ) : (
+                           <Button size="sm" variant="outline" disabled aria-label="Purchase to download">
+                             Purchase to download
+                           </Button>
+                         )}
                       </div>
                     </div>
                   ))}
@@ -191,7 +244,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 <CardHeader>
                   <div className="flex items-center gap-4">
                     <Avatar>
-                      <AvatarImage src={review.user.avatar || undefined} />
+                      <AvatarImage src={review.user.avatar || undefined} alt={review.user.displayName || review.user.username} />
                       <AvatarFallback>
                         {review.user.username.charAt(0).toUpperCase()}
                       </AvatarFallback>

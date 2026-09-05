@@ -10,9 +10,23 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import {
   ShoppingBag,
-  Download,
-  ExternalLink,
+  ArrowRight,
 } from "lucide-react"
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+    PENDING: 'secondary',
+    PROCESSING: 'secondary',
+    PAID: 'default',
+    COMPLETED: 'default',
+    FAILED: 'destructive',
+    CANCELLED: 'secondary',
+    REFUNDED: 'outline',
+    PARTIALLY_REFUNDED: 'outline',
+    DISPUTED: 'destructive',
+  }
+  return <Badge variant={map[status] ?? 'secondary'}>{status}</Badge>
+}
 
 export default async function OrdersPage() {
   const session = await getServerSession(authOptions)
@@ -24,19 +38,17 @@ export default async function OrdersPage() {
   const orders = await prisma.order.findMany({
     where: { buyerId: session.user.id },
     include: {
+      creator: { select: { id: true, username: true, displayName: true } },
       items: {
         include: {
           product: {
             include: {
-              creator: true,
-              media: {
-                where: { isThumbnail: true },
-                take: 1
-              }
-            }
-          }
-        }
-      }
+              media: { where: { isThumbnail: true }, take: 1 },
+              creator: { select: { id: true, username: true, displayName: true } },
+            },
+          },
+        },
+      },
     },
     orderBy: { createdAt: "desc" }
   })
@@ -45,7 +57,7 @@ export default async function OrdersPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-2 gradient-text">My Orders</h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">View your order history and download purchased products</p>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">View your order history</p>
 
         {orders.length === 0 ? (
           <Card>
@@ -65,20 +77,24 @@ export default async function OrdersPage() {
         ) : (
           <div className="space-y-6">
             {orders.map((order) => (
-              <Card key={order.id}>
+              <Card key={order.id} className="hover:shadow-lg transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle>Order #{order.id.slice(0, 8)}</CardTitle>
-                    <Badge variant={order.status === "COMPLETED" ? "default" : "secondary"}>
-                      {order.status}
-                    </Badge>
+                    <div>
+                      <CardTitle className="text-lg">
+                        <Link href={`/orders/${order.id}`} className="hover:text-purple-600 transition-colors">
+                          Order #{order.id.slice(0, 8)}
+                        </Link>
+                      </CardTitle>
+                      <p className="text-sm text-gray-500">
+                        {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <StatusBadge status={order.status} />
                   </div>
-                  <p className="text-sm text-gray-500">
-                    {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
-                  </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-start gap-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                         <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex-shrink-0">
@@ -89,12 +105,9 @@ export default async function OrdersPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                              No image
-                            </div>
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>
                           )}
                         </div>
-
                         <div className="flex-1">
                           <div className="flex items-start justify-between">
                             <div>
@@ -108,34 +121,21 @@ export default async function OrdersPage() {
                               <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                             </div>
                           </div>
-
-                          {order.status === "COMPLETED" && (
-                            <div className="mt-3 flex gap-2">
-                              <Link href={`/products/${item.product.slug}`}>
-                                <Button size="sm" variant="outline">
-                                  <ExternalLink className="h-4 w-4 mr-1" />
-                                  View Product
-                                </Button>
-                              </Link>
-                              <Link href={`/downloads`}>
-                                <Button size="sm" className="gradient-bg text-white">
-                                  <Download className="h-4 w-4 mr-1" />
-                                  Download
-                                </Button>
-                              </Link>
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="flex items-center justify-between pt-4 border-t mt-4">
                     <div className="text-sm text-gray-500">
-                      {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                      {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                     </div>
-                    <div className="text-lg font-bold">
-                      Total: ${order.total.toFixed(2)}
+                    <div className="flex items-center gap-3">
+                      <div className="text-lg font-bold">Total: ${order.total.toFixed(2)}</div>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={`/orders/${order.id}`}>
+                          View Details <ArrowRight className="ml-1 h-4 w-4" />
+                        </Link>
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

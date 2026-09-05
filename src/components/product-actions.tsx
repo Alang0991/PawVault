@@ -60,11 +60,19 @@ export function ProductActions({
       return
     }
     setWishlisted((prev) => !prev)
-    await fetch("/api/user/wishlist", {
-      method: wishlisted ? "DELETE" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId }),
-    })
+    try {
+      const res = await fetch("/api/user/wishlist", {
+        method: wishlisted ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setWishlisted((prev) => !prev)
+      }
+    } catch (e) {
+      setWishlisted((prev) => !prev)
+    }
   }
 
   return (

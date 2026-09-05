@@ -2,9 +2,17 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { rateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   try {
+    const rateLimitResult = rateLimit(request, 30, 60_000)
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      )
+    }
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q') || ''
     const type = searchParams.get('type') || 'all'
@@ -57,8 +65,11 @@ export async function GET(request: Request) {
         take: limit,
         skip: offset,
       })
-      results.products = products
-      results.total += products.length
+      results.products = products.map((p) => ({
+        ...p,
+        contentRating: p.contentRating,
+      }))
+      results.total += results.products.length
     }
 
     // Search creators
@@ -97,7 +108,7 @@ export async function GET(request: Request) {
       results.total += creators.length
     }
 
-    return NextResponse.json(results)
+    return NextResponse.json(results, { headers: getRateLimitHeaders(rateLimitResult) })
   } catch (error) {
     console.error('Search error:', error)
     return NextResponse.json(

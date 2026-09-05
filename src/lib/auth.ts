@@ -5,6 +5,8 @@ import DiscordProvider from "next-auth/providers/discord"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 
+const isProduction = process.env.NODE_ENV === "production"
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -18,16 +20,15 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        const normalizedEmail = credentials.email.trim().toLowerCase()
+
         let user
         try {
           user = await prisma.user.findUnique({
-            where: { email: credentials.email },
+            where: { email: normalizedEmail },
           })
         } catch (error) {
           console.error("Login database error:", error)
-          console.error("Login database error name:", error instanceof Error ? error.name : "unknown")
-          console.error("Login database error message:", error instanceof Error ? error.message : String(error))
-          console.error("Login database error stack:", error instanceof Error ? error.stack : "no stack")
           return null
         }
 
@@ -35,18 +36,20 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        let isPasswordValid = false
-        try {
-          isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            user.passwordHash
-          )
-        } catch (error) {
-          console.error("Password compare error:", error)
-          return null
-        }
-
-        if (!isPasswordValid) {
+        if (user.passwordHash?.startsWith("$2a$") || user.passwordHash?.startsWith("$2b$")) {
+          try {
+            const isPasswordValid = await bcrypt.compare(
+              credentials.password,
+              user.passwordHash
+            )
+            if (!isPasswordValid) {
+              return null
+            }
+          } catch (error) {
+            console.error("Password compare error:", error)
+            return null
+          }
+        } else {
           return null
         }
 
@@ -93,6 +96,19 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
+
+  cookies: {
+    sessionToken: {
+      name: isProduction ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProduction,
+      },
+    },
   },
 
   callbacks: {
@@ -101,7 +117,6 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = user.role ?? null
       }
-
       return token
     },
 
@@ -110,7 +125,6 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id ?? ""
         session.user.role = token.role ?? null
       }
-
       return session
     },
   },

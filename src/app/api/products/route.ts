@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser, requireAuth } from "@/lib/session"
 import { z } from "zod"
+import { rateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
 
 const createProductSchema = z.object({
   title: z.string().min(1).max(200),
@@ -21,6 +22,7 @@ const createProductSchema = z.object({
   version: z.string().optional(),
   unityVersion: z.string().optional(),
   vrcSdkVersion: z.string().optional(),
+  contentRating: z.enum(["SFW", "MATURE", "NSFW"]).default("SFW"),
   polygonCount: z.number().int().optional(),
   fileSize: z.number().int().optional(),
   questCompatible: z.boolean().default(false),
@@ -35,6 +37,14 @@ const createProductSchema = z.object({
 
 export async function GET(request: Request) {
   try {
+    const rateLimitResult = rateLimit(request, 30, 60_000)
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
@@ -148,6 +158,7 @@ export async function GET(request: Request) {
 
       return {
         ...product,
+        contentRating: product.contentRating,
         rating: avgRating,
         reviewCount: product.reviews.length,
       }
@@ -161,7 +172,7 @@ export async function GET(request: Request) {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    })
+    }, { headers: getRateLimitHeaders(rateLimitResult) })
   } catch (error) {
     console.error("Get products error:", error)
     return NextResponse.json(
