@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Flag } from "lucide-react"
 import Link from "next/link"
+import { AdminActionButton } from "@/components/admin-action-button"
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +24,7 @@ export default async function FounderFeaturedPage() {
     prisma.user.findMany({
       where: { isFeatured: true },
       orderBy: { createdAt: "desc" },
-      select: { username: true, displayName: true, email: true },
+      select: { id: true, username: true, displayName: true, email: true },
     }),
   ])
 
@@ -54,7 +55,7 @@ export default async function FounderFeaturedPage() {
                     <p className="font-medium">{p.title}</p>
                     <p className="text-sm text-muted-foreground">by {p.creator.displayName || p.creator.username}</p>
                   </div>
-                  <Badge>Featured</Badge>
+                  <AdminActionButton url={`/api/admin/featured/product/${p.id}`} method="PATCH" body={{ featured: false }} variant="secondary" size="sm">Unfeature</AdminActionButton>
                 </div>
               ))}
             </div>
@@ -73,8 +74,11 @@ export default async function FounderFeaturedPage() {
             <div className="space-y-2">
               {creators.map((c) => (
                 <div key={c.email} className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <p className="font-medium">{c.displayName || c.username}</p>
-                  <Badge>Featured</Badge>
+                  <div>
+                    <p className="font-medium">{c.displayName || c.username}</p>
+                    <p className="text-sm text-muted-foreground">{c.email}</p>
+                  </div>
+                  <AdminActionButton url={`/api/admin/featured/creator/${c.id}`} method="PATCH" body={{ featured: false }} variant="secondary" size="sm">Unfeature</AdminActionButton>
                 </div>
               ))}
             </div>

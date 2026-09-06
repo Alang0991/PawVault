@@ -3,8 +3,10 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Crown } from "lucide-react"
+import { AdminActionButton } from "@/components/admin-action-button"
 
 export const dynamic = "force-dynamic"
 
@@ -46,7 +48,7 @@ export default async function FounderCreatorsPage() {
         <CardContent>
           {creators.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              No creators yet. Be one of the first creators on PawVault.
+              No creators yet.
             </p>
           ) : (
             <div className="space-y-2">
@@ -59,6 +61,16 @@ export default async function FounderCreatorsPage() {
                   <div className="flex items-center gap-2">
                     <Badge variant={c.role === "VERIFIED_CREATOR" ? "default" : "secondary"}>{c.role}</Badge>
                     {c.isFeatured && <Badge variant="outline">Featured</Badge>}
+                    <div className="flex gap-1">
+                      {c.isVerified ? (
+                        <AdminActionButton url={`/api/admin/creators/${c.id}/verify`} method="POST" body={{ verified: false }} variant="secondary" size="sm">Unverify</AdminActionButton>
+                      ) : (
+                        <AdminActionButton url={`/api/admin/creators/${c.id}/verify`} method="POST" body={{ verified: true }} size="sm">Verify</AdminActionButton>
+                      )}
+                      {!c.isFeatured && (
+                        <AdminActionButton url={`/api/admin/featured/creator/${c.id}`} method="PATCH" body={{ featured: true }} variant="secondary" size="sm">Feature</AdminActionButton>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -77,9 +89,21 @@ export default async function FounderCreatorsPage() {
           ) : (
             <div className="space-y-2">
               {applications.map((a) => (
-                <div key={a.id} className="border-b pb-2 last:border-0">
-                  <p className="font-medium">{a.displayName}</p>
-                  <p className="text-sm text-muted-foreground">{a.user.email} · @{a.user.username}</p>
+                <div key={a.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                  <div>
+                    <p className="font-medium">{a.displayName}</p>
+                    <p className="text-sm text-muted-foreground">{a.user.email} · @{a.user.username}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
+                      <input type="hidden" name="action" value="approve" />
+                      <Button type="submit" size="sm">Approve</Button>
+                    </form>
+                    <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
+                      <input type="hidden" name="action" value="reject" />
+                      <Button type="submit" size="sm" variant="destructive">Reject</Button>
+                    </form>
+                  </div>
                 </div>
               ))}
             </div>

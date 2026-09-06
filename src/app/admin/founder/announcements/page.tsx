@@ -4,8 +4,11 @@ import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Megaphone } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import Link from "next/link"
+import { Megaphone } from "lucide-react"
+import { AdminActionButton } from "@/components/admin-action-button"
 
 export const dynamic = "force-dynamic"
 
@@ -34,6 +37,30 @@ export default async function FounderAnnouncementsPage() {
             <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
               <Megaphone className="h-5 w-5 text-white" />
             </div>
+            <CardTitle>Create announcement</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form action="/api/admin/announcements" method="POST" className="space-y-3">
+            <Input name="title" required placeholder="Title" />
+            <Textarea name="body" required placeholder="Body" />
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="isPublished" value="true" className="rounded" />
+                Publish immediately
+              </label>
+              <Button type="submit">Create</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
+              <Megaphone className="h-5 w-5 text-white" />
+            </div>
             <CardTitle>Official posts</CardTitle>
           </div>
         </CardHeader>
@@ -46,9 +73,22 @@ export default async function FounderAnnouncementsPage() {
                 <div key={a.id} className="border-b pb-3 last:border-0">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">{a.title}</p>
-                    <Badge variant={a.isPublished ? "default" : "secondary"}>
-                      {a.isPublished ? "Published" : "Draft"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={a.isPublished ? "default" : "secondary"}>
+                        {a.isPublished ? "Published" : "Draft"}
+                      </Badge>
+                      <div className="flex gap-1">
+                        {a.isPublished ? (
+                          <AdminActionButton url={`/api/admin/announcements/${a.id}`} method="PATCH" body={{ isPublished: false }} variant="secondary" size="sm">Unpublish</AdminActionButton>
+                        ) : (
+                          <AdminActionButton url={`/api/admin/announcements/${a.id}`} method="PATCH" body={{ isPublished: true }} size="sm">Publish</AdminActionButton>
+                        )}
+                        <form action={`/api/admin/announcements/${a.id}`} method="POST" className="inline">
+                          <input type="hidden" name="_method" value="DELETE" />
+                          <Button type="submit" size="sm" variant="destructive">Delete</Button>
+                        </form>
+                      </div>
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     by {a.author.displayName || a.author.username}

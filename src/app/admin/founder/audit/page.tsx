@@ -3,18 +3,35 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { ScrollText } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
-export default async function AuditLogsPage() {
+export default async function AuditLogsPage({
+  searchParams,
+}: {
+  searchParams: { action?: string; from?: string; to?: string }
+}) {
   const user = await getServerUser()
   if (!user || user.role !== "FOUNDER") {
     redirect("/admin")
   }
 
+  const where: any = {}
+  if (searchParams.action) {
+    where.action = { contains: searchParams.action, mode: "insensitive" as const }
+  }
+  if (searchParams.from || searchParams.to) {
+    where.createdAt = {}
+    if (searchParams.from) where.createdAt.gte = new Date(searchParams.from)
+    if (searchParams.to) where.createdAt.lte = new Date(searchParams.to)
+  }
+
   const logs = await prisma.auditLog.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     take: 100,
     include: {
@@ -31,17 +48,26 @@ export default async function AuditLogsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <ScrollText className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <CardTitle>Recent events ({logs.length})</CardTitle>
-              <CardDescription>Sensitive fields like passwords are redacted.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ScrollText className="h-5 w-5" />
+              <div>
+                <CardTitle>Recent events ({logs.length})</CardTitle>
+                <CardDescription>Sensitive fields like passwords are redacted.</CardDescription>
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
+          <form method="GET" className="flex flex-wrap gap-2 mb-4">
+            <Input name="action" placeholder="Filter by action..." defaultValue={searchParams.action ?? ""} className="w-48" />
+            <Input name="from" type="date" defaultValue={searchParams.from ?? ""} className="w-40" />
+            <Input name="to" type="date" defaultValue={searchParams.to ?? ""} className="w-40" />
+            <Button type="submit" size="sm">Filter</Button>
+            <Button type="submit" size="sm" variant="outline" asChild>
+              <Link href="/admin/founder/audit">Clear</Link>
+            </Button>
+          </form>
           {logs.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">No events yet.</p>
           ) : (

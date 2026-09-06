@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { AlertTriangle } from "lucide-react"
 
@@ -50,7 +51,22 @@ export default async function FounderReportsPage() {
                       Reported by {r.reporter.displayName || r.reporter.username} · {new Date(r.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant={r.status === "PENDING" ? "destructive" : "secondary"}>{r.status}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={r.status === "PENDING" ? "destructive" : "secondary"}>{r.status}</Badge>
+                    {r.status === "PENDING" && (
+                      <form action={`/api/admin/reports/${r.id}`} method="POST" className="flex gap-1">
+                        <select name="action" className="text-xs border rounded px-1 py-1 bg-background">
+                          <option value="approve">Approve</option>
+                          <option value="remove">Remove</option>
+                          <option value="warn">Warn</option>
+                          <option value="ban">Ban</option>
+                          <option value="investigate">Investigate</option>
+                          <option value="dismiss">Dismiss</option>
+                        </select>
+                        <Button type="submit" size="sm" variant="outline" className="text-xs">Act</Button>
+                      </form>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

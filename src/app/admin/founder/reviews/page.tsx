@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Star } from "lucide-react"
+import { AdminActionButton } from "@/components/admin-action-button"
 
 export const dynamic = "force-dynamic"
 
@@ -44,12 +45,15 @@ export default async function FounderReviewsPage() {
           ) : (
             <div className="space-y-2">
               {reviews.map((r) => (
-                <div key={r.id} className="border-b pb-2 last:border-0">
-                  <p className="font-medium">{r.product.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {r.rating}★ by {r.user.displayName || r.user.username}
-                  </p>
-                  {r.content && <p className="text-sm">{r.content}</p>}
+                <div key={r.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                  <div>
+                    <p className="font-medium">{r.product.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {r.rating}★ by {r.user.displayName || r.user.username}
+                    </p>
+                    {r.content && <p className="text-sm">{r.content}</p>}
+                  </div>
+                  <AdminActionButton url={`/api/admin/reviews/${r.id}`} method="DELETE" body={{}} variant="destructive" size="sm" confirm="Remove this review?">Remove</AdminActionButton>
                 </div>
               ))}
             </div>

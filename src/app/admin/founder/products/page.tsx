@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Package } from "lucide-react"
+import { AdminActionButton } from "@/components/admin-action-button"
 
 export const dynamic = "force-dynamic"
 
@@ -54,6 +55,19 @@ export default async function FounderProductsPage() {
                     <Badge variant={p.isPublished ? "default" : "secondary"}>
                       {p.isPublished ? "Published" : "Draft"}
                     </Badge>
+                    <div className="flex gap-1">
+                      {p.isPublished ? (
+                        <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "unpublish" }} confirm="Unpublish this product?">Unpublish</AdminActionButton>
+                      ) : (
+                        <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "publish" }}>Publish</AdminActionButton>
+                      )}
+                      {p.isFeatured ? (
+                        <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "unfeature" }} variant="secondary">Unfeature</AdminActionButton>
+                      ) : (
+                        <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "feature" }} variant="secondary">Feature</AdminActionButton>
+                      )}
+                      <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "delete" }} variant="destructive" confirm="Delete this product?">Delete</AdminActionButton>
+                    </div>
                   </div>
                 </div>
               ))}
