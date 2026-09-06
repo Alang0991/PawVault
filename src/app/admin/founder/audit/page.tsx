@@ -10,7 +10,7 @@ import { ScrollText } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
-export default async function AuditLogsPage({
+export default async function FounderAuditPage({
   searchParams,
 }: {
   searchParams: { action?: string; from?: string; to?: string }
@@ -42,17 +42,17 @@ export default async function AuditLogsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Audit logs</h1>
-        <p className="text-muted-foreground">Every important administrative action is recorded here.</p>
+        <h1 className="text-2xl font-bold">Audit logs</h1>
+        <p className="text-sm text-muted-foreground">Every important administrative action is recorded here.</p>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ScrollText className="h-5 w-5" />
+            <div className="flex items-center gap-2">
+              <ScrollText className="h-4 w-4" />
               <div>
-                <CardTitle>Recent events ({logs.length})</CardTitle>
+                <CardTitle className="text-base">Recent events ({logs.length})</CardTitle>
                 <CardDescription>Sensitive fields like passwords are redacted.</CardDescription>
               </div>
             </div>
@@ -69,18 +69,18 @@ export default async function AuditLogsPage({
             </Button>
           </form>
           {logs.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No events yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No events yet.</p>
           ) : (
             <div className="space-y-2">
               {logs.map((log) => (
                 <div key={log.id} className="border-b pb-3 last:border-0">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{log.action}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm">{log.action}</p>
+                      <p className="text-xs text-muted-foreground">
                         {log.user ? (log.user.displayName || log.user.username) : "system"}
                         {log.user?.role && (
-                          <Badge variant="outline" className="ml-2">{log.user.role}</Badge>
+                          <Badge variant="outline" className="ml-2 text-xs">{log.user.role}</Badge>
                         )}
                       </p>
                     </div>

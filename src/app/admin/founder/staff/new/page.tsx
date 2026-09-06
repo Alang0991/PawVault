@@ -23,13 +23,13 @@ export default async function NewStaffPage() {
             Back to staff
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Add moderator</h1>
-        <p className="text-muted-foreground">Promote an existing user to a staff role.</p>
+        <h1 className="text-2xl font-bold">Add moderator</h1>
+        <p className="text-sm text-muted-foreground">Promote an existing user to a staff role.</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Promote existing user</CardTitle>
+          <CardTitle className="text-base">Promote existing user</CardTitle>
         </CardHeader>
         <CardContent>
           <form action="/api/admin/staff/create" method="POST" className="space-y-4">

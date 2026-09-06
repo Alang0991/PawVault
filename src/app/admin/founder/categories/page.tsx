@@ -23,17 +23,17 @@ export default async function FounderCategoriesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Categories</h1>
-        <p className="text-muted-foreground">{categories.length} categories</p>
+        <h1 className="text-2xl font-bold">Categories</h1>
+        <p className="text-sm text-muted-foreground">{categories.length} categories</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <TagIcon className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <TagIcon className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Create category</CardTitle>
+            <CardTitle className="text-base">Create category</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -57,26 +57,26 @@ export default async function FounderCategoriesPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <TagIcon className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <TagIcon className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>All categories</CardTitle>
+            <CardTitle className="text-base">All categories</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {categories.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No categories yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No categories yet.</p>
           ) : (
             <div className="space-y-2">
               {categories.map((c) => (
                 <div key={c.id} className="flex items-center justify-between border-b pb-2 last:border-0">
                   <div>
-                    <p className="font-medium">{c.name}</p>
-                    <p className="text-sm text-muted-foreground">/{c.slug}</p>
+                    <p className="font-medium text-sm">{c.name}</p>
+                    <p className="text-xs text-muted-foreground">/{c.slug}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{c._count.products} products</span>
+                    <span className="text-xs text-muted-foreground">{c._count.products} products</span>
                     <form action={`/api/admin/categories/${c.id}`} method="POST" className="flex gap-1">
                       <input type="hidden" name="_method" value="PUT" />
                       <input type="hidden" name="name" value={c.name} />

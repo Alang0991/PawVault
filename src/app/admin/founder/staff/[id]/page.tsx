@@ -45,23 +45,23 @@ export default async function StaffMemberPage({ params }: { params: { id: string
             Back to staff
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Manage staff</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold">Manage staff</h1>
+        <p className="text-sm text-muted-foreground">
           {target.displayName || target.username} · {target.email}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Shield className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Shield className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle>Role</CardTitle>
+              <CardTitle className="text-base">Role</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Current role:{" "}
-                <Badge variant={target.role === "FOUNDER" ? "default" : "secondary"}>{target.role}</Badge>
+                <Badge variant={target.role === "FOUNDER" ? "default" : "secondary"} className="text-xs">{target.role}</Badge>
               </p>
             </div>
           </div>
@@ -93,11 +93,11 @@ export default async function StaffMemberPage({ params }: { params: { id: string
 
       <Card>
         <CardHeader>
-          <CardTitle>Account status</CardTitle>
+          <CardTitle className="text-base">Account status</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Status: <Badge>{target.status}</Badge>
+            Status: <Badge className="text-xs">{target.status}</Badge>
           </p>
           {!isProtected && (
             <form action="/api/admin/staff/status" method="POST" className="space-y-3">

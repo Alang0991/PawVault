@@ -24,35 +24,33 @@ export default async function FounderProductsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Products</h1>
-        <p className="text-muted-foreground">{products.length} total products</p>
+        <h1 className="text-2xl font-bold">Products</h1>
+        <p className="text-sm text-muted-foreground">{products.length} total products</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Package className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Package className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>All products</CardTitle>
+            <CardTitle className="text-base">All products</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {products.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No products yet. More drops are on the way.
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-8">No products yet.</p>
           ) : (
             <div className="space-y-2">
               {products.map((p) => (
                 <div key={p.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <div>
-                    <p className="font-medium">{p.title}</p>
-                    <p className="text-sm text-muted-foreground">by {p.creator.displayName || p.creator.username}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm">{p.title}</p>
+                    <p className="text-xs text-muted-foreground">by {p.creator.displayName || p.creator.username}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {p.isFeatured && <Badge>Featured</Badge>}
-                    <Badge variant={p.isPublished ? "default" : "secondary"}>
+                    {p.isFeatured && <Badge variant="outline" className="text-xs">Featured</Badge>}
+                    <Badge variant={p.isPublished ? "default" : "secondary"} className="text-xs">
                       {p.isPublished ? "Published" : "Draft"}
                     </Badge>
                     <div className="flex gap-1">
@@ -62,9 +60,9 @@ export default async function FounderProductsPage() {
                         <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "publish" }}>Publish</AdminActionButton>
                       )}
                       {p.isFeatured ? (
-                        <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "unfeature" }} variant="secondary">Unfeature</AdminActionButton>
+                        <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "unfeature" }} variant="secondary" size="sm">Unfeature</AdminActionButton>
                       ) : (
-                        <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "feature" }} variant="secondary">Feature</AdminActionButton>
+                        <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "feature" }} variant="secondary" size="sm">Feature</AdminActionButton>
                       )}
                       <AdminActionButton url={`/api/admin/products/${p.id}`} method="PATCH" body={{ action: "delete" }} variant="destructive" confirm="Delete this product?">Delete</AdminActionButton>
                     </div>

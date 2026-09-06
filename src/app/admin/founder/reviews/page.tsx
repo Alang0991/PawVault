@@ -26,32 +26,32 @@ export default async function FounderReviewsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Reviews</h1>
-        <p className="text-muted-foreground">{reviews.length} real reviews</p>
+        <h1 className="text-2xl font-bold">Reviews</h1>
+        <p className="text-sm text-muted-foreground">{reviews.length} real reviews</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Star className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Star className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>All reviews</CardTitle>
+            <CardTitle className="text-base">All reviews</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {reviews.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No reviews yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No reviews yet.</p>
           ) : (
             <div className="space-y-2">
               {reviews.map((r) => (
                 <div key={r.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <div>
-                    <p className="font-medium">{r.product.title}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm">{r.product.title}</p>
+                    <p className="text-xs text-muted-foreground">
                       {r.rating}★ by {r.user.displayName || r.user.username}
                     </p>
-                    {r.content && <p className="text-sm">{r.content}</p>}
+                    {r.content && <p className="text-sm mt-1 line-clamp-2">{r.content}</p>}
                   </div>
                   <AdminActionButton url={`/api/admin/reviews/${r.id}`} method="DELETE" body={{}} variant="destructive" size="sm" confirm="Remove this review?">Remove</AdminActionButton>
                 </div>

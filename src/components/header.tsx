@@ -12,12 +12,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, ShoppingCart, User, Menu, Heart, Settings, LogOut, LayoutDashboard, Bell, Store, Shield, ShoppingBag, Compass } from "lucide-react"
+import { Search, ShoppingCart, User, Menu, Heart, Settings, LogOut, LayoutDashboard, Bell, Store, Shield, ShoppingBag, Compass, Package, Users, Crown, AlertTriangle, Tag, Flag, Percent, Megaphone, ScrollText } from "lucide-react"
 import { useState } from "react"
+import { ROLES } from "@/lib/roles"
 
 export default function Header() {
   const { data: session } = useSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  const isFounder = session?.user?.role === ROLES.FOUNDER
+  const isAdmin = session?.user?.role === ROLES.ADMIN
+  const isCreator = ["CREATOR", "VERIFIED_CREATOR", "ADMIN", "FOUNDER"].includes(session?.user?.role || "")
+  const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(session?.user?.role || "")
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl">
@@ -25,10 +31,10 @@ export default function Header() {
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
+            <div className="h-8 w-8 rounded-lg bg-foreground flex items-center justify-center">
+              <span className="text-background font-bold text-lg">P</span>
             </div>
-            <span className="text-xl font-bold tracking-tight">Pawvault</span>
+            <span className="text-xl font-bold tracking-tight">PawVault</span>
           </Link>
 
           {/* Search Bar - Desktop */}
@@ -81,12 +87,40 @@ export default function Header() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <div className="flex flex-col space-y-1.5 p-2">
+                <DropdownMenuContent className="w-64" align="end" forceMount>
+                  <div className="flex flex-col space-y-1.5 p-3">
                     <p className="text-sm font-medium">{session.user?.name}</p>
                     <p className="text-xs text-muted-foreground">{session.user?.email}</p>
+                    {isFounder && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded px-1.5 py-0.5 w-fit">
+                        <Shield className="h-3 w-3" />
+                        Founder
+                      </span>
+                    )}
                   </div>
                   <DropdownMenuSeparator />
+
+                  {isFounder && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/founder">
+                          <Shield className="h-4 w-4 mr-2 text-amber-600" />
+                          <span className="font-semibold text-amber-700 dark:text-amber-400">Founder Control Center</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-amber-200 dark:bg-amber-800" />
+                    </>
+                  )}
+
+                  {isCreator && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/creator/dashboard">
+                        <Store className="h-4 w-4 mr-2" />
+                        Creator Hub
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard">
                       <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -105,31 +139,22 @@ export default function Header() {
                       Orders
                     </Link>
                   </DropdownMenuItem>
+
+                  {isStaff && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/moderation">
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Moderation
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+
                   <DropdownMenuItem asChild>
                     <Link href="/settings">
                       <Settings className="h-4 w-4 mr-2" />
                       Settings
                     </Link>
                   </DropdownMenuItem>
-                  {session.user?.role && ["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(session.user.role) && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/creator/dashboard">
-                          <Store className="h-4 w-4 mr-2" />
-                          Creator Hub
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  {session.user?.role && ["ADMIN", "OWNER"].includes(session.user.role) && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/moderation">
-                        <Shield className="h-4 w-4 mr-2" />
-                        Moderation
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>
                     <LogOut className="h-4 w-4 mr-2" />
@@ -139,7 +164,7 @@ export default function Header() {
               </DropdownMenu>
             ) : (
               <Link href="/auth/signin">
-                <Button className="bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white hover:opacity-90 transition-opacity">
+                <Button className="bg-foreground text-background hover:bg-foreground/90 transition-opacity">
                   <User className="h-4 w-4 mr-2" />
                   Sign In
                 </Button>
@@ -160,6 +185,14 @@ export default function Header() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-4 space-y-4 border-t">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="search"
+                placeholder="Search products, creators..."
+                className="pl-10 h-9 bg-muted/50 border-0"
+              />
+            </div>
             <Link href="/browse" className="block text-sm font-medium hover:text-primary transition-colors">
               Browse
             </Link>
@@ -169,13 +202,23 @@ export default function Header() {
             <Link href="/creators" className="block text-sm font-medium hover:text-primary transition-colors">
               Creators
             </Link>
-            <div className="flex space-x-2 pt-2">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/wishlist"><Heart className="h-5 w-5" /></Link>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/wishlist"><Heart className="h-4 w-4 mr-1" /> Wishlist</Link>
               </Button>
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/cart"><ShoppingCart className="h-5 w-5" /></Link>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/cart"><ShoppingCart className="h-4 w-4 mr-1" /> Cart</Link>
               </Button>
+              {isCreator && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/creator/dashboard"><Store className="h-4 w-4 mr-1" /> Creator Hub</Link>
+                </Button>
+              )}
+              {isFounder && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/admin/founder"><Shield className="h-4 w-4 mr-1" /> Founder Control Center</Link>
+                </Button>
+              )}
             </div>
           </div>
         )}

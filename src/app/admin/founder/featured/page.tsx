@@ -31,29 +31,29 @@ export default async function FounderFeaturedPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Featured</h1>
-        <p className="text-muted-foreground">{products.length} featured products · {creators.length} featured creators</p>
+        <h1 className="text-2xl font-bold">Featured</h1>
+        <p className="text-sm text-muted-foreground">{products.length} featured products · {creators.length} featured creators</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Flag className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Flag className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Featured products</CardTitle>
+            <CardTitle className="text-base">Featured products</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {products.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No featured products yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No featured products yet.</p>
           ) : (
             <div className="space-y-2">
               {products.map((p) => (
                 <div key={p.id} className="flex items-center justify-between border-b pb-2 last:border-0">
                   <div>
-                    <p className="font-medium">{p.title}</p>
-                    <p className="text-sm text-muted-foreground">by {p.creator.displayName || p.creator.username}</p>
+                    <p className="font-medium text-sm">{p.title}</p>
+                    <p className="text-xs text-muted-foreground">by {p.creator.displayName || p.creator.username}</p>
                   </div>
                   <AdminActionButton url={`/api/admin/featured/product/${p.id}`} method="PATCH" body={{ featured: false }} variant="secondary" size="sm">Unfeature</AdminActionButton>
                 </div>
@@ -65,18 +65,18 @@ export default async function FounderFeaturedPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Featured creators</CardTitle>
+          <CardTitle className="text-base">Featured creators</CardTitle>
         </CardHeader>
         <CardContent>
           {creators.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No featured creators yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No featured creators yet.</p>
           ) : (
             <div className="space-y-2">
               {creators.map((c) => (
                 <div key={c.email} className="flex items-center justify-between border-b pb-2 last:border-0">
                   <div>
-                    <p className="font-medium">{c.displayName || c.username}</p>
-                    <p className="text-sm text-muted-foreground">{c.email}</p>
+                    <p className="font-medium text-sm">{c.displayName || c.username}</p>
+                    <p className="text-xs text-muted-foreground">{c.email}</p>
                   </div>
                   <AdminActionButton url={`/api/admin/featured/creator/${c.id}`} method="PATCH" body={{ featured: false }} variant="secondary" size="sm">Unfeature</AdminActionButton>
                 </div>

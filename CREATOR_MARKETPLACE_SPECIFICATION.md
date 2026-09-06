@@ -1,1284 +1,1493 @@
-# CREATOR MARKETPLACE - SOFTWARE SPECIFICATION
-
-## TABLE OF CONTENTS
-1. Platform Overview
-2. Public Pages
-3. Authentication
-4. User Accounts
-5. Creator Storefronts
-6. Product Management
-7. Media Upload System
-8. Marketplace
-9. Product Detail Page
-10. Shopping Cart & Checkout
-11. Customer Dashboard
-12. Creator Dashboard
-13. Licensing System
-14. Reviews & Ratings
-15. Notifications
-16. Messaging & Support
-17. Coupons & Discounts
-18. Admin Panel
-19. Moderation
-20. Database Design
-21. API Design
-22. Backend Architecture
-23. Frontend Architecture
-24. Security
-25. Infrastructure
-26. Analytics
-27. Email Templates
-28. Legal Pages
-29. QA Testing
-30. Feature Checklist
-
-=========================================================
-1. PLATFORM OVERVIEW
-=========================================================
-
-## Purpose
-Creator-focused digital marketplace for downloadable products. Platform acts as merchant of record, handling payments, taxes, compliance.
-
-## User Types
-- Customers: Individuals/businesses purchasing digital products
-- Creators: 3D artists, developers, designers, musicians selling products
-- Admins: Platform staff managing operations
-
-## Business Model
-- Platform Commission: 15% standard, 12% verified, 10% premium
-- Payouts: Monthly on 15th, $50 minimum threshold
-- Payment Processing: Stripe integration
-- Tax: Platform handles VAT/sales tax collection
-
-## Core Features
-- Product creation and management
-- File/media upload from device
-- Storefront customization
-- Shopping cart and checkout
-- License generation
-- Reviews and ratings
-- Analytics dashboard
-- Payout management
-
-=========================================================
-2. PUBLIC PAGES
-=========================================================
-
-## Landing Page (/)
-- Hero with gradient background, CTA buttons
-- Featured products grid (4 items)
-- Trending creators (4 items)
-- Category quick-links
-- Stats cards
-- API: GET /api/products/featured, GET /api/creators/trending
-
-## Browse Page (/browse)
-- Filter sidebar (category, price, rating, tags)
-- Product grid with pagination
-- Search bar with autocomplete
-- Sort options (newest, price, popularity)
-- API: GET /api/products with filters
-
-## Search Results (/search)
-- Tab navigation (products, creators, collections)
-- Results count
-- Filter sidebar
-- API: GET /api/search?q=query
-
-## Product Detail (/product/[slug])
-- Image gallery with lightbox
-- Pricing with sale badges
-- Add to cart, buy now, wishlist buttons
-- Description, specs, reviews, FAQ
-- Related products
-- API: GET /api/products/[slug]
-
-## Creator Store (/store/[slug])
-- Custom banner and logo
-- Product grid
-- Collections
-- Reviews summary
-- Follow button
-- API: GET /api/stores/[slug]
-
-## Category Page (/category/[slug])
-- Category header with description
-- Subcategory navigation
-- Product grid
-- API: GET /api/categories/[slug]
-
-=========================================================
-3. AUTHENTICATION
-=========================================================
-
-## Register (/auth/register)
-- Email, username, password, confirm password
-- Terms acceptance checkbox
-- Email verification required
-- API: POST /api/auth/register
-
-## Login (/auth/login)
-- Email/password form
-- Remember me checkbox
-- Social login (Google, GitHub)
-- API: POST /api/auth/login
-
-## Forgot Password (/auth/forgot-password)
-- Email input
-- Reset token sent via email
-- API: POST /api/auth/forgot-password
-
-## Reset Password (/auth/reset-password)
-- New password, confirm password
-- Token validation
-- API: POST /api/auth/reset-password
-
-## MFA (/account/mfa)
-- TOTP authenticator app support
-- Backup codes generation
-- Trusted devices
-- API: POST /api/account/mfa/setup
-
-=========================================================
-4. USER ACCOUNTS
-=========================================================
-
-## Dashboard (/dashboard)
-- Welcome message with user stats
-- Recent orders, downloads, wishlist
-- Quick actions
-- API: GET /api/user/dashboard
-
-## Profile (/profile/[username])
-- Public profile page
-- Avatar, banner, bio
-- Stats (followers, following)
-- Social links
-- API: GET /api/profiles/[username]
-
-## Edit Profile (/account/profile/edit)
-- Avatar/banner upload from device
-- Display name, username, bio
-- Social links
-- Privacy settings
-- API: PUT /api/account/profile
-
-## Wishlist (/wishlist)
-- Product grid with remove option
-- Add to cart buttons
-- API: GET/POST/DELETE /api/wishlist
-
-## Collections (/collections)
-- Create custom product collections
-- Cover image upload
-- API: GET/POST/DELETE /api/collections
-
-=========================================================
-5. CREATOR STOREFRONTS
-=========================================================
-
-## Create Store (/store/create)
-- Store name, slug, description
-- Logo/banner upload from device
-- Social links
-- API: POST /api/stores
-
-## Store Settings (/store/[slug]/settings)
-- Customize store appearance
-- Featured products selection
-- Pinned products
-- Collections management
-- API: PUT /api/stores/[slug]/settings
-
-## Team Management (/store/[slug]/team)
-- Invite team members
-- Role assignment (owner, admin, editor, viewer)
-- API: GET/POST/DELETE /api/stores/[slug]/team
-
-## Analytics (/store/[slug]/analytics)
-- Revenue charts
-- Sales metrics
-- Traffic data
-- Top products
-- CSV export
-- API: GET /api/stores/[slug]/analytics
-
-=========================================================
-6. PRODUCT MANAGEMENT
-=========================================================
-
-## Create Product (/creator/products/new)
-- Multi-step wizard (info, media, files, pricing, publish)
-- Title, description, category, tags
-- Thumbnail/gallery upload from device
-- Product files upload from device
-- Pricing, sale options
-- License configuration
-- API: POST /api/products
-
-## Edit Product (/creator/products/[id]/edit)
-- All product fields
-- Version history
-- Unpublish option
-- API: PUT /api/creator/products/[id]
-
-## File Upload (/creator/products/[id]/files)
-- Drag-and-drop upload from device
-- File list with progress
-- Replace/delete options
-- API: POST/DELETE /api/products/files
-
-## Media Upload (/creator/products/[id]/media)
-- Image/video upload from device
-- Thumbnail selection
-- Gallery management
-- API: POST/DELETE /api/products/media
-
-## Pricing (/creator/products/[id]/pricing)
-- Regular price, sale price
-- Sale date range
-- Wholesale pricing
-- API: PUT /api/creator/products/[id]/pricing
-
-=========================================================
-7. MEDIA UPLOAD SYSTEM
-=========================================================
-
-## Upload Methods
-- Drag-and-drop
-- Click-to-browse file picker
-- Multi-file upload
-- Mobile photo library
-- Camera upload (mobile)
-
-## Supported Formats
-- Images: PNG, JPG, WEBP, GIF, AVIF
-- Videos: MP4, MOV, WEBM
-- Files: ZIP, RAR, 7Z, PDF, source code archives
-
-## Upload Features
-- Progress bar with percentage
-- Chunked upload for large files
-- Resumable upload
-- Virus/malware scanning
-- File hash generation
-- Thumbnail generation
-- Image optimization
-- CDN delivery
-- Signed URLs for access
-
-## Security
-- File type validation (MIME + magic bytes)
-- File size limits (avatar 5MB, banner 10MB, files 10GB)
-- Virus scanning integration
-- Encrypted storage at rest
-- Access control lists
-
-=========================================================
-8. MARKETPLACE
-=========================================================
-
-## Homepage Sections
-- Featured products (admin-curated)
-- Trending products (algorithm-based)
-- New releases (last 30 days)
-- Best-selling (all time)
-- Free products
-- Sale products
-
-## Search
-- Full-text search (title, description, tags)
-- Autocomplete suggestions
-- Recent searches
-- Popular searches
-- Fuzzy search
-- Tag search, category search, creator search
-
-## Filters
-- Category, subcategory, tags
-- Price range slider
-- Free/paid toggle
-- On sale toggle
-- Rating filter
-- Creator filter
-- File type filter
-- Compatibility filter
-- Date added/updated
-
-## Sorting
-- Relevance, newest, oldest
-- Price low to high, price high to low
-- Most popular, best selling
-- Highest rated, recently updated
-
-=========================================================
-9. PRODUCT DETAIL PAGE
-=========================================================
-
-## Components
-- Product title, subtitle
-- Creator name with avatar (link to store)
-- Image gallery with lightbox
-- Preview videos
-- Price with sale badge
-- Add to cart, buy now buttons
-- Wishlist, favorite, share buttons
-- Product description (rich text)
-- Files included list
-- Requirements, compatibility
-- Version info with changelog
-- Documentation link
-- FAQ section
-- License information
-- Refund policy link
-- Reviews with ratings
-- Related products
-- Creator's other products
-
-## API
-- GET /api/products/[slug]
-- POST /api/cart
-- POST /api/wishlist
-- GET /api/products/[slug]/reviews
-
-=========================================================
-10. SHOPPING CART & CHECKOUT
-=========================================================
-
-## Shopping Cart (/cart)
-- Product list with quantities
-- Quantity controls (min 1, max 100)
-- Remove item buttons
-- Coupon input
-- Subtotal, tax, total calculation
-- API: GET/POST/DELETE /api/cart
-
-## Checkout (/checkout)
-- Order summary
-- Payment form (Stripe)
-- Saved payment methods
-- Guest checkout option
-- Tax calculation
-- API: POST /api/checkout
-
-## Payment System
-- Stripe integration
-- Tax calculation (TaxJar)
-- Fraud checks (Stripe Radar)
-- Order creation on success
-- License generation
-- Download access unlock
-- Email receipt
-
-## Refunds
-- Refund request form
-- Creator/admin approval
-- Stripe refund processing
-- License revocation
-- API: POST /api/orders/[id]/refund
-
-=========================================================
-11. CUSTOMER DASHBOARD
-=========================================================
-
-## Pages
-- /dashboard - Overview with stats
-- /purchases - Order history
-- /purchases/[id] - Order details
-- /downloads - Downloadable files
-- /licenses - License keys
-- /favorites - Favorited products
-- /wishlist - Wishlist items
-- /collections - Custom collections
-- /billing - Billing history
-- /billing/invoices - Invoice download
-- /notifications - Account notifications
-- /messages - Creator messages
-- /support - Support tickets
-
-=========================================================
-12. CREATOR DASHBOARD
-=========================================================
-
-## Pages
-- /creator/dashboard - Revenue/sales overview
-- /creator/analytics/revenue - Revenue charts
-- /creator/analytics/sales - Sales metrics
-- /creator/products - Product management
-- /creator/products/new - Create product
-- /creator/products/[id]/edit - Edit product
-- /creator/products/[id]/uploads - File manager
-- /creator/media - Media library
-- /creator/orders - Customer orders
-- /creator/customers - Customer list
-- /creator/reviews - Review management
-- /creator/coupons - Coupon codes
-- /creator/discounts - Product discounts
-- /creator/bundles - Product bundles
-- /creator/payouts - Payout history
-- /creator/tax - Tax settings
-- /creator/store/settings - Store configuration
-- /creator/team - Team management
-- /creator/messages - Support messages
-
-=========================================================
-13. LICENSING SYSTEM
-=========================================================
-
-## License Generation
-- Trigger: Successful order
-- Format: UUID v4 or custom
-- Storage: Encrypted in database
-- API: POST /api/licenses/generate
-
-## License Validation
-- API: GET /api/licenses/validate?key=xxx
-- Checks: Exists, not revoked, not expired
-- Rate limit: 100 req/min
-
-## License Verification API
-- External integration endpoint
-- API: GET /api/licenses/verify?key=xxx
-- Auth: API key required
-- Rate limit: 1000 req/min
-
-## Entitlements
-- Download permission
-- Update access
-- Support access
-- Commercial use rights
-
-## License Revocation
-- Trigger: Refund, chargeback
-- API: POST /api/licenses/[id]/revoke
-- Effect: Blocks downloads
-
-=========================================================
-14. REVIEWS & RATINGS
-=========================================================
-
-## Star Ratings
-- Range: 1-5 stars
-- Display: Star icons
-- Calculation: Average of all ratings
-
-## Written Reviews
-- Title (max 100 chars)
-- Content (max 1000 chars)
-- Rating (1-5)
-- Verified purchase badge
-
-## Creator Replies
-- Nested under review
-- Validation: Creator owns product
-
-## Review Management
-- Edit within 30 days
-- Delete within 30 days
-- Report inappropriate reviews
-- Helpful votes
-
-=========================================================
-15. NOTIFICATIONS
-=========================================================
-
-## Types
-- Email notifications (Resend/SendGrid)
-- In-app notifications
-- Browser push (OneSignal)
-
-## Triggers
-- Account verification
-- Password reset
-- Purchase receipt
-- Product update
-- New sale
-- Refund request/approval/denied
-- Payout
-- New follower
-- New review
-- Creator reply
-- Support message
-- Admin warning
-- Account suspension
-
-## Preferences
-- User control over notification types
-- Email, in-app, push toggles
-- API: PUT /api/user/notification-preferences
-
-=========================================================
-16. MESSAGING & SUPPORT
-=========================================================
-
-## Customer-to-Creator Messages
-- Conversation list
-- Message threads
-- Send/reply actions
-- Block user option
-- API: GET/POST /api/messages
-
-## Support Tickets
-- Ticket creation form
-- Category selection
-- Priority levels
-- Status tracking
-- API: GET/POST /api/support/tickets
-
-## Admin Support
-- Ticket queue
-- Assignment system
-- Response tools
-- Escalation
-
-=========================================================
-17. COUPONS & DISCOUNTS
-=========================================================
-
-## Coupon Codes
-- Store-wide discounts
-- Percentage or fixed amount
-- Usage limits
-- Expiration dates
-- API: POST /api/coupons
-
-## Product Discounts
-- Product-specific discounts
-- Sale price with date range
-- Bundle pricing
-- API: POST /api/discounts
-
-## Validation
-- Code uniqueness
-- Usage limit enforcement
-- Expiration check
-- Minimum purchase validation
-
-=========================================================
-18. ADMIN PANEL
-=========================================================
-
-## Pages
-- /admin/dashboard - Platform overview
-- /admin/users - User management
-- /admin/creators - Creator management
-- /admin/products - Product management
-- /admin/moderation - Moderation queue
-- /admin/orders - Order management
-- /admin/payments - Payment monitoring
-- /admin/refunds - Refund processing
-- /admin/payouts - Payout management
-- /admin/tax - Tax configuration
-- /admin/reports - Platform reports
-- /admin/support - Support tickets
-- /admin/copyright - DMCA claims
-- /admin/settings - Site configuration
-- /admin/features - Feature flags
-- /admin/logs - System logs
-- /admin/audit - Audit trail
-
-=========================================================
-19. MODERATION
-=========================================================
-
-## Report Types
-- Product reports
-- User reports
-- Creator reports
-- Copyright claims (DMCA)
-- Abuse reports
-- Fraud reports
-- Spam reports
-- NSFW content
-- Illegal content
-
-## Moderation Flow
-- Report submission
-- Moderation queue
-- Admin review
-- Actions: Approve, remove, warn, ban
-- Audit logging
-
-=========================================================
-20. DATABASE DESIGN
-=========================================================
-
-## Core Tables
-
-### users
-- id (PK, cuid)
-- email (unique, indexed)
-- username (unique, indexed)
-- passwordHash (bcrypt)
-- displayName
-- role (enum: USER, CREATOR, VERIFIED_CREATOR, ADMIN)
-- avatar (media ref)
-- bio
-- website
-- location
-- followersCount
-- followingCount
-- salesCount
-- rating
-- isVerified
-- createdAt
-- updatedAt
-
-### profiles
-- id (PK, cuid)
-- userId (FK, unique)
-- bio
-- website
-- socialLinks (JSON)
-- privacySettings (JSON)
-
-### stores
-- id (PK, cuid)
-- userId (FK, unique)
-- name
-- slug (unique)
-- description
-- logo (media ref)
-- banner (media ref)
-- socialLinks (JSON)
-- featuredProducts (JSON)
-- createdAt
-- updatedAt
-
-### products
-- id (PK, cuid)
-- creatorId (FK)
-- storeId (FK)
-- categoryId (FK)
-- title
-- slug (unique)
-- subtitle
-- description
-- price
-- salePrice
-- isOnSale
-- saleStartsAt
-- saleEndsAt
-- isFree
-- isPublished
-- isFeatured
-- version
-- unityVersion
-- vrcSdkVersion
-- polygonCount
-- fileSize
-- questCompatible
-- pcCompatible
-- wholesaleEnabled
-- wholesaleMinQty
-- wholesalePrice
-- licenseType
-- seoTitle
-- seoDescription
-- createdAt
-- updatedAt
-
-### product_media
-- id (PK, cuid)
-- productId (FK)
-- type (enum: image, video)
-- url
-- order
-- isThumbnail
-- createdAt
-
-### product_files
-- id (PK, cuid)
-- productId (FK)
-- filename
-- url
-- size
-- platform
-- version
-- createdAt
-
-### categories
-- id (PK, cuid)
-- name
-- slug (unique)
-- description
-- icon
-- parentId (FK)
-- createdAt
-
-### tags
-- id (PK, cuid)
-- name
-- slug (unique)
-- createdAt
-
-### product_tags
-- productId (FK)
-- tagId (FK)
-
-### carts
-- id (PK, cuid)
-- userId (FK, nullable for guest)
-- sessionId (for guest carts)
-- createdAt
-- updatedAt
-
-### cart_items
-- id (PK, cuid)
-- cartId (FK)
-- productId (FK)
-- quantity
-- createdAt
-
-### orders
-- id (PK, cuid)
-- buyerId (FK)
-- total
-- status (enum: PENDING, COMPLETED, REFUNDED, CANCELLED)
-- paymentIntentId
-- createdAt
-- updatedAt
-
-### order_items
-- id (PK, cuid)
-- orderId (FK)
-- productId (FK)
-- price
-- quantity
-
-### payments
-- id (PK, cuid)
-- orderId (FK)
-- amount
-- currency
-- status
-- provider
-- providerPaymentId
-- createdAt
-
-### refunds
-- id (PK, cuid)
-- orderId (FK)
-- amount
-- reason
-- status
-- createdAt
-
-### invoices
-- id (PK, cuid)
-- orderId (FK)
-- number
-- url
-- createdAt
-
-### licenses
-- id (PK, cuid)
-- userId (FK)
-- productId (FK)
-  orderId (FK)
-  licenseKey (unique)
-  status (enum: ACTIVE, REVOKED, EXPIRED)
-  createdAt
-  expiresAt
-  revokedAt
-
-### downloads
-- id (PK, cuid)
-  userId (FK)
-  productId (FK)
-  orderId (FK)
-  fileId (FK)
-  downloadedAt
-
-### reviews
-- id (PK, cuid)
-  productId (FK)
-  userId (FK)
-  rating
-  title
-  content
-  isVerified
-  helpfulCount
-  createdAt
-  updatedAt
-
-### favorites
-- id (PK, cuid)
-  userId (FK)
-  productId (FK)
-  createdAt
-
-### wishlist_items
-- id (PK, cuid)
-  userId (FK)
-  productId (FK)
-  createdAt
-
-### collections
-- id (PK, cuid)
-  userId (FK)
-  name
-  slug
-  description
-  coverImage (media ref)
-  createdAt
-
-### collection_items
-- id (PK, cuid)
-  collectionId (FK)
-  productId (FK)
-  order
-
-### followers
-- followerId (FK)
-  followingId (FK)
-  createdAt
-
-### coupons
-- id (PK, cuid)
-  code (unique)
-  type (enum: percentage, fixed)
-  amount
-  minPurchase
-  usageLimit
-  usedCount
-  expiresAt
-  creatorId (FK, nullable for platform coupons)
-  createdAt
-
-### discounts
-- id (PK, cuid)
-  productId (FK)
-  type
-  amount
-  startsAt
-  endsAt
-  createdAt
-
-### bundles
-- id (PK, cuid)
-  creatorId (FK)
-  name
-  slug
-  price
-  description
-  coverImage (media ref)
-  createdAt
-
-### bundle_items
-- id (PK, cuid)
-  bundleId (FK)
-  productId (FK)
-
-### notifications
-- id (PK, cuid)
-  userId (FK)
-  type
-  title
-  content
-  isRead
-  createdAt
-
-### messages
-- id (PK, cuid)
-  fromId (FK)
-  toId (FK)
-  subject
-  content
-  isRead
-  createdAt
-
-### support_tickets
-- id (PK, cuid)
-  userId (FK)
-  subject
-  category
-  priority
-  status
-  createdAt
-
-### reports
-- id (PK, cuid)
-  reporterId (FK)
-  reportedType (enum: user, product, review, message)
-  reportedId
-  reason
-  status
-  createdAt
-
-### moderation_actions
-- id (PK, cuid)
-  reportId (FK)
-  adminId (FK)
-  action
-  notes
-  createdAt
-
-### payouts
-- id (PK, cuid)
-  creatorId (FK)
-  amount
-  status (enum: PENDING, PROCESSING, PAID, FAILED)
-  method
-  processedAt
-  createdAt
-
-### tax_records
-- id (PK, cuid)
-  userId (FK)
-  amount
-  type
-  period
-  createdAt
-
-### sessions
-- id (PK, cuid)
-  userId (FK)
-  token
-  expiresAt
-  createdAt
-
-### api_tokens
-- id (PK, cuid)
-  userId (FK)
-  token
-  scopes
-  expiresAt
-  createdAt
-
-### audit_logs
-- id (PK, cuid)
-  userId (FK)
-  action
-  details (JSON)
-  ipAddress
-  createdAt
-
-=========================================================
-21. API DESIGN
-=========================================================
-
-## Authentication
-- POST /api/auth/register - Create account
-- POST /api/auth/login - Authenticate
-- POST /api/auth/logout - End session
-- POST /api/auth/forgot-password - Initiate reset
-- POST /api/auth/reset-password - Complete reset
-- GET /api/auth/verify-email - Verify email
-
-## Users
-- GET /api/user/profile - Get profile
-- PUT /api/user/profile - Update profile
-- POST /api/user/profile/avatar - Upload avatar
-- POST /api/user/profile/banner - Upload banner
-
-## Products
-- GET /api/products - List products with filters
-- GET /api/products/[id] - Get product details
-- POST /api/products - Create product
-- PUT /api/products/[id] - Update product
-- DELETE /api/products/[id] - Delete product
-- GET /api/products/[id]/reviews - Get reviews
-
-## Uploads
-- POST /api/media/upload - Upload media
-- POST /api/products/files - Upload files
-- DELETE /api/media/[id] - Delete media
-- DELETE /api/products/files/[id] - Delete file
-
-## Cart
-- GET /api/cart - Get cart
-- POST /api/cart - Add to cart
-- DELETE /api/cart/items/[id] - Remove item
-- PUT /api/cart/items/[id] - Update quantity
-- POST /api/cart/coupon - Apply coupon
-
-## Checkout
-- POST /api/checkout - Create order
-- GET /api/checkout/session - Get session status
-
-## Orders
-- GET /api/orders - List orders
-- GET /api/orders/[id] - Get order details
-- POST /api/orders/[id]/refund - Request refund
-
-## Licenses
-- GET /api/licenses - List licenses
-- GET /api/licenses/validate - Validate license
-- POST /api/licenses/generate - Generate license
-
-## Reviews
-- GET /api/products/[id]/reviews - Get reviews
-- POST /api/reviews - Create review
-- PUT /api/reviews/[id] - Update review
-- DELETE /api/reviews/[id] - Delete review
-
-## Notifications
-- GET /api/notifications - List notifications
-- PUT /api/notifications/[id]/read - Mark read
-- DELETE /api/notifications/[id] - Delete
-
-=========================================================
-22. BACKEND ARCHITECTURE
-=========================================================
-
-## Services
-- AuthService: Authentication, sessions, MFA
-- UserService: User management, profiles
-- StoreService: Store configuration
-- ProductService: CRUD operations
-- UploadService: File/media handling
-- CheckoutService: Order processing
-- PaymentService: Stripe integration
-- LicenseService: License generation/validation
-- NotificationService: Email/in-app/push
-- ReviewService: Review management
-- ModerationService: Content moderation
-- AdminService: Admin operations
-
-## Background Jobs
-- Email sending
-- Notification processing
-- License generation
-- Payout processing
-- Analytics aggregation
-- File scanning
-
-## Infrastructure
-- Node.js with Express
-- Prisma ORM
-- SQLite (dev) / PostgreSQL (prod)
-- Redis for caching
-- AWS S3 for storage
-- CloudFront CDN
-- Resend for email
-
-=========================================================
-23. FRONTEND ARCHITECTURE
-=========================================================
-
-## Stack
-- Next.js 14+ with App Router
-- React 18+
-- TypeScript
-- Tailwind CSS
-- shadcn/ui components
-
-## Components
-- Layout components (Header, Footer, Sidebar)
-- ProductCard, CreatorCard
-- Forms (with validation)
-- Modals
-- Upload components (drag-drop)
-- Tables
-- Charts (recharts)
-
-## State Management
-- React Context for global state
-- Server actions for mutations
-- SWR or React Query for data fetching
-
-=========================================================
-24. SECURITY
-=========================================================
-
-## Authentication
-- Password hashing (bcrypt)
-- Session management (httpOnly cookies)
-- JWT for API tokens
-- CSRF protection
-
-## Data Protection
-- Input validation
-- SQL injection prevention (Prisma)
-- XSS prevention (sanitization)
-- File upload validation
-- Encrypted storage at rest
-
-## Rate Limiting
-- API rate limiting per endpoint
-- Brute force protection on auth
-- Upload rate limiting
-
-## Audit Logging
-- All admin actions logged
-- Sensitive operations logged
-- IP address tracking
-
-=========================================================
-25. INFRASTRUCTURE
-=========================================================
-
-## Hosting
-- Vercel or AWS
-- Docker containers
-- Load balancing
-- Auto-scaling
-
-## Storage
-- AWS S3 or Cloudflare R2
-- CloudFront CDN
-- Image optimization
-
-## Database
-- PostgreSQL (production)
-- Read replicas for scaling
-- Connection pooling
-
-## Caching
-- Redis for sessions
-- Redis for API caching
-- CDN for static assets
-
-## Monitoring
-- Error tracking (Sentry)
-- Performance monitoring
-- Uptime monitoring
-- Log aggregation
-
-=========================================================
-26. ANALYTICS
-=========================================================
-
-## Events
-- page_view
-- product_view
-- add_to_cart
-- purchase_completed
-- download_completed
-- search_query
-- filter_apply
-
-## Storage
-- analytics_events table
-- Aggregated in background jobs
-- Retention: 90 days raw, 1 year aggregated
-
-## Dashboards
-- User analytics
-- Creator analytics
-- Platform analytics
-- Export to CSV
-
-=========================================================
-27. EMAIL TEMPLATES
-=========================================================
-
-## Templates
-- Welcome email
-- Verify email
-- Password reset
-- Order confirmation
-- Refund notification
-- Product update
-- Payout notification
-- Account warning/suspension
-
-## Provider
-- Resend or SendGrid
-- HTML templates
-- Personalization variables
-- Unsubscribe link
-
-=========================================================
-28. LEGAL PAGES
-=========================================================
-
-## Pages
-- /terms - Terms of Service
-- /privacy - Privacy Policy
-- /cookies - Cookie Policy
-- /refunds - Refund Policy
-- /copyright - Copyright/DMCA
-- /acceptable-use - Acceptable Use Policy
-
-## Content
-- Platform terms
-- Data collection
-- Cookie usage
-- Refund policy
-- Copyright procedure
-- Usage rules
-
-=========================================================
-29. QA TESTING
-=========================================================
-
-## Test Plans
-- Registration/login flows
-- Product creation and upload
-- File upload from device
-- Checkout process
-- Payment failure handling
-- Refund processing
-- Download access
-- License validation
-- Review submission
-- Mobile responsiveness
-- Security testing
-- Performance testing
-
-=========================================================
-30. FEATURE CHECKLIST
-=========================================================
-
-## Core Features
-- [P1] User registration/login
-- [P1] Product creation
-- [P1] File upload from device
-- [P1] Shopping cart
-- [P1] Checkout with Stripe
-- [P1] License generation
-- [P1] Download access
-- [P1] Reviews and ratings
-
-## Creator Features
-- [P1] Storefront customization
-- [P1] Product management
-- [P1] Media upload from device
-- [P1] Pricing and discounts
-- [P1] Analytics dashboard
-- [P1] Payout management
-- [P2] Team collaboration
-- [P2] Bundle creation
-
-## Customer Features
-- [P1] Browse and search
-- [P1] Wishlist
-- [P1] Collections
-- [P1] Order history
-- [P1] Downloads page
-- [P1] License management
-- [P2] Favorites
-
-## Admin Features
-- [P1] User management
-- [P1] Product moderation
-- [P1] Order management
-- [P1] Payout processing
-- [P2] Analytics dashboard
-- [P2] Report management
-
-## Security
-- [P1] Password hashing
-- [P1] Session management
-- [P1] File upload validation
-- [P1] Rate limiting
-- [P1] Audit logging
-- [P2] MFA support
-- [P2] 2FA
-
-## Infrastructure
-- [P1] Database setup
-- [P1] File storage
-- [P1] Email service
-- [P1] Payment integration
-- [P2] CDN
-- [P2] Caching layer
-- [P2] Monitoring
-
-=========================================================
-END OF SPECIFICATION
-=========================================================
-
-This specification provides a complete blueprint for building a creator-focused digital marketplace. All major features, database schemas, API endpoints, and security considerations are documented to guide development, design, QA, and DevOps teams.
+# PAWVAULT — COMPLETE UX + FOUNDER + MODERATION OVERHAUL
+
+I need you to treat this as a **major UX and platform functionality overhaul**, not a cosmetic update.
+
+The current PawVault experience still feels like a generic SaaS template, and the Founder account currently behaves like a normal user account.
+
+I want PawVault to feel like a **real, polished creator marketplace that is new but genuinely functional**, with a proper Founder Control Center behind it.
+
+DO NOT just make the existing UI prettier.
+
+Rework the user journey, navigation, marketplace UX, Founder experience, moderation tools, and authentication flow while preserving the existing backend functionality wherever it already works.
+
+---
+
+# PART 1 — THE CORE PAWVAULT UX PROBLEM
+
+PawVault is a CREATOR MARKETPLACE.
+
+It should feel like a place where people:
+
+**DISCOVER → BROWSE → SAVE → FOLLOW → BUY → DOWNLOAD → DISCOVER MORE**
+
+It should NOT feel like:
+
+Hero
+→ generic marketing cards
+→ "Why choose us"
+→ generic statistics
+→ giant CTA
+→ footer
+
+The current experience feels too much like a SaaS landing page.
+
+I want users to immediately think:
+
+> "What's cool here?"
+
+Not:
+
+> "What features does this company offer?"
+
+---
+
+# PART 2 — HOMEPAGE REDESIGN
+
+Completely rethink the homepage.
+
+Do NOT make the hero enormous.
+
+The hero should be compact and visually confident.
+
+Possible direction:
+
+**Made by creators.
+Found on PawVault.**
+
+Short supporting text.
+
+[ Browse Marketplace ] [ Start Selling ]
+
+Then immediately show marketplace content.
+
+---
+
+## HOMEPAGE STRUCTURE
+
+### 1. Compact Hero
+
+Keep it around 30–40% of the first viewport.
+
+No huge empty space.
+
+No giant generic SaaS gradient.
+
+No excessive marketing copy.
+
+---
+
+### 2. CATEGORY NAVIGATION
+
+Immediately below the hero.
+
+Use REAL categories from the database.
+
+For example, only if they actually exist:
+
+3D Models
+Textures
+Materials
+Shaders
+Plugins
+Avatars
+Tools
+Assets
+
+Do not fabricate categories.
+
+Make the category navigation visually interesting without turning every category into a giant rounded card.
+
+---
+
+### 3. TRENDING
+
+If real data exists:
+
+**Trending**
+
+Show actual products.
+
+Product cards should include:
+
+* Large product image
+* Product name
+* Creator avatar
+* Creator username
+* Price
+* Rating
+* Review count
+* Wishlist button
+* Sale badge when applicable
+
+If there is not enough real data, do not fake it.
+
+---
+
+### 4. NEW DROPS
+
+If real products exist:
+
+**New Drops**
+
+Show newest actual products.
+
+Again:
+
+NO fake products.
+
+NO fake reviews.
+
+NO fake downloads.
+
+NO fake sales.
+
+---
+
+### 5. CREATOR SPOTLIGHT
+
+If real creators exist:
+
+Show a creator spotlight.
+
+Include:
+
+* Large avatar
+* Creator name
+* @username
+* Verification status
+* Bio
+* Followers
+* Product count
+* A few real products
+* View creator button
+
+Creators should feel like actual people with storefronts.
+
+---
+
+### 6. DISCOVER MORE
+
+Give users a mixed marketplace grid so they can continue browsing.
+
+The homepage should not end after one section.
+
+---
+
+# PART 3 — PRODUCT CARDS
+
+Product cards are extremely important.
+
+They should visually communicate:
+
+IMAGE
+
+Product Name
+
+Creator avatar + creator name
+
+Rating / reviews
+
+Price
+
+Wishlist
+
+If on sale:
+
+Old price
+Sale price
+Discount
+
+The product image should be the dominant visual element.
+
+Do NOT use generic gradients instead of actual product images.
+
+If an actual image doesn't exist, use a tasteful real-data empty state.
+
+Do not make every card look like the exact same oversized rounded SaaS component.
+
+---
+
+# PART 4 — CREATOR PROFILES
+
+Creator profiles should feel like mini storefronts.
+
+Show:
+
+Avatar
+
+Creator name
+
+@username
+
+Verified status
+
+Bio
+
+Followers
+
+Products
+
+Other legitimate statistics
+
+[ Follow ]
+
+Social links if actually configured.
+
+Then:
+
+Featured Products
+
+All Products
+
+About
+
+Reviews
+
+etc.
+
+A creator should feel like a first-class entity on PawVault, not just tiny metadata under a product.
+
+---
+
+# PART 5 — PRODUCT PAGE
+
+Redesign product pages into a proper marketplace product experience.
+
+Desktop:
+
+Large gallery on the left.
+
+Product information on the right.
+
+Show:
+
+Creator avatar
+Creator username
+Product title
+Rating
+Review count
+Price
+Sale information
+
+Actions:
+
+[ BUY NOW ]
+
+[ ADD TO WISHLIST ]
+
+[ SHARE ]
+
+Then:
+
+Description
+
+What's Included
+
+Requirements
+
+Supported Formats
+
+Version
+
+License
+
+Updates
+
+Reviews
+
+More From This Creator
+
+Related Products
+
+The page should never become a dead end.
+
+Always provide another discovery path.
+
+---
+
+# PART 6 — BROWSE MARKETPLACE
+
+The Browse page should feel like the actual marketplace.
+
+Header:
+
+**Browse Marketplace**
+
+Search products...
+
+Filters:
+
+Category
+Price
+Rating
+Tags
+Free
+On Sale
+
+Sort:
+
+Recommended
+Newest
+Popular
+Price Low → High
+Price High → Low
+Rating
+
+Keep filters compact and usable.
+
+Do not make a giant wall of form controls.
+
+Let the product grid dominate the page.
+
+---
+
+# PART 7 — SEARCH
+
+Search should be a real discovery system.
+
+When typing:
+
+Show REAL matching products.
+
+Show REAL creators.
+
+Show REAL categories.
+
+Do not generate fake suggestions.
+
+If nothing matches:
+
+**Nothing matched that search.**
+
+Then:
+
+Browse all products
+Explore categories
+Explore creators
+
+---
+
+# PART 8 — NAVIGATION
+
+The primary navigation should prioritize marketplace functionality.
+
+Desktop:
+
+PawVault logo
+
+Browse
+Categories
+Creators
+
+Search
+
+Wishlist
+Library
+
+Sell / Creator Dashboard
+
+Account
+
+Do not bury actual marketplace functionality underneath generic marketing pages.
+
+---
+
+# PART 9 — MOBILE
+
+Do not simply shrink desktop.
+
+Design mobile intentionally.
+
+Mobile should have:
+
+Compact header
+Search
+Horizontal category navigation
+Product browsing
+Creator browsing
+Easy wishlist
+Easy purchasing
+
+The marketplace should be comfortable to browse with one thumb.
+
+---
+
+# PART 10 — VISUAL DESIGN
+
+I DO NOT WANT:
+
+❌ Generic SaaS gradients
+❌ Huge purple/blue hero
+❌ Excessive glassmorphism
+❌ Everything inside giant rounded cards
+❌ Huge empty whitespace
+❌ Corporate "Why Choose PawVault?" sections
+❌ Stock illustrations
+❌ Excessive glowing effects
+❌ Random animations everywhere
+❌ Fake 3D gimmicks
+❌ Every section looking identical
+
+I DO WANT:
+
+Strong typography
+
+Excellent spacing
+
+Large product imagery
+
+Creator avatars
+
+Subtle borders
+
+Editorial layouts
+
+Dense marketplace sections where appropriate
+
+Occasional large featured products
+
+Horizontal product rails
+
+Creator strips
+
+Interesting visual rhythm
+
+The PRODUCT ART should provide much of the visual interest.
+
+---
+
+# PART 11 — MARKETPLACE DISCOVERY LOOP
+
+This is one of the most important requirements.
+
+The website should naturally encourage:
+
+Product
+↓
+Creator
+↓
+Creator's other products
+↓
+Category
+↓
+Related product
+↓
+Another creator
+↓
+Wishlist
+↓
+Purchase
+
+I want someone to be able to spend 20 minutes browsing PawVault.
+
+The experience should constantly give them another interesting thing to click.
+
+---
+
+# PART 12 — EMPTY STATES
+
+PawVault currently has very little real marketplace data.
+
+That is completely fine.
+
+Do NOT fake activity.
+
+Never fabricate:
+
+Users
+Creators
+Products
+Sales
+Downloads
+Followers
+Reviews
+Ratings
+Orders
+
+Instead create beautiful honest empty states.
+
+For example:
+
+**More creators are joining PawVault.**
+
+**Be one of the first creators to drop something.**
+
+[ Start Selling ]
+
+Do NOT say:
+
+"Join thousands of creators"
+
+when the database does not contain thousands of creators.
+
+Honest + beautiful is much better than fake activity.
+
+---
+
+# PART 13 — FIX THE FOUNDER EXPERIENCE
+
+Now the other major problem.
+
+I am the Founder, but my account menu currently looks like a normal user account:
+
+Bluey Barks
+
+Dashboard
+Library
+Orders
+Settings
+Sign Out
+
+There is NO Founder control center.
+
+That needs to change.
+
+When the authenticated user has:
+
+`FOUNDER`
+
+their account menu must visibly include:
+
+**Founder Control Center →**
+
+This should lead to:
+
+`/admin/founder`
+
+Do NOT make the Founder somehow know that URL manually.
+
+---
+
+# PART 14 — FOUNDER ACCOUNT MENU
+
+Founder menu should look approximately like:
+
+Bluey Barks
+FOUNDER
+
+━━━━━━━━━━━━━━━━
+
+🛡 Founder Control Center
+
+Dashboard
+Reports
+Users
+Creators
+Products
+Orders
+Reviews
+Moderation
+Staff & Mods
+Permissions
+Categories
+Featured
+Discounts
+Announcements
+Audit Logs
+
+━━━━━━━━━━━━━━━━
+
+Library
+Orders
+Settings
+Sign Out
+
+The exact visual design can differ, but the hierarchy needs to be obvious.
+
+Normal USER accounts must NEVER see Founder controls.
+
+ADMIN accounts should only see Admin functionality.
+
+MODERATOR accounts should only see Moderation functionality.
+
+---
+
+# PART 15 — FOUNDER CONTROL CENTER
+
+Build a proper:
+
+`/admin/founder`
+
+control center.
+
+Use a dedicated admin layout.
+
+Sidebar:
+
+PAWVAULT
+
+Founder Control Center
+
+### Overview
+
+Dashboard
+
+### Marketplace
+
+Products
+Categories
+Featured
+Discounts
+
+### Community
+
+Users
+Creators
+Reviews
+Reports
+
+### Moderation
+
+Moderation Queue
+User Moderation
+Product Moderation
+
+### Staff
+
+Moderators
+Administrators
+Permissions
+
+### System
+
+Announcements
+Settings
+Audit Logs
+
+Bottom:
+
+Founder profile
+
+Bluey Barks
+FOUNDER
+
+Sign Out
+
+---
+
+# PART 16 — FOUNDER DASHBOARD
+
+The overview should show REAL database information.
+
+For example:
+
+Users
+Creators
+Products
+Orders
+
+Then:
+
+### Requires Attention
+
+Open reports
+Pending creator applications
+Products requiring moderation
+Suspended users
+
+If there is nothing:
+
+**Nothing needs your attention.**
+
+Do not fabricate charts.
+
+Do not fabricate numbers.
+
+Do not create fake activity just to make the dashboard look busy.
+
+---
+
+# PART 17 — REPORT MANAGEMENT
+
+Founder needs a complete Reports section.
+
+Show:
+
+All Reports
+
+Filters:
+
+Open
+Investigating
+Resolved
+Dismissed
+
+Also filter by:
+
+Report type
+Date
+Reporter
+Reported user
+Reported product
+Assigned moderator
+
+Each report:
+
+Reporter
+Reported subject
+Reason
+Description
+Created date
+Status
+Assigned moderator
+Evidence if available
+
+Opening a report provides:
+
+Report Details
+
+Assign moderator
+
+Change status
+
+Add moderation note
+
+Inspect user
+
+Inspect product
+
+Resolve
+
+Dismiss
+
+Every meaningful moderation action must be audited.
+
+---
+
+# PART 18 — USER MANAGEMENT
+
+Founder needs complete user management.
+
+Users:
+
+Search
+
+Filters:
+
+Active
+Suspended
+Banned
+Creators
+Staff
+
+User rows:
+
+Avatar
+Name
+Username
+Role
+Status
+Joined date
+Creator status
+
+User details:
+
+Profile
+Account information
+Role
+Permissions
+Moderation history
+Reports
+Products
+Orders where appropriate
+Audit history
+
+Founder actions:
+
+Suspend
+Unsuspend
+Ban
+Unban
+Change role
+Manage permissions
+Add moderation note
+
+Dangerous actions need confirmation dialogs.
+
+---
+
+# PART 19 — STAFF & MODERATORS
+
+Create:
+
+**Staff & Mods**
+
+Show:
+
+Founder
+Administrators
+Moderators
+
+Each:
+
+Avatar
+Name
+Username
+Role
+Status
+Permissions
+Staff date
+Recent activity
+
+Founder gets:
+
+**Add Staff Member**
+
+Choose:
+
+ADMIN
+
+or
+
+MODERATOR
+
+Then configure permissions.
+
+---
+
+# PART 20 — CREATE MODERATOR
+
+Founder should be able to select an existing PawVault user and promote them to Moderator.
+
+Permission groups:
+
+### Users
+
+☐ View users
+☐ Suspend users
+☐ Ban users
+☐ Manage user notes
+
+### Products
+
+☐ View products
+☐ Moderate products
+☐ Hide products
+☐ Remove products
+
+### Reports
+
+☐ View reports
+☐ Handle reports
+☐ Resolve reports
+
+### Reviews
+
+☐ Moderate reviews
+
+### Creators
+
+☐ Review creator applications
+☐ Moderate creators
+
+### Orders
+
+☐ View orders
+☐ Handle order issues
+
+### Other
+
+☐ Manage announcements
+☐ View audit logs
+
+Founder can grant/revoke individual permissions.
+
+Do NOT automatically give every moderator full admin access.
+
+---
+
+# PART 21 — PERMISSIONS
+
+Build a real permission management page.
+
+For every staff member show:
+
+Role
+
+Effective Permissions
+
+Role Permissions
+
+Custom Permissions
+
+Make it obvious where each permission comes from.
+
+All permissions must be enforced SERVER-SIDE.
+
+Hiding a button is NOT security.
+
+---
+
+# PART 22 — MODERATION QUEUE
+
+Create a unified:
+
+**Moderation Queue**
+
+Tabs:
+
+All
+Reports
+Products
+Users
+Reviews
+Creators
+
+Each item:
+
+Type
+Subject
+Reason
+Priority
+Created
+Assigned to
+Status
+
+Example:
+
+Product Report
+Texture Pack
+Copyright concern
+Unassigned
+
+[ Review ]
+
+Moderators only see actions allowed by their permissions.
+
+Founder sees everything.
+
+---
+
+# PART 23 — PRODUCT MODERATION
+
+Founder/moderators with permission can:
+
+Inspect product
+
+Inspect creator
+
+View reports
+
+Hide product
+
+Restore product
+
+Remove product where appropriate
+
+Add moderation note
+
+Prefer moderation states / soft deletion where appropriate instead of immediately destroying records.
+
+---
+
+# PART 24 — CREATOR APPLICATIONS
+
+Create a proper Creator Applications section.
+
+Founder can:
+
+View applications
+Approve
+Reject
+Request changes
+Add internal notes
+
+Show:
+
+Applicant
+Username
+Application date
+Status
+Application information
+
+---
+
+# PART 25 — REVIEWS
+
+Moderators with the correct permission can inspect problematic/reported reviews.
+
+Actions are permission-controlled.
+
+Do not expose unrelated private account information.
+
+---
+
+# PART 26 — CATEGORIES
+
+Founder can:
+
+Create
+Edit
+Disable
+Reorder
+
+Only active categories should appear publicly.
+
+Do not create fake categories simply to make the site appear populated.
+
+---
+
+# PART 27 — FEATURED
+
+Founder can:
+
+Search real products
+
+Feature
+
+Unfeature
+
+Reorder featured products
+
+No fake engagement statistics.
+
+---
+
+# PART 28 — DISCOUNTS
+
+Founder can create actual discount codes.
+
+Support:
+
+Code
+Discount
+Expiration
+Usage limit
+Products/categories
+Active/disabled state
+
+Show actual usage data.
+
+---
+
+# PART 29 — ANNOUNCEMENTS
+
+Founder can create:
+
+Title
+Message
+Status
+Start date
+End date
+
+Preview before publishing.
+
+---
+
+# PART 30 — AUDIT LOGS
+
+Create a serious audit log.
+
+Show:
+
+Timestamp
+Staff member
+Action
+Target
+Result
+
+Filters:
+
+Staff member
+Action
+Target
+Date
+
+Examples:
+
+Moderator suspended user
+
+Founder approved creator
+
+Moderator removed product
+
+Founder changed permissions
+
+NEVER store/display:
+
+Passwords
+Tokens
+Secrets
+Cookies
+Credentials
+
+---
+
+# PART 31 — FOUNDER SECURITY
+
+Founder is the highest role.
+
+Founder cannot be:
+
+Demoted
+
+Banned by moderators
+
+Suspended by moderators
+
+Modified by moderators
+
+Stripped of Founder permissions
+
+All permission checks must happen server-side.
+
+Do not rely on UI visibility for security.
+
+---
+
+# PART 32 — ROLE HIERARCHY
+
+FOUNDER
+
+Full platform control.
+
+ADMIN
+
+Administrative functionality according to assigned permissions.
+
+MODERATOR
+
+Moderation functionality according to assigned permissions.
+
+CREATOR
+
+Creator functionality.
+
+USER
+
+Normal marketplace functionality.
+
+The dashboard and navigation should adapt based on role.
+
+---
+
+# PART 33 — PASSWORD / AUTHENTICATION BUG
+
+There is also a serious issue with the Founder authentication flow.
+
+The password input currently isn't behaving correctly / does not allow the password to be properly added.
+
+FIX THIS FIRST.
+
+Inspect the actual:
+
+Password input
+→ form
+→ validation
+→ API/server action
+→ hashing
+→ database
+→ login
+→ session
+→ role
+→ Founder authorization
+
+Do not just change the visual input.
+
+Check for:
+
+* disabled
+* readOnly
+* incorrect `name`
+* broken form registration
+* React state resetting
+* validation schema rejecting passwords
+* password omitted from FormData
+* server receiving undefined
+* incorrect property name
+* bcrypt/bcryptjs mismatch
+* hash saved incorrectly
+* login checking wrong field
+* email normalization issues
+* account status
+* role loading
+* session callback
+* middleware
+* redirects
+* Prisma schema issues
+
+The password must:
+
+* Accept normal keyboard input
+* Accept symbols
+* Not randomly clear
+* Not silently fail
+* Submit correctly
+* Hash correctly
+* Authenticate correctly
+
+Do NOT hard-code the password into source code.
+
+Do NOT print the password into logs.
+
+Do NOT expose it in browser console output.
+
+---
+
+# PART 34 — FOUNDER AUTH TEST
+
+Actually test the entire Founder flow.
+
+1. Open sign-in.
+2. Click password field.
+3. Type password.
+4. Confirm the field accepts it.
+5. Submit.
+6. Confirm authentication succeeds.
+7. Confirm session exists.
+8. Confirm role is FOUNDER.
+9. Open `/admin/founder`.
+10. Refresh.
+11. Confirm access remains.
+12. Sign out.
+13. Sign in again.
+14. Confirm Founder access remains.
+
+Also test incorrect credentials.
+
+Do not claim success if this has not actually been tested.
+
+---
+
+# PART 35 — ROLE TESTING
+
+Create/use a real test user.
+
+Promote them to Moderator.
+
+Give them limited permissions.
+
+Test:
+
+Moderator can access permitted features.
+
+Moderator cannot access Founder-only features.
+
+Moderator cannot manually navigate to:
+
+`/admin/founder`
+
+and gain access.
+
+Founder can still access everything.
+
+---
+
+# PART 36 — BROKEN LINKS
+
+Audit EVERY navigation link.
+
+No:
+
+404 pages
+
+dead buttons
+
+fake dashboard actions
+
+placeholder routes
+
+buttons that look clickable but do nothing
+
+The public marketplace and Founder control center both need working navigation.
+
+---
+
+# PART 37 — MOBILE ADMIN
+
+Founder Control Center must work on mobile.
+
+Use:
+
+☰ sidebar
+
+Responsive tables
+
+Mobile-friendly actions
+
+Readable moderation screens
+
+Do not simply squish the desktop dashboard onto a phone.
+
+---
+
+# PART 38 — DO NOT BREAK THE EXISTING BACKEND
+
+Before modifying anything, inspect the existing codebase.
+
+Preserve working:
+
+* Authentication
+* Founder system
+* Roles
+* Permissions
+* Prisma models
+* Products
+* Creators
+* Orders
+* Reviews
+* Wishlist
+* Creator applications
+* Audit logging
+* Moderation
+* Admin functionality
+
+This is an overhaul, not permission to randomly rewrite working backend systems.
+
+---
+
+# PART 39 — NO FAKE DATA
+
+This rule applies EVERYWHERE.
+
+Never create fake:
+
+Users
+Creators
+Products
+Orders
+Sales
+Downloads
+Followers
+Reviews
+Ratings
+Reports
+Moderation actions
+Staff activity
+
+If there is no data:
+
+make the empty state beautiful.
+
+Do not fake a busy marketplace.
+
+---
+
+# PART 40 — FINAL VISUAL STANDARD
+
+Before reporting completion, open the REAL rendered PawVault website.
+
+Inspect:
+
+Desktop homepage
+
+Mobile homepage
+
+Browse
+
+Search
+
+Categories
+
+Creators
+
+Creator profile
+
+Product page
+
+Wishlist
+
+Library
+
+Account menu
+
+Founder dashboard
+
+Reports
+
+Users
+
+Moderation
+
+Staff & Mods
+
+Permissions
+
+Audit Logs
+
+Fix anything that looks:
+
+* Ugly
+* Generic
+* Empty
+* Oversized
+* Repetitive
+* Awkward
+* Unfinished
+* Template-like
+* Non-functional
+
+Do not judge success by whether the code compiles.
+
+Judge it by the actual rendered experience.
+
+---
+
+# THE FINAL GOAL
+
+When someone visits PawVault:
+
+They should immediately see things worth discovering.
+
+They should be able to:
+
+**Discover a product**
+→ **see the creator**
+→ **see their other products**
+→ **browse the category**
+→ **find related products**
+→ **wishlist something**
+→ **buy it**
+→ **download it**
+→ **come back for more**
+
+And when I log in as Founder:
+
+I should immediately know:
+
+**This is MY platform.**
+
+I should be able to open:
+
+**Founder Control Center**
+
+and manage the entire marketplace:
+
+Users
+Creators
+Products
+Reports
+Moderation
+Moderators
+Admins
+Permissions
+Reviews
+Orders
+Categories
+Featured
+Discounts
+Announcements
+Audit Logs
+Settings
+
+Everything should use REAL PawVault data and REAL server-side permissions.
+
+Do not tell me "done" simply because the build passes.
+
+Actually use the website.
+
+Actually test the authentication.
+
+Actually test the Founder account.
+
+Actually test the moderation tools.
+
+Actually inspect the UX.
+
+The final result should feel like:
+
+**A real creator marketplace that happens to be new — with a serious platform management system behind it.**
+
+NOT:
+
+**A generic SaaS landing page with an admin dashboard bolted onto it.**

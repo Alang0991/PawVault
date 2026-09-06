@@ -23,17 +23,17 @@ export default async function FounderDiscountsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Discounts</h1>
-        <p className="text-muted-foreground">{coupons.length} coupons</p>
+        <h1 className="text-2xl font-bold">Discounts</h1>
+        <p className="text-sm text-muted-foreground">{coupons.length} coupons</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Percent className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Percent className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Create coupon</CardTitle>
+            <CardTitle className="text-base">Create coupon</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -72,26 +72,26 @@ export default async function FounderDiscountsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Percent className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Percent className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Coupons</CardTitle>
+            <CardTitle className="text-base">Coupons</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {coupons.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No coupons yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No coupons yet.</p>
           ) : (
             <div className="space-y-2">
               {coupons.map((c) => (
                 <div key={c.id} className="flex items-center justify-between border-b pb-2 last:border-0">
                   <div>
-                    <p className="font-medium">{c.code}</p>
-                    <p className="text-sm text-muted-foreground">{c.type} · {c.amount}</p>
+                    <p className="font-medium text-sm">{c.code}</p>
+                    <p className="text-xs text-muted-foreground">{c.type} · {c.amount}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">{c.usedCount} / {c.usageLimit ?? "∞"}</span>
+                    <span className="text-xs">{c.usedCount} / {c.usageLimit ?? "∞"}</span>
                     <form action={`/api/admin/coupons/${c.id}`} method="POST" className="flex gap-1">
                       <input type="hidden" name="_method" value="PUT" />
                       <Input name="code" defaultValue={c.code} className="text-xs w-24 h-8" />

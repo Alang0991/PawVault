@@ -26,13 +26,13 @@ export default async function FounderPermissionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Permissions</h1>
-        <p className="text-muted-foreground">Reference: which roles have which permissions.</p>
+        <h1 className="text-2xl font-bold">Permissions</h1>
+        <p className="text-sm text-muted-foreground">Reference: which roles have which permissions.</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Assign custom permissions</CardTitle>
+          <CardTitle className="text-base">Assign custom permissions</CardTitle>
           <CardDescription>Grant or revoke individual permissions for any user (comma-separated keys).</CardDescription>
         </CardHeader>
         <CardContent>
@@ -42,7 +42,7 @@ export default async function FounderPermissionsPage() {
                 <input type="hidden" name="userId" value={u.id} />
                 <span className="text-sm font-medium w-40 truncate">{u.displayName || u.username}</span>
                 <span className="text-xs text-muted-foreground w-24 truncate">{u.email}</span>
-                <Badge variant={u.role === "FOUNDER" ? "default" : u.role === "ADMIN" ? "secondary" : "outline"}>{u.role}</Badge>
+                <Badge variant={u.role === "FOUNDER" ? "default" : u.role === "ADMIN" ? "secondary" : "outline"} className="text-xs">{u.role}</Badge>
                 <Input
                   name="permissions"
                   defaultValue={u.customPermissions ?? ""}
@@ -60,7 +60,7 @@ export default async function FounderPermissionsPage() {
         {PERMISSION_GROUPS.map((group) => (
           <Card key={group.label}>
             <CardHeader>
-              <CardTitle>{group.label}</CardTitle>
+              <CardTitle className="text-base">{group.label}</CardTitle>
               <CardDescription>{group.description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-1">
@@ -77,9 +77,9 @@ export default async function FounderPermissionsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <ScrollText className="h-5 w-5" />
-            <CardTitle>Role baseline</CardTitle>
+          <div className="flex items-center gap-2">
+            <ScrollText className="h-4 w-4" />
+            <CardTitle className="text-base">Role baseline</CardTitle>
           </div>
           <CardDescription>Founder has every permission. Admin has most. Moderator is moderation-only.</CardDescription>
         </CardHeader>

@@ -27,17 +27,17 @@ export default async function FounderAnnouncementsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Announcements</h1>
-        <p className="text-muted-foreground">{announcements.length} announcements</p>
+        <h1 className="text-2xl font-bold">Announcements</h1>
+        <p className="text-sm text-muted-foreground">{announcements.length} announcements</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Megaphone className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Megaphone className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Create announcement</CardTitle>
+            <CardTitle className="text-base">Create announcement</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -57,24 +57,24 @@ export default async function FounderAnnouncementsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Megaphone className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Megaphone className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Official posts</CardTitle>
+            <CardTitle className="text-base">Official posts</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {announcements.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No announcements yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No announcements yet.</p>
           ) : (
             <div className="space-y-3">
               {announcements.map((a) => (
                 <div key={a.id} className="border-b pb-3 last:border-0">
                   <div className="flex items-center justify-between">
-                    <p className="font-medium">{a.title}</p>
+                    <p className="font-medium text-sm">{a.title}</p>
                     <div className="flex items-center gap-2">
-                      <Badge variant={a.isPublished ? "default" : "secondary"}>
+                      <Badge variant={a.isPublished ? "default" : "secondary"} className="text-xs">
                         {a.isPublished ? "Published" : "Draft"}
                       </Badge>
                       <div className="flex gap-1">
@@ -85,12 +85,12 @@ export default async function FounderAnnouncementsPage() {
                         )}
                         <form action={`/api/admin/announcements/${a.id}`} method="POST" className="inline">
                           <input type="hidden" name="_method" value="DELETE" />
-                          <Button type="submit" size="sm" variant="destructive">Delete</Button>
+                          <Button type="submit" size="sm" variant="destructive" className="text-xs">Delete</Button>
                         </form>
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-1">
                     by {a.author.displayName || a.author.username}
                     {a.author.role === "FOUNDER" && " · Founder"}
                   </p>

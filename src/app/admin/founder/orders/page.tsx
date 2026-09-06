@@ -36,36 +36,36 @@ export default async function FounderOrdersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Orders</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold">Orders</h1>
+        <p className="text-sm text-muted-foreground">
           {orders.length} total · ${(revenueAgg._sum.total ?? 0).toFixed(2)} revenue
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <BarChart3 className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <BarChart3 className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Real transactions</CardTitle>
+            <CardTitle className="text-base">Real transactions</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {orders.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No orders yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No orders yet.</p>
           ) : (
             <div className="space-y-3">
               {orders.map((o) => (
                 <div key={o.id} className="border-b pb-3 last:border-0">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">${o.total.toFixed(2)}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm">${o.total.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground">
                         {o.buyer?.displayName || o.buyer?.username || "guest"} · {new Date(o.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge variant={o.status === "COMPLETED" || o.status === "PAID" ? "default" : "secondary"}>{o.status}</Badge>
+                    <Badge variant={o.status === "COMPLETED" || o.status === "PAID" ? "default" : "secondary"} className="text-xs">{o.status}</Badge>
                   </div>
                   <div className="flex gap-2 mt-2">
                     <form action={`/api/admin/orders/${o.id}`} method="POST" className="flex gap-1">

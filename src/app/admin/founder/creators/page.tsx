@@ -32,35 +32,33 @@ export default async function FounderCreatorsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Creators</h1>
-        <p className="text-muted-foreground">{creators.length} creators · {applications.length} pending applications</p>
+        <h1 className="text-2xl font-bold">Creators</h1>
+        <p className="text-sm text-muted-foreground">{creators.length} creators · {applications.length} pending applications</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Crown className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Crown className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Creator accounts</CardTitle>
+            <CardTitle className="text-base">Creator accounts</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           {creators.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No creators yet.
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-8">No creators yet.</p>
           ) : (
             <div className="space-y-2">
               {creators.map((c) => (
                 <div key={c.id} className="flex items-center justify-between border-b pb-2 last:border-0">
                   <div>
-                    <p className="font-medium">{c.displayName || c.username}</p>
-                    <p className="text-sm text-muted-foreground">{c.email}</p>
+                    <p className="font-medium text-sm">{c.displayName || c.username}</p>
+                    <p className="text-xs text-muted-foreground">{c.email}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={c.role === "VERIFIED_CREATOR" ? "default" : "secondary"}>{c.role}</Badge>
-                    {c.isFeatured && <Badge variant="outline">Featured</Badge>}
+                    <Badge variant={c.role === "VERIFIED_CREATOR" ? "default" : "secondary"} className="text-xs">{c.role}</Badge>
+                    {c.isFeatured && <Badge variant="outline" className="text-xs">Featured</Badge>}
                     <div className="flex gap-1">
                       {c.isVerified ? (
                         <AdminActionButton url={`/api/admin/creators/${c.id}/verify`} method="POST" body={{ verified: false }} variant="secondary" size="sm">Unverify</AdminActionButton>
@@ -81,18 +79,18 @@ export default async function FounderCreatorsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Pending creator applications</CardTitle>
+          <CardTitle className="text-base">Pending creator applications</CardTitle>
         </CardHeader>
         <CardContent>
           {applications.length === 0 ? (
-            <p className="text-muted-foreground">No pending applications.</p>
+            <p className="text-sm text-muted-foreground">No pending applications.</p>
           ) : (
             <div className="space-y-2">
               {applications.map((a) => (
                 <div key={a.id} className="flex items-center justify-between border-b pb-2 last:border-0">
                   <div>
-                    <p className="font-medium">{a.displayName}</p>
-                    <p className="text-sm text-muted-foreground">{a.user.email} · @{a.user.username}</p>
+                    <p className="font-medium text-sm">{a.displayName}</p>
+                    <p className="text-xs text-muted-foreground">{a.user.email} · @{a.user.username}</p>
                   </div>
                   <div className="flex gap-1">
                     <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">

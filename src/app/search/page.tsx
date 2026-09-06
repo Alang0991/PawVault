@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatPrice } from "@/lib/helpers"
 import Link from "next/link"
+import { Search } from "lucide-react"
+
 async function searchProducts(query: string) {
   return prisma.product.findMany({
     where: {
@@ -34,7 +36,7 @@ async function searchProducts(query: string) {
         select: { rating: true },
       },
       _count: {
-        select: { favorites: true },
+        select: { favorites: true, reviews: true },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -62,30 +64,15 @@ async function searchCreators(query: string) {
   })
 }
 
-async function searchCollections(query: string) {
-  return prisma.collection.findMany({
+async function searchCategories(query: string) {
+  return prisma.category.findMany({
     where: {
-      isPublic: true,
       OR: [
         { name: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } },
+        { slug: { contains: query, mode: "insensitive" } },
       ],
     },
-    include: {
-      user: {
-        select: {
-          id: true,
-          username: true,
-          displayName: true,
-          avatar: true,
-        },
-      },
-      _count: {
-        select: { items: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 20,
+    include: { _count: { select: { products: { where: { isPublished: true } } } } },
   })
 }
 
@@ -93,38 +80,65 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
   const query = searchParams.q || ""
   let products: any[] = []
   let creators: any[] = []
-  let collections: any[] = []
+  let categories: any[] = []
 
   if (query.length > 0) {
     try {
-      products = await searchProducts(query)
-      creators = await searchCreators(query)
-      collections = await searchCollections(query)
+      const [p, c, cat] = await Promise.all([
+        searchProducts(query),
+        searchCreators(query),
+        searchCategories(query),
+      ])
+      products = p
+      creators = c
+      categories = cat
     } catch (error) {
       console.error("Search page error:", error)
     }
   }
 
-  const totalResults = products.length + creators.length + collections.length
+  const totalResults = products.length + creators.length + categories.length
+  const defaultTab = searchParams.tab || (products.length > 0 ? "products" : creators.length > 0 ? "creators" : "categories")
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white dark:bg-background">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-2">
-          {query ? `Search results for "${query}"` : "Search"}
+        <h1 className="text-2xl font-bold mb-1">
+          {query ? `Results for "${query}"` : "Search"}
         </h1>
-        <p className="text-muted-foreground mb-8">
-          {totalResults} results found
+        <p className="text-sm text-muted-foreground mb-6">
+          {query ? `${totalResults} result${totalResults === 1 ? "" : "s"}` : "Find products, creators, and categories."}
         </p>
 
         {query.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">Enter a search term to find products, creators, and collections.</p>
+          <div className="text-center py-16">
+            <div className="h-10 w-10 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
+              <Search className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">Enter a search term to find products, creators, and categories.</p>
+          </div>
+        ) : totalResults === 0 ? (
+          <div className="text-center py-16">
+            <p className="font-semibold mb-1">Nothing matched that search.</p>
+            <p className="text-sm text-muted-foreground mb-4">Try different keywords or explore what PawVault has to offer.</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <Button asChild size="sm">
+                <Link href="/browse">Browse all products</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/categories">Explore categories</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/creators">Explore creators</Link>
+              </Button>
+            </div>
+          </div>
         ) : (
-          <Tabs defaultValue={searchParams.tab || "products"}>
+          <Tabs defaultValue={defaultTab}>
             <TabsList>
               <TabsTrigger value="products">Products ({products.length})</TabsTrigger>
               <TabsTrigger value="creators">Creators ({creators.length})</TabsTrigger>
-              <TabsTrigger value="collections">Collections ({collections.length})</TabsTrigger>
+              <TabsTrigger value="categories">Categories ({categories.length})</TabsTrigger>
             </TabsList>
             <TabsContent value="products" className="mt-6">
               {products.length === 0 ? (
@@ -158,15 +172,17 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                   {creators.map((creator) => (
                     <Link key={creator.id} href={`/store/${creator.username}`}>
                       <Card className="h-full hover:shadow-md transition-shadow">
-                        <CardContent className="flex items-center gap-4 p-6">
-                          <Avatar className="h-12 w-12">
+                        <CardContent className="flex items-center gap-4 p-5">
+                          <Avatar className="h-11 w-11">
                             <AvatarImage src={creator.avatar || ""} alt={creator.displayName || creator.username} />
                             <AvatarFallback>{(creator.displayName || creator.username)[0]?.toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{creator.displayName || creator.username}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-1">{creator.bio}</p>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm truncate">{creator.displayName || creator.username}</h3>
+                            {creator.bio && (
+                              <p className="text-xs text-muted-foreground line-clamp-1">{creator.bio}</p>
+                            )}
+                            <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
                               <span>{creator.followersCount} followers</span>
                               <span>·</span>
                               <span>{creator.salesCount} sales</span>
@@ -179,45 +195,19 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                 </div>
               )}
             </TabsContent>
-            <TabsContent value="collections" className="mt-6">
-              {collections.length === 0 ? (
-                <p className="text-center text-muted-foreground py-12">No collections found.</p>
+            <TabsContent value="categories" className="mt-6">
+              {categories.length === 0 ? (
+                <p className="text-center text-muted-foreground py-12">No categories found.</p>
               ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {collections.map((collection) => (
-                    <Link
-                      key={collection.id}
-                      href={`/store/${collection.user.username}/collection/${collection.slug}`}
-                    >
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {categories.map((category) => (
+                    <Link key={category.id} href={`/categories/${category.slug}`}>
                       <Card className="h-full hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex items-center gap-3 mb-2">
-                            {collection.coverImage ? (
-                              <img
-                                src={collection.coverImage}
-                                alt=""
-                                className="h-12 w-12 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
-                                📚
-                              </div>
-                            )}
-                            <div>
-                              <h3 className="font-semibold line-clamp-1">{collection.name}</h3>
-                              <p className="text-xs text-muted-foreground">
-                                by {collection.user.displayName || collection.user.username}
-                              </p>
-                            </div>
+                        <CardContent className="p-5 flex items-center justify-between">
+                          <div>
+                            <h3 className="font-semibold text-sm">{category.name}</h3>
+                            <p className="text-xs text-muted-foreground">{category._count.products} product{category._count.products === 1 ? "" : "s"}</p>
                           </div>
-                          {collection.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {collection.description}
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {collection._count.items} items
-                          </p>
                         </CardContent>
                       </Card>
                     </Link>

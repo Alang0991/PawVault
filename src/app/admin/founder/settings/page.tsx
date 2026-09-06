@@ -22,17 +22,17 @@ export default async function FounderSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Platform configuration</p>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-sm text-muted-foreground">Platform configuration</p>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <SettingsIcon className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <SettingsIcon className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Marketplace</CardTitle>
+            <CardTitle className="text-base">Marketplace</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -69,7 +69,7 @@ export default async function FounderSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Security notes</CardTitle>
+          <CardTitle className="text-base">Security notes</CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-2">
           <p>• All admin routes require server-side role checks.</p>

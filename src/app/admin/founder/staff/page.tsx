@@ -34,8 +34,8 @@ export default async function StaffPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Staff / Team</h1>
-          <p className="text-muted-foreground">Moderators, admins, and the Founder</p>
+          <h1 className="text-2xl font-bold">Staff / Team</h1>
+          <p className="text-sm text-muted-foreground">Moderators, admins, and the Founder</p>
         </div>
         <Button asChild>
           <Link href="/admin/founder/staff/new">Add moderator</Link>
@@ -44,39 +44,39 @@ export default async function StaffPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center">
-              <Shield className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Shield className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle>Active staff ({staff.length})</CardTitle>
+              <CardTitle className="text-base">Active staff ({staff.length})</CardTitle>
               <CardDescription>Only the Founder can add or remove staff</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {staff.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No staff yet.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No staff yet.</p>
           ) : (
             <div className="space-y-3">
               {staff.map((s) => (
                 <div key={s.id} className="flex items-center justify-between border-b pb-3 last:border-0">
                   <div>
-                    <p className="font-medium">{s.displayName || s.username}</p>
-                    <p className="text-sm text-muted-foreground">{s.email}</p>
+                    <p className="font-medium text-sm">{s.displayName || s.username}</p>
+                    <p className="text-xs text-muted-foreground">{s.email}</p>
                     <p className="text-xs text-muted-foreground">
                       Joined {new Date(s.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={s.role === "FOUNDER" ? "default" : s.role === "ADMIN" ? "secondary" : "outline"}>
+                    <Badge variant={s.role === "FOUNDER" ? "default" : s.role === "ADMIN" ? "secondary" : "outline"} className="text-xs">
                       {s.role}
                     </Badge>
                     {s.status !== "ACTIVE" && (
-                      <Badge variant="destructive">{s.status}</Badge>
+                      <Badge variant="destructive" className="text-xs">{s.status}</Badge>
                     )}
                     <Link href={`/admin/founder/staff/${s.id}`}>
-                      <Button size="sm" variant="outline">Manage</Button>
+                      <Button size="sm" variant="outline" className="text-xs">Manage</Button>
                     </Link>
                   </div>
                 </div>
