@@ -1,0 +1,76 @@
+export const dynamic = "force-dynamic"
+
+import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { getServerUser } from "@/lib/session"
+import { z } from "zod"
+import { logFounderAction, AuditActions } from "@/lib/audit-logger"
+
+const schema = z.object({
+  identifier: z.string().min(1),
+  role: z.enum(["MODERATOR", "ADMIN"]),
+})
+
+export async function POST(request: Request) {
+  const user = await getServerUser()
+  if (!user || user.role !== "FOUNDER") {
+    return NextResponse.json({ error: "Founder only." }, { status: 403 })
+  }
+
+  let payload: any = {}
+  const contentType = request.headers.get("content-type") || ""
+  if (contentType.includes("application/json")) {
+    payload = await request.json().catch(() => ({}))
+  } else {
+    const fd = await request.formData()
+    payload = { identifier: fd.get("identifier"), role: fd.get("role") }
+  }
+
+  const parsed = schema.safeParse(payload)
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid input." }, { status: 400 })
+  }
+
+  const id = parsed.data.identifier.trim().toLowerCase()
+  const target = await prisma.user.findFirst({
+    where: { OR: [{ email: id }, { username: id }] },
+  })
+
+  if (!target) {
+    return NextResponse.json({ error: "User not found." }, { status: 404 })
+  }
+
+  if (target.role === "FOUNDER") {
+    return NextResponse.json({ error: "Cannot modify Founder." }, { status: 403 })
+  }
+
+  if (target.id === user.id) {
+    return NextResponse.json({ error: "Cannot modify yourself." }, { status: 403 })
+  }
+
+  const previousRole = target.role
+  await prisma.user.update({
+    where: { id: target.id },
+    data: { role: parsed.data.role },
+  })
+
+  await logFounderAction(
+    user.id,
+    AuditActions.STAFF_CREATED,
+    { previousRole, newRole: parsed.data.role, targetEmail: target.email, targetUsername: target.username },
+    { entityType: "User", entityId: target.id },
+  )
+
+  if (parsed.data.role === "MODERATOR" || previousRole === "MODERATOR" || parsed.data.role === "ADMIN" || previousRole === "ADMIN") {
+    await logFounderAction(
+      user.id,
+      parsed.data.role === "MODERATOR" && previousRole === "USER"
+        ? AuditActions.STAFF_PROMOTED
+        : AuditActions.STAFF_PROMOTED,
+      { from: previousRole, to: parsed.data.role },
+      { entityType: "User", entityId: target.id },
+    )
+  }
+
+  return NextResponse.json({ success: true, userId: target.id })
+}

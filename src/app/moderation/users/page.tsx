@@ -5,17 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Users } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function ModerationUsersPage() {
   const user = await getServerUser()
-  if (!user || !["ADMIN", "OWNER"].includes(user.role)) {
+  if (!user || !["ADMIN", "FOUNDER"].includes(user.role)) {
     redirect("/moderation")
   }
 
-  const canAssignAdminOrOwner = user.role === "OWNER"
+  const canAssignAdminOrFounder = user.role === "FOUNDER"
 
   let users: any[] = []
   try {
@@ -27,6 +26,7 @@ export default async function ModerationUsersPage() {
         username: true,
         displayName: true,
         role: true,
+        status: true,
         isVerified: true,
         createdAt: true,
       },
@@ -63,9 +63,12 @@ export default async function ModerationUsersPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={u.role === "OWNER" ? "default" : u.role === "ADMIN" ? "secondary" : "outline"}>
+                      <Badge variant={u.role === "FOUNDER" ? "default" : u.role === "ADMIN" ? "secondary" : "outline"}>
                         {u.role}
                       </Badge>
+                      {u.status !== "ACTIVE" && (
+                        <Badge variant="destructive">{u.status}</Badge>
+                      )}
                       {u.isVerified && <Badge variant="secondary">Verified</Badge>}
                       <Link href={`/moderation/users/${u.id}`}>
                         <Button size="sm" variant="outline">

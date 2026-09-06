@@ -4,16 +4,18 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { z } from "zod"
+import { isAdminOrFounder } from "@/lib/roles"
+import { logAdminAction, AuditActions } from "@/lib/audit-logger"
 
 const moderationActionSchema = z.object({
   reportId: z.string(),
-  action: z.enum(["approve", "remove", "warn", "ban"]),
+  action: z.enum(["approve", "remove", "warn", "ban", "investigate", "dismiss"]),
 })
 
 export async function GET() {
   try {
     const user = await getServerUser()
-    if (!user || user.role !== "ADMIN") {
+    if (!user || !isAdminOrFounder(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -52,7 +54,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getServerUser()
-    if (!user || user.role !== "ADMIN") {
+    if (!user || !isAdminOrFounder(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -70,32 +72,86 @@ export async function POST(request: Request) {
       )
     }
 
-    await prisma.moderationAction.create({
-      data: {
-        reportId: validated.reportId,
-        adminId: user.id,
-        action: validated.action.toUpperCase(),
-        notes: `Action taken by moderator ${user.username}`,
-      },
-    })
-
-    const newStatus = 
-      validated.action === 'approve' ? 'DISMISSED' :
-      validated.action === 'remove' ? 'RESOLVED' : 'REVIEWED'
-
-    await prisma.report.update({
-      where: { id: validated.reportId },
-      data: { status: newStatus },
-    })
-
-    if (validated.action === 'ban' && report.reportedType === 'User') {
-      await prisma.user.update({
-        where: { id: report.reportedId },
-        data: { role: 'BANNED' },
-      })
+    let newStatus: string
+    let auditAction: string = AuditActions.ADMIN_MODERATION_ACTION
+    switch (validated.action) {
+      case "approve":
+        newStatus = "DISMISSED"
+        auditAction = AuditActions.REPORT_DISMISSED
+        break
+      case "remove":
+        newStatus = "RESOLVED"
+        auditAction = AuditActions.REPORT_RESOLVED
+        break
+      case "warn":
+        newStatus = "RESOLVED"
+        auditAction = AuditActions.REPORT_RESOLVED
+        break
+      case "ban":
+        newStatus = "RESOLVED"
+        auditAction = AuditActions.ADMIN_USER_BANNED
+        break
+      case "investigate":
+        newStatus = "INVESTIGATING"
+        auditAction = AuditActions.REPORT_INVESTIGATING
+        break
+      case "dismiss":
+        newStatus = "DISMISSED"
+        auditAction = AuditActions.REPORT_DISMISSED
+        break
+      default:
+        newStatus = "REVIEWED"
     }
 
-    return NextResponse.json({ success: true })
+    await prisma.$transaction(async (tx) => {
+      await tx.moderationAction.create({
+        data: {
+          reportId: validated.reportId,
+          adminId: user.id,
+          action: validated.action.toUpperCase(),
+          notes: `Action taken by staff ${user.username}`,
+        },
+      })
+      await tx.report.update({
+        where: { id: validated.reportId },
+        data: { status: newStatus },
+      })
+    })
+
+    if (validated.action === "ban" && report.reportedType === "User") {
+      await prisma.user.update({
+        where: { id: report.reportedId },
+        data: { status: "BANNED" },
+      })
+      await logAdminAction(
+        user.id,
+        AuditActions.ADMIN_USER_BANNED,
+        { reason: report.reason, source: "moderation", reportId: report.id },
+        { entityType: "User", entityId: report.reportedId },
+      )
+    }
+
+    if (validated.action === "remove" && report.reportedType === "Product") {
+      await prisma.product.update({
+        where: { id: report.reportedId },
+        data: { isPublished: false },
+      })
+      await logAdminAction(
+        user.id,
+        AuditActions.ADMIN_PRODUCT_REMOVED,
+        { reason: report.reason, source: "moderation", reportId: report.id },
+        { entityType: "Product", entityId: report.reportedId },
+      )
+    }
+
+    await logAdminAction(
+      user.id,
+      auditAction,
+      { action: validated.action, status: newStatus },
+      { entityType: "Report", entityId: report.id },
+    )
+
+    return NextResponse.json({ success: true, status: newStatus })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "make-owner": "tsx scripts/make-owner.ts"
+    "make-founder": "tsx scripts/make-founder.ts",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",

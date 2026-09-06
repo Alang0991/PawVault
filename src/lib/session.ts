@@ -17,6 +17,7 @@ export async function getServerUser() {
       username: true,
       displayName: true,
       role: true,
+      status: true,
       avatar: true,
       bio: true,
       isVerified: true,

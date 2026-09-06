@@ -315,8 +315,19 @@ export default async function BrowsePage({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">No products found</p>
+              <div className="text-center py-16 border rounded-lg">
+                <h3 className="text-xl font-semibold mb-2">No products match your filters</h3>
+                <p className="text-muted-foreground mb-2">More drops are on the way.</p>
+                <p className="text-sm text-muted-foreground mb-4">Be one of the first creators on PawVault.</p>
+                {hasFilters ? (
+                  <Button asChild variant="outline">
+                    <Link href="/browse">Clear filters</Link>
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href="/creator">Become a creator</Link>
+                  </Button>
+                )}
               </div>
             )}
 

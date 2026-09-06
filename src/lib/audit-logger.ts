@@ -2,90 +2,165 @@ import { prisma } from '@/lib/prisma'
 import { headers } from 'next/headers'
 
 export interface AuditLogOptions {
-  userId?: string
+  userId?: string | null
   action: string
   details?: Record<string, any>
   entityType?: string
   entityId?: string
+  ipAddress?: string | null
 }
 
 export async function createAuditLog(options: AuditLogOptions) {
   try {
-    const headersList = await headers()
-    const ipAddress = headersList.get('x-forwarded-for') || 
-                     headersList.get('x-real-ip') || 
-                     'unknown'
+    let ip = options.ipAddress
+    if (!ip) {
+      try {
+        const headersList = await headers()
+        ip =
+          headersList.get('x-forwarded-for') ||
+          headersList.get('x-real-ip') ||
+          'unknown'
+      } catch {
+        ip = 'unknown'
+      }
+    }
+
+    const safeDetails = sanitizeDetails(options.details)
 
     await prisma.auditLog.create({
       data: {
-        userId: options.userId,
+        userId: options.userId ?? null,
         action: options.action,
-        details: options.details ? JSON.stringify(options.details) : null,
-        ipAddress,
+        details: safeDetails ? JSON.stringify(safeDetails) : null,
+        ipAddress: ip ?? 'unknown',
       },
     })
   } catch (error) {
     console.error('Failed to create audit log:', error)
-    // Don't throw - audit logging should not break the main flow
   }
+}
+
+function sanitizeDetails(details?: Record<string, any>): Record<string, any> | null {
+  if (!details) return null
+  const banned = new Set([
+    'password',
+    'passwordHash',
+    'currentPassword',
+    'newPassword',
+    'token',
+    'sessionToken',
+    'secret',
+    'cookie',
+  ])
+  const out: Record<string, any> = {}
+  for (const [k, v] of Object.entries(details)) {
+    if (banned.has(k)) {
+      out[k] = '[REDACTED]'
+    } else {
+      out[k] = v
+    }
+  }
+  return out
 }
 
 export async function logUserAction(
   userId: string,
   action: string,
-  details?: Record<string, any>
+  details?: Record<string, any>,
+  entity?: { entityType?: string; entityId?: string },
 ) {
-  await createAuditLog({ userId, action, details })
+  await createAuditLog({ userId, action, details, ...entity })
 }
 
 export async function logAdminAction(
   userId: string,
   action: string,
-  details?: Record<string, any>
+  details?: Record<string, any>,
+  entity?: { entityType?: string; entityId?: string },
 ) {
-  await createAuditLog({ userId, action, details })
+  await createAuditLog({ userId, action, details, ...entity })
 }
 
 export async function logSecurityEvent(
   action: string,
-  details?: Record<string, any>
+  details?: Record<string, any>,
 ) {
   await createAuditLog({ action, details })
 }
 
-// Common action constants
 export const AuditActions = {
-  // User actions
   USER_REGISTERED: 'USER_REGISTERED',
   USER_LOGIN: 'USER_LOGIN',
   USER_LOGOUT: 'USER_LOGOUT',
   USER_PASSWORD_CHANGED: 'USER_PASSWORD_CHANGED',
   USER_PROFILE_UPDATED: 'USER_PROFILE_UPDATED',
   USER_EMAIL_VERIFIED: 'USER_EMAIL_VERIFIED',
-  
-  // Product actions
+
   PRODUCT_CREATED: 'PRODUCT_CREATED',
   PRODUCT_UPDATED: 'PRODUCT_UPDATED',
   PRODUCT_DELETED: 'PRODUCT_DELETED',
   PRODUCT_PUBLISHED: 'PRODUCT_PUBLISHED',
   PRODUCT_UNPUBLISHED: 'PRODUCT_UNPUBLISHED',
-  
-  // Order actions
+  PRODUCT_FEATURED: 'PRODUCT_FEATURED',
+  PRODUCT_UNFEATURED: 'PRODUCT_UNFEATURED',
+
   ORDER_CREATED: 'ORDER_CREATED',
   ORDER_COMPLETED: 'ORDER_COMPLETED',
   ORDER_REFUNDED: 'ORDER_REFUNDED',
   ORDER_CANCELLED: 'ORDER_CANCELLED',
-  
-  // Admin actions
+
+  STAFF_CREATED: 'STAFF_CREATED',
+  STAFF_PROMOTED: 'STAFF_PROMOTED',
+  STAFF_DEMOTED: 'STAFF_DEMOTED',
+  STAFF_REMOVED: 'STAFF_REMOVED',
+  STAFF_DISABLED: 'STAFF_DISABLED',
+  STAFF_PERMISSIONS_CHANGED: 'STAFF_PERMISSIONS_CHANGED',
+
   ADMIN_USER_BANNED: 'ADMIN_USER_BANNED',
   ADMIN_USER_UNBANNED: 'ADMIN_USER_UNBANNED',
+  ADMIN_USER_SUSPENDED: 'ADMIN_USER_SUSPENDED',
+  ADMIN_USER_RESTORED: 'ADMIN_USER_RESTORED',
   ADMIN_PRODUCT_REMOVED: 'ADMIN_PRODUCT_REMOVED',
+  ADMIN_PRODUCT_RESTORED: 'ADMIN_PRODUCT_RESTORED',
   ADMIN_MODERATION_ACTION: 'ADMIN_MODERATION_ACTION',
-  
-  // Security events
+
+  CREATOR_VERIFIED: 'CREATOR_VERIFIED',
+  CREATOR_UNVERIFIED: 'CREATOR_UNVERIFIED',
+  CREATOR_FEATURED: 'CREATOR_FEATURED',
+  CREATOR_UNFEATURED: 'CREATOR_UNFEATURED',
+  CREATOR_APPLICATION_APPROVED: 'CREATOR_APPLICATION_APPROVED',
+  CREATOR_APPLICATION_REJECTED: 'CREATOR_APPLICATION_REJECTED',
+
+  REPORT_CREATED: 'REPORT_CREATED',
+  REPORT_RESOLVED: 'REPORT_RESOLVED',
+  REPORT_DISMISSED: 'REPORT_DISMISSED',
+  REPORT_INVESTIGATING: 'REPORT_INVESTIGATING',
+
+  CATEGORY_CREATED: 'CATEGORY_CREATED',
+  CATEGORY_UPDATED: 'CATEGORY_UPDATED',
+  CATEGORY_DELETED: 'CATEGORY_DELETED',
+
+  ANNOUNCEMENT_CREATED: 'ANNOUNCEMENT_CREATED',
+  ANNOUNCEMENT_PUBLISHED: 'ANNOUNCEMENT_PUBLISHED',
+  ANNOUNCEMENT_UPDATED: 'ANNOUNCEMENT_UPDATED',
+  ANNOUNCEMENT_DELETED: 'ANNOUNCEMENT_DELETED',
+
+  SETTINGS_UPDATED: 'SETTINGS_UPDATED',
+
   SECURITY_LOGIN_FAILED: 'SECURITY_LOGIN_FAILED',
   SECURITY_RATE_LIMIT_EXCEEDED: 'SECURITY_RATE_LIMIT_EXCEEDED',
   SECURITY_SUSPICIOUS_ACTIVITY: 'SECURITY_SUSPICIOUS_ACTIVITY',
   SECURITY_FILE_UPLOAD_REJECTED: 'SECURITY_FILE_UPLOAD_REJECTED',
+  SECURITY_PRIVILEGE_ESCALATION_BLOCKED: 'SECURITY_PRIVILEGE_ESCALATION_BLOCKED',
+
   FILE_UPLOADED: 'FILE_UPLOADED',
 } as const
+
+export async function logFounderAction(
+  founderId: string,
+  action: string,
+  details?: Record<string, any>,
+  entity?: { entityType?: string; entityId?: string },
+) {
+  await createAuditLog({ userId: founderId, action, details, ...entity })
+}

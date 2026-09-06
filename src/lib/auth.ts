@@ -36,6 +36,16 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        if ((user as any).status === "BANNED") {
+          return null
+        }
+        if ((user as any).status === "SUSPENDED") {
+          const until = (user as any).suspendedUntil as Date | null | undefined
+          if (until && new Date(until) > new Date()) {
+            return null
+          }
+        }
+
         if (user.passwordHash?.startsWith("$2a$") || user.passwordHash?.startsWith("$2b$")) {
           try {
             const isPasswordValid = await bcrypt.compare(

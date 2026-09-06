@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
 
 export default async function ModerationReportsPage() {
   const user = await getServerUser()
-  if (!user || !["ADMIN", "OWNER"].includes(user.role)) {
+  if (!user || !["ADMIN", "FOUNDER"].includes(user.role)) {
     redirect("/moderation")
   }
 

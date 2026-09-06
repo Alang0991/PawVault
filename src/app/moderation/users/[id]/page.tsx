@@ -23,7 +23,7 @@ const ALLOWED_ROLES = [
   "VERIFIED_CREATOR",
   "MODERATOR",
   "ADMIN",
-  "OWNER",
+  "FOUNDER",
 ] as const
 
 interface UserPageProps {
@@ -32,7 +32,7 @@ interface UserPageProps {
 
 export default async function ModerationUserPage({ params }: UserPageProps) {
   const user = await getServerUser()
-  if (!user || !["ADMIN", "OWNER"].includes(user.role)) {
+  if (!user || !["ADMIN", "FOUNDER"].includes(user.role)) {
     redirect("/moderation")
   }
 
@@ -44,6 +44,7 @@ export default async function ModerationUserPage({ params }: UserPageProps) {
       username: true,
       displayName: true,
       role: true,
+      status: true,
       isVerified: true,
       createdAt: true,
     },
@@ -53,7 +54,7 @@ export default async function ModerationUserPage({ params }: UserPageProps) {
     notFound()
   }
 
-  const canAssignAdminOrOwner = user.role === "OWNER"
+  const canAssignAdminOrFounder = user.role === "FOUNDER"
   const isSelf = targetUser.id === user.id
 
   return (
@@ -81,7 +82,7 @@ export default async function ModerationUserPage({ params }: UserPageProps) {
               <div>
                 <CardTitle>Role Assignment</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Current role: <Badge variant={targetUser.role === "OWNER" ? "default" : "secondary"}>{targetUser.role}</Badge>
+                  Current role: <Badge variant={targetUser.role === "FOUNDER" ? "default" : "secondary"}>{targetUser.role}</Badge>
                 </p>
               </div>
             </div>
@@ -96,15 +97,15 @@ export default async function ModerationUserPage({ params }: UserPageProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {ALLOWED_ROLES.map((r) => (
-                      <SelectItem key={r} value={r} disabled={!canAssignAdminOrOwner && ["ADMIN", "OWNER"].includes(r)}>
+                      <SelectItem key={r} value={r} disabled={!canAssignAdminOrFounder && ["ADMIN", "FOUNDER"].includes(r)}>
                         {r}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {!canAssignAdminOrOwner && (
+                {!canAssignAdminOrFounder && (
                   <p className="text-xs text-muted-foreground">
-                    Only the platform owner can assign ADMIN or OWNER roles.
+                    Only the Founder can assign ADMIN or FOUNDER roles.
                   </p>
                 )}
               </div>

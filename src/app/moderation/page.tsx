@@ -13,7 +13,7 @@ export default async function ModerationPage() {
     redirect("/auth/signin")
   }
 
-  if (!["ADMIN", "OWNER"].includes(user.role)) {
+  if (!["ADMIN", "FOUNDER"].includes(user.role)) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-16">
         <div className="container mx-auto px-4 max-w-xl">

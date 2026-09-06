@@ -112,6 +112,24 @@ export default async function Home() {
         </div>
       </section>
 
+      {featured.length > 0 && (
+        <section className="py-12 md:py-16">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                <h2 className="text-xl md:text-2xl font-bold">Featured</h2>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {featured.map((product: any) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {trendingCreators.length > 0 && (
         <section className="py-12 md:py-16 bg-muted/30">
           <div className="container mx-auto px-4">
@@ -209,7 +227,11 @@ export default async function Home() {
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold">Made by creators. Built for the community.</h2>
             <p className="mt-4 text-muted-foreground text-lg">
-              Start selling your work today. Keep most of what you earn, reach a global audience, and build your brand.
+              {productCount > 0 ? (
+                <>PawVault is home to {creatorCount} creator{creatorCount === 1 ? "" : "s"} and {productCount} published product{productCount === 1 ? "" : "s"}.</>
+              ) : (
+                <>PawVault is just getting started. More drops are on the way.</>
+              )}
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
@@ -219,6 +241,9 @@ export default async function Home() {
                 <Link href="/browse">Start browsing</Link>
               </Button>
             </div>
+            <p className="mt-6 text-sm text-muted-foreground">
+              Be one of the first creators on PawVault.
+            </p>
           </div>
         </div>
       </section>

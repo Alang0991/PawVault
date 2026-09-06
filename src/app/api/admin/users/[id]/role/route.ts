@@ -4,10 +4,19 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { z } from "zod"
+import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { isFounder, isAdminOrFounder } from "@/lib/roles"
 
 const updateRoleSchema = z.object({
-  role: z.enum(["USER", "CREATOR", "VERIFIED_CREATOR", "MODERATOR", "ADMIN", "OWNER"]),
+  role: z.enum(["USER", "CREATOR", "VERIFIED_CREATOR", "MODERATOR", "ADMIN", "FOUNDER"]),
 })
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  return PUT(request, { params })
+}
 
 export async function PUT(
   request: Request,
@@ -19,7 +28,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    if (!["ADMIN", "OWNER"].includes(user.role)) {
+    if (!isAdminOrFounder(user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -34,22 +43,37 @@ export async function PUT(
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const isPromotingToAdminOrOwner = ["ADMIN", "OWNER"].includes(validated.role)
-    const isSelfDemotion = target.id === user.id
+    const isSelf = target.id === user.id
 
-    if (isPromotingToAdminOrOwner && user.role !== "OWNER") {
+    if (validated.role === "FOUNDER" && !isFounder(user.role)) {
       return NextResponse.json(
-        { error: "Only the platform owner can assign ADMIN or OWNER roles." },
+        { error: "Only the platform Founder can grant the FOUNDER role." },
         { status: 403 }
       )
     }
 
-    if (isSelfDemotion && validated.role !== "OWNER") {
+    if (target.role === "FOUNDER" && !isFounder(user.role)) {
       return NextResponse.json(
-        { error: "You cannot remove your own OWNER role." },
+        { error: "Only the platform Founder can modify a Founder account." },
         { status: 403 }
       )
     }
+
+    if (isSelf && validated.role !== user.role) {
+      return NextResponse.json(
+        { error: "You cannot change your own role." },
+        { status: 403 }
+      )
+    }
+
+    if (isFounder(target.role) && validated.role !== "FOUNDER") {
+      return NextResponse.json(
+        { error: "Founder role cannot be demoted. Transfer ownership only via FOUNDER_BOOTSTRAP_PASSWORD rotation." },
+        { status: 403 }
+      )
+    }
+
+    const previousRole = target.role
 
     const updated = await prisma.user.update({
       where: { id: params.id },
@@ -64,6 +88,18 @@ export async function PUT(
         createdAt: true,
       },
     })
+
+    let action: string = AuditActions.STAFF_PROMOTED
+    if (["USER", "CREATOR", "VERIFIED_CREATOR"].includes(validated.role)) {
+      action = AuditActions.STAFF_DEMOTED
+    }
+
+    await logAdminAction(
+      user.id,
+      action,
+      { previousRole, newRole: validated.role, targetEmail: target.email, targetUsername: target.username },
+      { entityType: "User", entityId: target.id },
+    )
 
     return NextResponse.json({ user: updated })
   } catch (error) {
