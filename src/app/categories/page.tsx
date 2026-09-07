@@ -1,8 +1,9 @@
 export const dynamic = "force-dynamic"
 
 import { prisma } from "@/lib/prisma"
-import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
+import { SectionHeader } from "@/components/section-header"
+import { CategoryCard } from "@/components/category-card"
+import { Package } from "lucide-react"
 
 async function getCategories() {
   return prisma.category.findMany({
@@ -24,30 +25,23 @@ export default async function CategoriesPage() {
   const categories = await getCategories()
 
   return (
-    <div className="min-h-screen">
-      <div className="bg-gradient-to-br from-slate-600 to-slate-500 py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold text-white">Categories</h1>
-          <p className="text-blue-100 mt-2 text-lg">Browse VRChat assets by category</p>
-        </div>
-      </div>
-      <div className="container mx-auto px-4 py-12">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-10 md:py-12">
+        <SectionHeader
+          title="Categories"
+          subtitle="Browse assets by category"
+          icon={<Package className="h-5 w-5 text-text-muted" />}
+        />
+
         {categories.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">No categories yet.</p>
+          <div className="text-center py-16 text-text-muted">
+            <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
+            <p>No categories yet. New sections are added as the marketplace grows.</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/category/${category.slug}`}
-              >
-                <div className="p-6 rounded-xl border-2 border-transparent hover:border-blue-500 hover:shadow-xl transition-all bg-card hover:-translate-y-1">
-                  <h3 className="font-semibold text-center text-lg">{category.name}</h3>
-                  <p className="text-sm text-muted-foreground text-center mt-1">
-                     {category._count.products} assets
-                  </p>
-                </div>
-              </Link>
+              <CategoryCard key={category.id} category={category} />
             ))}
           </div>
         )}

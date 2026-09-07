@@ -94,6 +94,12 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   preferences             UserPreference?
   stripeConnectedAccount  StripeConnectedAccount?
+  feedbackPosts           FeedbackPost[]
+  feedbackVotes           FeedbackVote[]
+  feedbackComments         FeedbackComment[]
+  roadmapItems            RoadmapItem[]
+  changelogEntries        ChangelogEntry[]
+  supportTicketMessages   SupportTicketMessage[]
 
   @@index([email])
   @@index([username])
@@ -699,10 +705,25 @@ model SupportTicket {
   status    String   @default("OPEN")
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages SupportTicketMessage[]
 
   @@index([userId])
   @@index([status])
+}
+
+model SupportTicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  userId    String
+  content   String
+  isStaff   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
 }
 
 model Report {
@@ -1019,4 +1040,93 @@ model CreatorApplication {
 
   @@index([status])
   @@index([userId])
+}
+
+model FeedbackPost {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  content     String
+  category    String
+  status      String   @default("OPEN")
+  votes       Int      @default(0)
+  isPinned    Boolean  @default(false)
+  isLocked    Boolean  @default(false)
+  duplicateOf String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes_rel FeedbackVote[]
+  comments  FeedbackComment[]
+
+  @@index([userId])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FeedbackVote {
+  id        String @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post FeedbackPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+model FeedbackComment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  isOfficial Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post FeedbackPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+}
+
+model RoadmapItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("PLANNED")
+  priority    String   @default("MEDIUM")
+  feedbackId  String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model ChangelogEntry {
+  id          String   @id @default(cuid())
+  title       String
+  summary     String?
+  description String?
+  category    String
+  releaseDate DateTime
+  authorId    String?
+  feedbackId  String?
+  createdAt   DateTime @default(now())
+
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([releaseDate])
+  @@index([createdAt])
 }

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import Image from "next/image"
 import Link from "next/link"
 import { Upload, Loader2 } from "lucide-react"
 
@@ -148,16 +149,16 @@ export default function CreatorShopSettingsPage() {
           <Card>
             <CardHeader><CardTitle>Appearance</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-lg overflow-hidden bg-muted aspect-[21/9] flex items-center justify-center">
+              <div className="rounded-lg overflow-hidden bg-muted aspect-[21/9] flex items-center justify-center relative">
                 {store.banner ? (
-                  <img src={store.banner} alt="banner" className="w-full h-full object-cover" />
+                  <Image src={store.banner} alt="banner" fill className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-muted-foreground text-sm">No banner</span>
                 )}
               </div>
               <div className="flex items-center gap-4">
                 <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                  {store.logo ? <img src={store.logo} alt="logo" className="w-full h-full object-cover" /> : <span className="text-muted-foreground text-xs">No logo</span>}
+                  {store.logo ? <Image src={store.logo} alt="logo" width={64} height={64} className="w-full h-full object-cover" /> : <span className="text-muted-foreground text-xs">No logo</span>}
                 </div>
                 <div className="flex gap-2">
                   <label className="cursor-pointer">

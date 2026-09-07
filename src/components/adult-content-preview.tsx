@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Eye, Loader2, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -97,7 +98,11 @@ export function AdultContentPreview({
         />
       )
     }
-    return <img src={src} alt={alt} className={cn(imgClassName, className)} loading={priority ? "eager" : "lazy"} sizes={sizes} onError={() => setImgError(true)} />
+    return (
+      <div className={cn("relative", className)}>
+        <Image src={src} alt={alt} fill className={cn(imgClassName)} loading={priority ? "eager" : "lazy"} sizes={sizes} onError={() => setImgError(true)} />
+      </div>
+    )
   }
 
   // NSFW
@@ -127,7 +132,7 @@ export function AdultContentPreview({
     }
     return (
       <div className={cn("relative", className)}>
-        <img src={src} alt={alt} className={cn(imgClassName)} loading={priority ? "eager" : "lazy"} sizes={sizes} onError={() => setImgError(true)} />
+        <Image src={src} alt={alt} fill className={cn(imgClassName)} loading={priority ? "eager" : "lazy"} sizes={sizes} onError={() => setImgError(true)} />
         {showBadge && <AdultBadge className="absolute top-2 left-2" />}
       </div>
     )
@@ -174,10 +179,11 @@ export function AdultContentPreview({
 
   return (
     <div className={cn("relative overflow-hidden", className)}>
-      <img
+      <Image
         src={blurredSrc}
         alt=""
         aria-hidden="true"
+        fill
         className={cn("w-full h-full object-cover", imgClassName)}
         style={{ filter: "blur(28px)", transform: "scale(1.15)" }}
         sizes={sizes}

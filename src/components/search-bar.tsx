@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
+import Image from "next/image"
 import { Search, Loader2 } from "lucide-react"
 import Link from "next/link"
 
@@ -138,7 +139,7 @@ export function SearchBar() {
               }`}
             >
               {s.image ? (
-                <img src={s.image} alt="" className="h-8 w-8 rounded object-cover" />
+                <Image src={s.image} alt="" width={32} height={32} className="h-8 w-8 rounded object-cover" />
               ) : (
                 <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-xs">
                   {s.type === "creator" ? "C" : "P"}

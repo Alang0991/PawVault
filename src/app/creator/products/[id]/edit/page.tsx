@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -427,11 +428,11 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                         key={m.id}
                         className={`relative rounded-lg overflow-hidden border-2 ${m.isThumbnail ? "border-purple-500" : "border-transparent"}`}
                       >
-                        <div className="aspect-square bg-muted flex items-center justify-center">
+                        <div className="aspect-square bg-muted flex items-center justify-center relative">
                           {m.type === "video" ? (
                             <Video className="h-8 w-8 text-muted-foreground" />
                           ) : (
-                            <img src={m.url} alt="" className="w-full h-full object-cover" />
+                            <Image src={m.url} alt="" fill className="w-full h-full object-cover" />
                           )}
                         </div>
                         <button

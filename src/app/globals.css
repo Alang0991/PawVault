@@ -2,51 +2,103 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262 83% 58%;
-    --radius: 0.75rem;
-  }
+/* ============================================================
+   PawVault Design System — Semantic Color Tokens
+   Restrained, marketplace-first palette. The accent is
+   PawVault's signature violet-fuchsia — part of the brand
+   identity, not a random SaaS gradient.
+   ============================================================ */
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 262 83% 58%;
-  }
+:root {
+  /* ---- Core shadcn-compat tokens (kept stable for Radix UI) ---- */
+  --background: 210 38% 98.5%;
+  --foreground: 222 84% 4.5%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 84% 4.5%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 84% 4.5%;
+  --primary: 262 83% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 38% 96%;
+  --secondary-foreground: 224 71% 4%;
+  --muted: 210 38% 96%;
+  --muted-foreground: 215 18% 45%;
+  --accent: 262 83% 55%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 86%;
+  --input: 214 32% 86%;
+  --ring: 262 83% 55%;
+  --radius: 0.5rem;
+
+  /* ---- PawVault marketplace semantic tokens ---- */
+  --pv-surface: 0 0% 100%;
+  --pv-surface-elevated: 0 0% 100%;
+  --pv-surface-subtle: 210 38% 99%;
+  --pv-text-primary: 222 84% 4.5%;
+  --pv-text-secondary: 224 71% 8%;
+  --pv-text-muted: 215 18% 45%;
+  --pv-border: 214 32% 86%;
+  --pv-accent: 262 83% 55%;      /* PawVault violet */
+  --pv-accent-hover: 271 83% 48%;
+  --pv-accent-soft: 262 93% 96%;
+  --pv-success: 150 60% 42%;
+  --pv-warning: 40 90% 55%;
+  --pv-error: 0 84.2% 60.2%;
+  --pv-info: 210 100% 55%;
+  --pv-price: 150 60% 40%;       /* emerald — signals value */
+  --pv-sale: 0 75% 52%;          /* rose — for discounts */
+
+  /* ---- Gradients (subtle, brand-aligned) ---- */
+  --pv-gradient: linear-gradient(135deg, hsl(262 83% 55%), hsl(312 83% 55%));
+  --pv-gradient-soft: linear-gradient(135deg, hsl(262 93% 96%), hsl(312 93% 94%));
+  --pv-gradient-muted: linear-gradient(135deg, hsl(215 38% 93%), hsl(220 38% 89%));
+}
+
+/* ---- Dark mode: moody, makes artwork pop ---- */
+.dark {
+  --background: 222 84% 5.5%;
+  --foreground: 210 40% 98%;
+  --card: 222 84% 7.5%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 84% 7.5%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 262 83% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20.2% 65%;
+  --accent: 262 83% 55%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 217 33% 19%;
+  --input: 217 33% 19%;
+  --ring: 262 83% 55%;
+  --radius: 0.5rem;
+
+  --pv-surface: 222 84% 6.5%;
+  --pv-surface-elevated: 222 84% 8.5%;
+  --pv-surface-subtle: 223 84% 5%;
+  --pv-text-primary: 210 40% 98%;
+  --pv-text-secondary: 215 20% 80%;
+  --pv-text-muted: 215 20.2% 65%;
+  --pv-border: 217 33% 19%;
+  --pv-accent: 262 83% 55%;
+  --pv-accent-hover: 271 83% 58%;
+  --pv-accent-soft: 262 93% 22%;
+  --pv-success: 150 55% 60%;
+  --pv-warning: 40 95% 60%;
+  --pv-error: 0 84.2% 60.2%;
+  --pv-info: 210 98% 70%;
+  --pv-price: 150 55% 58%;
+  --pv-sale: 0 75% 60%;
+
+  --pv-gradient: linear-gradient(135deg, hsl(262 83% 55%), hsl(312 83% 55%));
+  --pv-gradient-soft: linear-gradient(135deg, hsl(262 93% 18%), hsl(312 93% 12%));
+  --pv-gradient-muted: linear-gradient(135deg, hsl(223 84% 10%), hsl(225 84% 8%));
 }
 
 @layer base {
@@ -56,6 +108,14 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a {
+    @apply text-accent;
+  }
+  a:hover {
+    @apply text-accent-hover;
   }
 }
 
@@ -79,5 +139,22 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Brand touches — used sparingly, intentionally */
+  .pv-gradient-text {
+    background: var(--pv-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .pv-gradient-bg {
+    background: var(--pv-gradient);
+  }
+
+  /* Focus ring — consistent, accessible */
+  .focus-ring {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }

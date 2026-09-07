@@ -2,24 +2,28 @@ export const dynamic = "force-dynamic"
 
 import { prisma } from "@/lib/prisma"
 import { ProductCard } from "@/components/product-card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { ProductGrid } from "@/components/product-grid"
+import { SectionHeader } from "@/components/section-header"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { RatingStars } from "@/components/rating-stars"
+import { Rating } from "@/components/rating"
+import { StatusBadge } from "@/components/status-badge"
 import { SortSelect } from "@/components/sort-select"
 import { CategoryFilter } from "@/components/category-filter"
-import { Users, Store, Package, User, Star, Twitter, Youtube, MessageCircle } from "lucide-react"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { getServerUser } from "@/lib/session"
-import { formatPrice } from "@/lib/helpers"
+import { AdultContentPreview } from "@/components/adult-content-preview"
 import { FollowButton } from "@/components/follow-button"
 import { ShareButton } from "@/components/share-button"
 import { getOwnedProducts } from "@/lib/ownership"
 import { sanitizeSocialUrl } from "@/lib/sanitizer"
-import { AdultContentPreview } from "@/components/adult-content-preview"
+import { getServerUser } from "@/lib/session"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { Users, Store, Package, User, Twitter, Youtube, MessageCircle, Star } from "lucide-react"
+import Image from "next/image"
 
 const STORE_PAGE_SIZE = 12
 
@@ -48,47 +52,47 @@ async function getStoreData(slug: string): Promise<StoreData | null> {
   const store = await prisma.store.findUnique({
     where: { slug },
     include: {
-       user: {
-         select: {
-           id: true,
-           username: true,
-           displayName: true,
-           avatar: true,
-           bio: true,
-           followersCount: true,
-           salesCount: true,
-           isVerified: true,
-         },
-       },
-       _count: {
-         select: { products: { where: { isPublished: true } } },
-       },
-     },
-   })
+      user: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatar: true,
+          bio: true,
+          followersCount: true,
+          salesCount: true,
+          isVerified: true,
+        },
+      },
+      _count: {
+        select: { products: { where: { isPublished: true } } },
+      },
+    },
+  })
 
-   if (store) {
-     const rating = await getStoreRating(store.id)
-     return {
-       id: store.id,
-       name: store.name,
-       slug: store.slug,
-       description: store.description ?? undefined,
-       banner: store.banner ?? undefined,
-       socialLinks: store.socialLinks ?? undefined,
-       user: {
-         id: store.user.id,
-         username: store.user.username,
-         displayName: store.user.displayName ?? undefined,
-         avatar: store.user.avatar ?? undefined,
-         bio: store.user.bio ?? undefined,
-         followersCount: store.user.followersCount,
-         salesCount: store.user.salesCount,
-         isVerified: store.user.isVerified,
-       },
-       rating,
-       totalProducts: store._count.products,
-     }
-   }
+  if (store) {
+    const rating = await getStoreRating(store.id)
+    return {
+      id: store.id,
+      name: store.name,
+      slug: store.slug,
+      description: store.description ?? undefined,
+      banner: store.banner ?? undefined,
+      socialLinks: store.socialLinks ?? undefined,
+      user: {
+        id: store.user.id,
+        username: store.user.username,
+        displayName: store.user.displayName ?? undefined,
+        avatar: store.user.avatar ?? undefined,
+        bio: store.user.bio ?? undefined,
+        followersCount: store.user.followersCount,
+        salesCount: store.user.salesCount,
+        isVerified: store.user.isVerified,
+      },
+      rating,
+      totalProducts: store._count.products,
+    }
+  }
 
   const profileUser = await prisma.user.findFirst({
     where: { username: slug },
@@ -197,7 +201,6 @@ async function getPublicCollections(userId: string) {
 
 async function getStoreProducts({
   storeId,
-  creatorId,
   sort,
   category,
   priceMin,
@@ -205,7 +208,6 @@ async function getStoreProducts({
   page,
 }: {
   storeId: string
-  creatorId: string
   sort: string
   category?: string
   priceMin?: string
@@ -214,7 +216,6 @@ async function getStoreProducts({
 }) {
   const where: any = {
     storeId,
-    creatorId,
     isPublished: true,
     ...(category && { category: { slug: category } }),
     ...(priceMin && { price: { gte: parseFloat(priceMin) } }),
@@ -277,16 +278,10 @@ async function getStoreProducts({
   return { products: productsWithRating, total, totalPages: Math.ceil(total / STORE_PAGE_SIZE) }
 }
 
-function buildStoreHref(
-  username: string,
-  overrides: Record<string, string | undefined>
-) {
+function buildStoreHref(username: string, overrides: Record<string, string | undefined>) {
   const params = new URLSearchParams()
-  const keys = ["sort", "category", "priceMin", "priceMax", "page"]
-  for (const key of keys) {
-    if (overrides[key] !== undefined) {
-      params.set(key, overrides[key]!)
-    }
+  for (const [k, v] of Object.entries(overrides)) {
+    if (v !== undefined) params.set(k, v)
   }
   const qs = params.toString()
   return `/store/${username}${qs ? `?${qs}` : ""}`
@@ -334,6 +329,7 @@ export default async function StorePage({
   const currentUser = await getServerUser()
   const creatorName = store.user.displayName || store.user.username
   const isOwner = currentUser?.id === store.user.id
+  const isVerified = store.user.isVerified
 
   const sort = searchParams.sort || "newest"
   const category = searchParams.category
@@ -346,7 +342,6 @@ export default async function StorePage({
     getPublicCollections(store.user.id),
     getStoreProducts({
       storeId: store.id,
-      creatorId: store.user.id,
       sort,
       category,
       priceMin,
@@ -369,7 +364,6 @@ export default async function StorePage({
   ])
 
   const ownedProductIds = new Set(ownedProducts.map((op: any) => op.product.id))
-
   const { products, total, totalPages } = productsResult
 
   const featuredWithRating = featuredProducts.map((product) => {
@@ -382,40 +376,49 @@ export default async function StorePage({
   const hasActiveFilters = category || priceMin || priceMax
 
   return (
-    <div className="min-h-screen">
-      <div className="h-64 bg-gradient-to-br from-gray-900 to-gray-700 relative">
+    <div className="min-h-screen bg-background">
+      {/* Store banner */}
+      <div className="relative h-48 md:h-56 w-full overflow-hidden bg-surface-subtle">
         {store.banner ? (
           <AdultContentPreview
             directUrl={store.banner}
             contentRating="SFW"
             alt={`Banner for ${store.name}`}
-            className="w-full h-full object-cover opacity-50"
             variant="background"
             aspect="video"
-            showBadge={false}
+            className="w-full h-full"
           />
-        ) : null}
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-violet-600/15 to-fuchsia-500/15" />
+        )}
       </div>
+
       <div className="container mx-auto px-4">
         <div className="relative -mt-16 mb-8">
           <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
-            <Avatar className="h-32 w-32 border-4 border-white bg-white shrink-0">
+            <Avatar className="h-28 w-28 md:h-32 md:w-32 border-4 border-background bg-surface">
               <AvatarImage src={store.user.avatar || ""} alt={creatorName} />
-              <AvatarFallback className="text-4xl">{creatorName[0]?.toUpperCase()}</AvatarFallback>
+              <AvatarFallback className="text-4xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white font-semibold">
+                {creatorName[0]?.toUpperCase()}
+              </AvatarFallback>
             </Avatar>
-            <div className="flex-1 py-4 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-3xl font-bold">{store.name}</h1>
-                {store.user.isVerified && (
-                  <Badge className="gradient-bg text-white border-0">Verified</Badge>
-                )}
+
+            <div className="flex-1 min-w-0 py-4">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl md:text-3xl font-bold text-text-primary">
+                  {store.name}
+                </h1>
+                {isVerified && <StatusBadge type="verified" />}
               </div>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-sm text-text-secondary mt-1">
                 @{store.user.username} · Creator
               </p>
               {store.description && (
-                <p className="text-muted-foreground mt-2 line-clamp-2">{store.description}</p>
+                <p className="mt-2 text-sm text-text-secondary line-clamp-2">
+                  {store.description}
+                </p>
               )}
+
               {store.socialLinks && (() => {
                 let social: Record<string, string> = {}
                 try { social = JSON.parse(store.socialLinks) } catch { return null }
@@ -426,26 +429,27 @@ export default async function StorePage({
                 return (
                   <div className="flex items-center gap-3 mt-3">
                     {twitter && (
-                      <a href={twitter} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground" aria-label="Twitter">
+                      <a href={twitter} target="_blank" rel="noopener noreferrer" className="text-text-muted hover:text-accent" aria-label="Twitter">
                         <Twitter className="h-4 w-4" />
                       </a>
                     )}
                     {youtube && (
-                      <a href={youtube} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground" aria-label="YouTube">
+                      <a href={youtube} target="_blank" rel="noopener noreferrer" className="text-text-muted hover:text-accent" aria-label="YouTube">
                         <Youtube className="h-4 w-4" />
                       </a>
                     )}
                     {discord && (
-                      <a href={discord} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground" aria-label="Discord">
+                      <a href={discord} target="_blank" rel="noopener noreferrer" className="text-text-muted hover:text-accent" aria-label="Discord">
                         <MessageCircle className="h-4 w-4" />
                       </a>
                     )}
                   </div>
                 )
               })()}
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
-                <span className="flex items-center gap-1">
-                  <RatingStars rating={store.rating} />
+
+              <div className="flex items-center gap-4 mt-3 text-sm text-text-muted flex-wrap">
+                <span className="flex items-center gap-1.5">
+                  <Rating rating={store.rating} size="sm" showCount={false} />
                   {store.rating > 0 && <span>{store.rating.toFixed(1)}</span>}
                 </span>
                 <span className="flex items-center gap-1">
@@ -458,6 +462,7 @@ export default async function StorePage({
                 </span>
               </div>
             </div>
+
             <div className="flex gap-2 pb-2">
               {isOwner ? (
                 <Button variant="outline" asChild>
@@ -474,13 +479,13 @@ export default async function StorePage({
           </div>
         </div>
 
-        <Separator className="mb-8" />
+        <Separator className="mb-6" />
 
         <nav className="mb-8">
           <div className="flex items-center gap-1 border-b overflow-x-auto">
             <Link
               href={`/store/${store.user.username}`}
-              className="px-4 py-2 text-sm font-medium border-b-2 border-primary text-primary whitespace-nowrap"
+              className="px-4 py-2 text-sm font-medium border-b-2 border-accent text-accent whitespace-nowrap"
             >
               <div className="flex items-center gap-2">
                 <Store className="h-4 w-4" />
@@ -489,7 +494,7 @@ export default async function StorePage({
             </Link>
             <Link
               href={`/profile/${store.user.username}`}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+              className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary transition-colors whitespace-nowrap"
             >
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
@@ -498,68 +503,48 @@ export default async function StorePage({
             </Link>
             <Link
               href={`/store/${store.user.username}/posts`}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+              className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary transition-colors whitespace-nowrap"
             >
-              <div className="flex items-center gap-2">
-                Posts
-              </div>
+              Posts
             </Link>
           </div>
         </nav>
 
         {featuredWithRating.length > 0 && !hasActiveFilters && page === 1 && (
           <section className="mb-12">
-            <div className="flex items-center gap-2 mb-6">
-              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-              <h2 className="text-2xl font-bold">Featured</h2>
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {featuredWithRating.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={{
-                    ...product,
-                    rating: product.rating,
-                    reviewCount: product.reviewCount,
-                  }}
-                  isOwned={ownedProductIds.has(product.id)}
-                />
-              ))}
-            </div>
+            <SectionHeader
+              title="Featured"
+              icon={<Star className="h-5 w-5 text-amber-400 fill-amber-400" />}
+            />
+            <ProductGrid products={featuredWithRating} />
           </section>
         )}
 
         {collections.length > 0 && !hasActiveFilters && page === 1 && (
           <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Collections</h2>
-            </div>
+            <SectionHeader title="Collections" />
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {collections.slice(0, 3).map((collection) => (
                 <Link key={collection.id} href={`/collections/${collection.slug}`}>
-                  <Card className="h-full hover:shadow-md transition-shadow">
+                  <Card className="h-full hover:shadow-card-hover transition-shadow">
                     <CardContent className="p-0">
                       <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
                         {collection.coverImage ? (
-                          <img
-                            src={collection.coverImage}
-                            alt={collection.name}
-                            className="w-full h-full object-cover"
-                          />
+                          <Image src={collection.coverImage} alt={collection.name} fill className="object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-4xl">
+                          <div className="w-full h-full flex items-center justify-center text-3xl">
                             📚
                           </div>
                         )}
                       </div>
                       <div className="p-4">
-                        <h3 className="font-semibold truncate">{collection.name}</h3>
+                        <h3 className="font-semibold text-text-primary truncate">{collection.name}</h3>
                         {collection.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                          <p className="text-sm text-text-secondary line-clamp-1 mt-1">
                             {collection.description}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-text-muted mt-2">
                           {collection._count.items} product{collection._count.items === 1 ? "" : "s"}
                         </p>
                       </div>
@@ -574,10 +559,10 @@ export default async function StorePage({
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-2xl font-bold text-text-primary">
                 {hasActiveFilters ? "Filtered Products" : "All Products"}
               </h2>
-              <p className="text-muted-foreground text-sm mt-1">
+              <p className="text-text-secondary text-sm mt-1">
                 {total} product{total === 1 ? "" : "s"}
                 {hasActiveFilters && " (filtered)"}
               </p>
@@ -603,34 +588,34 @@ export default async function StorePage({
 
           {hasActiveFilters && (
             <div className="flex items-center gap-2 mb-6 flex-wrap">
-              <span className="text-sm text-muted-foreground">Active filters:</span>
+              <span className="text-sm text-text-muted">Active filters:</span>
               {category && (
                 <Badge variant="secondary" className="gap-1">
                   Category: {category}
-                  <Link href={buildStoreHref(store.user.username, { category: undefined, page: undefined })} className="ml-1 hover:text-foreground">
+                  <Link href={buildStoreHref(store.user.username, { category: undefined, page: undefined })} className="ml-1 hover:text-text-primary">
                     ×
                   </Link>
                 </Badge>
               )}
               {priceMin && (
                 <Badge variant="secondary" className="gap-1">
-                  Min: {formatPrice(parseFloat(priceMin))}
-                  <Link href={buildStoreHref(store.user.username, { priceMin: undefined, page: undefined })} className="ml-1 hover:text-foreground">
+                  Min: {priceMin}
+                  <Link href={buildStoreHref(store.user.username, { priceMin: undefined, page: undefined })} className="ml-1 hover:text-text-primary">
                     ×
                   </Link>
                 </Badge>
               )}
               {priceMax && (
                 <Badge variant="secondary" className="gap-1">
-                  Max: {formatPrice(parseFloat(priceMax))}
-                  <Link href={buildStoreHref(store.user.username, { priceMax: undefined, page: undefined })} className="ml-1 hover:text-foreground">
+                  Max: {priceMax}
+                  <Link href={buildStoreHref(store.user.username, { priceMax: undefined, page: undefined })} className="ml-1 hover:text-text-primary">
                     ×
                   </Link>
                 </Badge>
               )}
               <Link
                 href={buildStoreHref(store.user.username, { category: undefined, priceMin: undefined, priceMax: undefined, page: undefined })}
-                className="text-sm text-rose-600 hover:underline"
+                className="text-sm text-sale hover:underline"
               >
                 Clear all
               </Link>
@@ -639,14 +624,14 @@ export default async function StorePage({
 
           {products.length === 0 ? (
             <Card className="p-12 text-center">
-              <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No products found</h3>
-              <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              <Package className="h-12 w-12 mx-auto text-text-muted mb-4" />
+              <h3 className="text-lg font-semibold text-text-primary mb-2">No products found</h3>
+              <p className="text-text-secondary max-w-md mx-auto mb-6">
                 {hasActiveFilters
                   ? "No products match your current filters. Try adjusting or clearing your filters."
                   : isOwner
-                  ? "Your store is ready but you have not published any products yet."
-                  : "This creator has not published any products yet."}
+                  ? "Your store is ready but you haven't published any products yet."
+                  : "This creator hasn't published any products yet."}
               </p>
               {hasActiveFilters && (
                 <Button asChild variant="outline">
@@ -656,24 +641,18 @@ export default async function StorePage({
             </Card>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={{
-                      ...product,
-                      rating: product.rating,
-                      reviewCount: product.reviewCount,
-                    }}
-                    isOwned={ownedProductIds.has(product.id)}
-                  />
-                ))}
-              </div>
+              <ProductGrid
+                products={products.map((p: any) => ({
+                  ...p,
+                  isOwned: ownedProductIds.has(p.id),
+                }))}
+              />
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-8">
                   <Button
                     variant="outline"
+                    size="sm"
                     disabled={page <= 1}
                     asChild={page > 1}
                   >
@@ -683,11 +662,12 @@ export default async function StorePage({
                       <span>Previous</span>
                     )}
                   </Button>
-                  <span className="text-sm text-muted-foreground px-2">
+                  <span className="text-sm text-text-muted px-2">
                     Page {page} of {totalPages}
                   </span>
                   <Button
                     variant="outline"
+                    size="sm"
                     disabled={page >= totalPages}
                     asChild={page < totalPages}
                   >

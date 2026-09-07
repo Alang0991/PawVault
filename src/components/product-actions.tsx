@@ -4,19 +4,24 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import { ShoppingCart, Heart, Zap } from "lucide-react"
 
 export function ProductActions({
   productId,
   isFree,
+  initialWishlisted = false,
+  currency = "USD",
 }: {
   productId: string
   isFree: boolean
+  initialWishlisted?: boolean
+  currency?: string
 }) {
   const router = useRouter()
   const { data: session } = useSession()
   const [busy, setBusy] = useState(false)
-  const [wishlisted, setWishlisted] = useState(false)
+  const [wishlisted, setWishlisted] = useState(initialWishlisted)
 
   const addToCart = async () => {
     if (!session) {
@@ -25,12 +30,14 @@ export function ProductActions({
     }
     setBusy(true)
     try {
-      await fetch("/api/cart", {
+      const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, quantity: 1 }),
       })
-      router.push("/cart")
+      if (res.ok) {
+        router.push("/cart")
+      }
     } finally {
       setBusy(false)
     }
@@ -43,12 +50,14 @@ export function ProductActions({
     }
     setBusy(true)
     try {
-      await fetch("/api/cart", {
+      const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, quantity: 1 }),
       })
-      router.push("/checkout")
+      if (res.ok) {
+        router.push("/checkout")
+      }
     } finally {
       setBusy(false)
     }
@@ -59,35 +68,60 @@ export function ProductActions({
       router.push("/auth/signin")
       return
     }
-    setWishlisted((prev) => !prev)
+    const next = !wishlisted
+    setWishlisted(next)
     try {
       const res = await fetch("/api/user/wishlist", {
-        method: wishlisted ? "DELETE" : "POST",
+        method: next ? "POST" : "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId }),
       })
       if (!res.ok) {
-        const data = await res.json()
         setWishlisted((prev) => !prev)
       }
-    } catch (e) {
+    } catch {
       setWishlisted((prev) => !prev)
     }
   }
 
   return (
-    <div className="flex gap-2">
-      <Button size="lg" className="flex-1 gradient-bg text-white" onClick={addToCart} disabled={busy}>
+    <div className="flex items-center gap-2">
+      <Button
+        size="lg"
+        className="flex-1"
+        onClick={addToCart}
+        disabled={busy}
+      >
         <ShoppingCart className="mr-2 h-5 w-5" />
-        Add to {isFree ? "Collection" : "Import Queue"}
+        {isFree ? "Add to Collection" : "Add to Cart"}
       </Button>
-      <Button size="lg" variant="outline" onClick={buyNow} disabled={busy}>
-        <Zap className="mr-2 h-5 w-5" />
-        Buy Now
-      </Button>
-      <Button size="lg" variant="outline" onClick={toggleWishlist} aria-label="Add to wishlist">
-        <Heart className={`h-5 w-5 ${wishlisted ? "fill-red-500 text-red-500" : ""}`} />
-      </Button>
+
+      {!isFree && (
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={buyNow}
+          disabled={busy}
+        >
+          <Zap className="mr-2 h-5 w-5" />
+          Buy Now
+        </Button>
+      )}
+
+      <IconButton
+        variant={wishlisted ? "primary" : "ghost"}
+        size="lg"
+        onClick={toggleWishlist}
+        aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+      >
+        <Heart
+          className={`h-5 w-5 ${
+            wishlisted
+              ? "fill-white text-white"
+              : "text-text-secondary"
+          }`}
+        />
+      </IconButton>
     </div>
   )
 }

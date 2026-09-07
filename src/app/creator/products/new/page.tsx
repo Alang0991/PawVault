@@ -17,7 +17,7 @@ import {
   X,
   Upload,
   FileText,
-  Image,
+  ImageIcon,
   Video,
   Loader2,
   Check,
@@ -26,6 +26,7 @@ import {
   Star,
   AlertCircle,
 } from "lucide-react"
+import NextImage from "next/image"
 
 interface Category {
   id: string
@@ -507,11 +508,11 @@ export default function CreateProductPage() {
                         key={i}
                         className={`relative rounded-lg overflow-hidden border-2 ${m.isThumbnail ? "border-purple-500" : "border-transparent"}`}
                       >
-                        <div className="aspect-square bg-muted flex items-center justify-center">
+                        <div className="aspect-square bg-muted relative flex items-center justify-center">
                           {m.uploading ? (
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                           ) : m.type === "image" ? (
-                            <img src={m.url} alt="" className="w-full h-full object-cover" />
+                            <NextImage src={m.url} alt="" fill className="object-cover" />
                           ) : (
                             <Video className="h-8 w-8 text-muted-foreground" />
                           )}
@@ -706,7 +707,7 @@ function SaveIndicator({ status, savedAt, error }: { status: SaveStatus; savedAt
   }
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <Image className="h-4 w-4" aria-hidden="true" /> Draft not saved yet
+      <ImageIcon className="h-4 w-4" aria-hidden="true" /> Draft not saved yet
     </div>
   )
 }

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -155,7 +156,7 @@ function ProductRow({ product }: { product: ProductListItem }) {
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="h-16 w-16 rounded-md overflow-hidden bg-muted shrink-0">
             {product.thumbnail ? (
-              <img src={product.thumbnail} alt={product.title} className="h-full w-full object-cover" />
+              <Image src={product.thumbnail} alt={product.title} width={64} height={64} className="h-full w-full object-cover" />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-muted-foreground">
                 <Package className="h-6 w-6" />

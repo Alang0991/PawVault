@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   ArrowLeft,
 } from "lucide-react"
+import Image from "next/image"
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -98,10 +99,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   <div className="flex gap-4">
                     <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex-shrink-0">
                       {item.product.media[0] ? (
-                        <img
+                        <Image
                           src={item.product.media[0].url}
                           alt={item.product.title}
-                          className="w-full h-full object-cover"
+                          width={64}
+                          height={64}
+                          className="object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>

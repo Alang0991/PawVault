@@ -25,6 +25,8 @@ import {
   Tag
 } from "lucide-react"
 import { formatPrice, formatDate } from "@/lib/helpers"
+import { Rating } from "@/components/rating"
+import Image from "next/image"
 
 export default function CreatorDashboard() {
   const [data, setData] = useState<any>(null)
@@ -47,26 +49,24 @@ export default function CreatorDashboard() {
   }, [])
 
   return (
-    data ? (
-      <div className="min-h-screen">
-      <div className="space-y-8">
-        {/* Main Content */}
-        <div>
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h1 className="text-3xl font-bold">Creator Hub</h1>
-                  <p className="text-muted-foreground">
-                    {data.store?.name || 'No store created yet'}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800">
-                    <Link href="/creator/products/new">
-                      <Plus className="mr-2 h-4 w-4" />
-                      New Asset
-                    </Link>
-                  </Button>
-                </div>
+      data ? (
+       <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 md:py-10">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-text-primary">Creator Hub</h1>
+            <p className="text-text-secondary">
+              {data.store?.name || 'No store created yet'}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button asChild>
+              <Link href="/creator/products/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Asset
+              </Link>
+            </Button>
+          </div>
               </div>
 
               {/* Stats Grid */}
@@ -211,7 +211,7 @@ export default function CreatorDashboard() {
                           <CardContent className="p-6 flex items-center gap-6">
                             <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden shrink-0">
                               {product.media[0] ? (
-                                <img src={product.media[0].url} alt={product.title} className="w-full h-full object-cover" />
+                                <Image src={product.media[0].url} alt={product.title} width={96} height={96} className="object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                                   No image
@@ -265,7 +265,7 @@ export default function CreatorDashboard() {
                                 {license.product?.title || "Product"}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                {new Date(license.createdAt).toLocaleDateString()}
+                                {formatDate(license.createdAt)}
                               </p>
                             </div>
                             <Badge variant={license.status === "ACTIVE" ? "default" : "secondary"}>
@@ -297,23 +297,14 @@ export default function CreatorDashboard() {
                                 <AvatarFallback>{(review.user.displayName || review.user.username)[0]?.toUpperCase()}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium">{review.user.displayName || review.user.username}</p>
-                                  <div className="flex items-center">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                      <Star
-                                        key={star}
-                                        className={`h-4 w-4 ${
-                                          star <= review.rating ? "text-sky-500 fill-current" : "text-gray-300"
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                </div>
+                                 <div className="flex items-center gap-2 mb-1">
+                                   <p className="font-medium text-text-primary">{review.user.displayName || review.user.username}</p>
+                                   <Rating rating={review.rating} size="sm" showCount={false} />
+                                 </div>
                                 <p className="text-sm text-muted-foreground mb-1">
                                    on <Link href={`/product/${review.product.slug}`} className="hover:underline">{review.product.title}</Link>
                                 </p>
-                                {review.content && <p className="text-sm">{review.content}</p>}
+                                {review.content && <p className="text-sm text-text-secondary">{review.content}</p>}
                               </div>
                             </div>
                           </CardContent>
@@ -325,7 +316,6 @@ export default function CreatorDashboard() {
               </Tabs>
             </div>
           </div>
-        </div>
     ) : loading ? (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

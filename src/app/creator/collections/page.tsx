@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/helpers"
 import Link from "next/link"
+import Image from "next/image"
 import {
   Plus,
   Trash2,
@@ -245,10 +246,12 @@ export default function CreatorCollectionsPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0">
                       {collection.coverImage ? (
-                        <img
+                        <Image
                           src={collection.coverImage}
                           alt=""
-                          className="h-16 w-16 rounded-lg object-cover shrink-0"
+                          width={64}
+                          height={64}
+                          className="rounded-lg object-cover shrink-0"
                         />
                       ) : (
                         <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center text-2xl shrink-0">
@@ -303,10 +306,12 @@ export default function CreatorCollectionsPage() {
                             </div>
                             <div className="w-16 h-16 rounded-md overflow-hidden bg-muted shrink-0">
                               {item.product.media?.[0]?.url ? (
-                                <img
+                                <Image
                                   src={item.product.media[0].url}
                                   alt={item.product.title}
-                                  className="w-full h-full object-cover"
+                                  width={64}
+                                  height={64}
+                                  className="object-cover"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">

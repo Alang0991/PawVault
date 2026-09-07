@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import Image from "next/image"
 import {
   Plus,
   Edit,
@@ -86,13 +87,9 @@ export default async function CreatorProductsPage() {
             {products.map((product) => (
               <Card key={product.id} className="hover:shadow-lg transition-all">
                 <CardHeader className="p-0">
-                  <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-t-lg overflow-hidden">
+                  <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-t-lg overflow-hidden relative">
                     {product.media[0] ? (
-                      <img
-                        src={product.media[0].url}
-                        alt={product.title}
-                        className="w-full h-full object-cover"
-                      />
+                      <Image src={product.media[0].url} alt={product.title} fill className="object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">
                         No image

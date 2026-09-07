@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -99,10 +100,12 @@ async function OrderGroupContent({ orderGroupId }: { orderGroupId: string }) {
                       <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
                         <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex-shrink-0">
                           {item.product.media[0] ? (
-                            <img
+                            <Image
                               src={item.product.media[0].url}
                               alt={item.product.title}
-                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                              className="object-cover"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>

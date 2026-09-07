@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -76,11 +77,11 @@ export default async function ProductUploadsPage({ params }: UploadsPageProps) {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {product.media.map((m) => (
                       <div key={m.id} className={`relative rounded-lg overflow-hidden border-2 ${m.isThumbnail ? "border-purple-500" : "border-transparent"}`}>
-                        <div className="aspect-square bg-muted">
+                        <div className="aspect-square bg-muted relative">
                           {m.type === "video" ? (
                             <video src={m.url} className="w-full h-full object-cover" controls />
                           ) : (
-                            <img src={m.url} alt="" className="w-full h-full object-cover" />
+                            <Image src={m.url} alt="" fill className="w-full h-full object-cover" />
                           )}
                         </div>
                         <div className="absolute top-1 right-1 flex gap-1">

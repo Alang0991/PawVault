@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import Image from "next/image"
 import {
   ShoppingBag,
   Download,
@@ -258,10 +259,12 @@ export default async function DashboardPage() {
                       <Link key={item.id} href={`/products/${item.product.slug}`}>
                         <div className="flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                           {item.product.media[0] && (
-                            <img
+                            <Image
                               src={item.product.media[0].url}
                               alt={item.product.title}
-                              className="w-12 h-12 object-cover rounded"
+                              width={48}
+                              height={48}
+                              className="object-cover rounded"
                             />
                           )}
                           <div className="flex-1 min-w-0">

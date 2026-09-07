@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
+import Image from "next/image"
 
 export const dynamic = "force-dynamic"
 
@@ -50,7 +51,7 @@ export default async function CreatorMediaPage() {
               <Card key={item.id} className="overflow-hidden">
                 <div className="aspect-square bg-muted relative">
                   {item.type === "image" ? (
-                    <img src={item.url} alt="" className="w-full h-full object-cover" />
+                    <Image src={item.url} alt="" fill className="object-cover" />
                   ) : (
                     <video src={item.url} className="w-full h-full object-cover" />
                   )}
