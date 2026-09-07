@@ -58,6 +58,13 @@ export function useAccountState(): UseAccountStateReturn {
       })
 
       if (!res.ok) {
+        if (res.status === 401) {
+          if (currentToken === refreshToken.current) {
+            setAccount(null)
+            setIsLoading(false)
+          }
+          return
+        }
         throw new Error(`HTTP ${res.status}`)
       }
 

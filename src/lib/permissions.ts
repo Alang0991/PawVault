@@ -19,6 +19,11 @@ export const PERMISSIONS = {
   CREATORS_MANAGE: "creators.manage",
   CREATORS_FEATURE: "creators.feature",
 
+  CREATOR_APPROVAL_VIEW: "creator_approval.view",
+  CREATOR_APPROVAL_REVIEW: "creator_approval.review",
+  CREATOR_APPROVAL_APPROVE: "creator_approval.approve",
+  CREATOR_APPROVAL_REJECT: "creator_approval.reject",
+
   ORDERS_VIEW: "orders.view",
   ORDERS_MANAGE: "orders.manage",
   REFUNDS_MANAGE: "refunds.manage",
@@ -86,6 +91,10 @@ export const PERMISSION_GROUPS: Array<{
       { key: PERMISSIONS.CREATORS_VERIFY, label: "Verify creators", description: "Grant verified creator status." },
       { key: PERMISSIONS.CREATORS_MANAGE, label: "Manage creators", description: "Edit creator profiles." },
       { key: PERMISSIONS.CREATORS_FEATURE, label: "Feature creators", description: "Mark creators as featured." },
+      { key: PERMISSIONS.CREATOR_APPROVAL_VIEW, label: "View creator applications", description: "See the creator approval queue." },
+      { key: PERMISSIONS.CREATOR_APPROVAL_REVIEW, label: "Review creator applications", description: "Mark creator applications as under review or request changes." },
+      { key: PERMISSIONS.CREATOR_APPROVAL_APPROVE, label: "Approve creator applications", description: "Approve a creator's marketplace access." },
+      { key: PERMISSIONS.CREATOR_APPROVAL_REJECT, label: "Reject creator applications", description: "Reject a creator's marketplace access." },
     ],
   },
   {
@@ -160,6 +169,10 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.CREATORS_VIEW,
     PERMISSIONS.CREATORS_VERIFY,
     PERMISSIONS.CREATORS_MANAGE,
+    PERMISSIONS.CREATOR_APPROVAL_VIEW,
+    PERMISSIONS.CREATOR_APPROVAL_REVIEW,
+    PERMISSIONS.CREATOR_APPROVAL_APPROVE,
+    PERMISSIONS.CREATOR_APPROVAL_REJECT,
     PERMISSIONS.ORDERS_VIEW,
     PERMISSIONS.ORDERS_MANAGE,
     PERMISSIONS.REFUNDS_MANAGE,

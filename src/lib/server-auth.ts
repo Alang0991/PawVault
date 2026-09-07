@@ -1,7 +1,7 @@
 import { getServerUser } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
 import { Role, ROLES, isFounder, isAdminOrFounder, hasRoleAtLeast } from "@/lib/roles"
-import { Permission, roleHasPermission } from "@/lib/permissions"
+import { Permission, PERMISSIONS, roleHasPermission } from "@/lib/permissions"
 import { logSecurityEvent, AuditActions } from "@/lib/audit-logger"
 
 export type AuthContext = {
@@ -94,6 +94,70 @@ export async function requireAdminOrFounder(): Promise<AuthContext> {
       path: "requireAdminOrFounder",
     })
     throw new AuthorizationError("Admin or Founder only.")
+  }
+  return ctx
+}
+
+export async function requireCreatorApprovalView(): Promise<AuthContext> {
+  const ctx = await requireUser()
+  if (
+    !roleHasPermission(ctx.role, PERMISSIONS.CREATOR_APPROVAL_VIEW, ctx.customPermissions) &&
+    ctx.role !== "FOUNDER"
+  ) {
+    await logSecurityEvent(AuditActions.SECURITY_PRIVILEGE_ESCALATION_BLOCKED, {
+      attempted: "CREATOR_APPROVAL_VIEW",
+      actual: ctx.role,
+      path: "requireCreatorApprovalView",
+    })
+    throw new AuthorizationError("Missing permission: creator_approval.view")
+  }
+  return ctx
+}
+
+export async function requireCreatorApprovalReview(): Promise<AuthContext> {
+  const ctx = await requireUser()
+  if (
+    !roleHasPermission(ctx.role, PERMISSIONS.CREATOR_APPROVAL_REVIEW, ctx.customPermissions) &&
+    ctx.role !== "FOUNDER"
+  ) {
+    await logSecurityEvent(AuditActions.SECURITY_PRIVILEGE_ESCALATION_BLOCKED, {
+      attempted: "CREATOR_APPROVAL_REVIEW",
+      actual: ctx.role,
+      path: "requireCreatorApprovalReview",
+    })
+    throw new AuthorizationError("Missing permission: creator_approval.review")
+  }
+  return ctx
+}
+
+export async function requireCreatorApprovalApprove(): Promise<AuthContext> {
+  const ctx = await requireUser()
+  if (
+    !roleHasPermission(ctx.role, PERMISSIONS.CREATOR_APPROVAL_APPROVE, ctx.customPermissions) &&
+    ctx.role !== "FOUNDER"
+  ) {
+    await logSecurityEvent(AuditActions.SECURITY_PRIVILEGE_ESCALATION_BLOCKED, {
+      attempted: "CREATOR_APPROVAL_APPROVE",
+      actual: ctx.role,
+      path: "requireCreatorApprovalApprove",
+    })
+    throw new AuthorizationError("Missing permission: creator_approval.approve")
+  }
+  return ctx
+}
+
+export async function requireCreatorApprovalReject(): Promise<AuthContext> {
+  const ctx = await requireUser()
+  if (
+    !roleHasPermission(ctx.role, PERMISSIONS.CREATOR_APPROVAL_REJECT, ctx.customPermissions) &&
+    ctx.role !== "FOUNDER"
+  ) {
+    await logSecurityEvent(AuditActions.SECURITY_PRIVILEGE_ESCALATION_BLOCKED, {
+      attempted: "CREATOR_APPROVAL_REJECT",
+      actual: ctx.role,
+      path: "requireCreatorApprovalReject",
+    })
+    throw new AuthorizationError("Missing permission: creator_approval.reject")
   }
   return ctx
 }

@@ -2,9 +2,17 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireFounder } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { requirePermission } from "@/lib/server-auth"
+import {
+  parseRequestBody,
+  authorizationErrorResponse,
+  authenticationErrorResponse,
+  notFoundResponse,
+  serverErrorResponse,
+} from "@/lib/api-helpers"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const verifySchema = z.object({
   verified: z.boolean(),
@@ -15,12 +23,17 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireFounder()
+    const parsed = await parseRequestBody(request, verifySchema)
+    if (!parsed.ok) return parsed.response
 
-    const body = await request.json().catch(() => null)
-    const parsed = verifySchema.safeParse(body)
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input." }, { status: 400 })
+    let ctx
+    try {
+      ctx = await requirePermission(PERMISSIONS.CREATORS_VERIFY)
+    } catch (authError: any) {
+      const status = authError?.status
+      if (status === 401) return authenticationErrorResponse(authError.message)
+      if (status === 403) return authorizationErrorResponse(authError.message)
+      throw authError
     }
 
     const user = await prisma.user.findUnique({
@@ -28,7 +41,7 @@ export async function POST(
       select: { id: true, username: true, email: true, role: true, isVerified: true },
     })
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return notFoundResponse("User not found")
     }
 
     if (user.role !== "CREATOR" && user.role !== "VERIFIED_CREATOR") {
@@ -36,7 +49,9 @@ export async function POST(
     }
 
     const previousVerified = user.isVerified
-    const newRole = parsed.data.verified ? "VERIFIED_CREATOR" : "CREATOR"
+    if (previousVerified === parsed.data.verified) {
+      return NextResponse.json({ success: true, idempotent: true, user })
+    }
 
     await prisma.user.update({
       where: { id: params.id },
@@ -56,13 +71,7 @@ export async function POST(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
-        { status: 400 },
-      )
-    }
     console.error("Verify creator error:", error)
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+    return serverErrorResponse()
   }
 }

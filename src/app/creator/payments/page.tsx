@@ -19,7 +19,7 @@ import {
 export default async function CreatorPaymentsPage() {
   const user = await getServerUser()
   if (!user) redirect('/auth/signin')
-  if (!['CREATOR', 'VERIFIED_CREATOR', 'ADMIN', 'OWNER'].includes(user.role)) {
+  if (!['CREATOR', 'VERIFIED_CREATOR', 'ADMIN', 'FOUNDER'].includes(user.role)) {
     redirect('/creator/dashboard')
   }
 

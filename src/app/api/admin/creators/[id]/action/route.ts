@@ -2,15 +2,23 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireFounder } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
 import { invalidateUserSessions } from "@/lib/creator-guards"
 import { notifyAccountUpdate } from "@/lib/account-sync"
+import { requireFounder, requireAdminOrFounder } from "@/lib/server-auth"
+import {
+  parseRequestBody,
+  authorizationErrorResponse,
+  authenticationErrorResponse,
+  notFoundResponse,
+  serverErrorResponse,
+} from "@/lib/api-helpers"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const creatorActionSchema = z.object({
   action: z.enum(["suspend", "unsuspend", "ban", "unban", "verify", "unverify"]),
-  reason: z.string().optional(),
+  reason: z.string().max(2000).optional(),
 })
 
 export async function POST(
@@ -18,59 +26,100 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireFounder()
+    const parsed = await parseRequestBody(request, creatorActionSchema)
+    if (!parsed.ok) return parsed.response
 
-    const body = await request.json().catch(() => null)
-    const parsed = creatorActionSchema.safeParse(body)
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input." }, { status: 400 })
+    let ctx
+    try {
+      ctx = await requireAdminOrFounder()
+    } catch (authError: any) {
+      const status = authError?.status
+      if (status === 401) return authenticationErrorResponse(authError.message)
+      if (status === 403) return authorizationErrorResponse(authError.message)
+      throw authError
     }
 
     const target = await prisma.user.findUnique({
       where: { id: params.id },
-      select: { id: true, username: true, role: true, creatorStatus: true },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        creatorStatus: true,
+        status: true,
+        isVerified: true,
+        bannedReason: true,
+      },
     })
 
     if (!target) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return notFoundResponse("User not found")
     }
 
     if (target.role === "FOUNDER") {
-      return NextResponse.json({ error: "Cannot modify Founder." }, { status: 403 })
+      return authorizationErrorResponse("Cannot modify Founder.")
     }
 
     const data: any = {}
     let auditAction: string = AuditActions.CREATOR_STATUS_CHANGED
+    let changed = false
 
     switch (parsed.data.action) {
       case "suspend":
-        data.creatorStatus = "SUSPENDED"
+        if (target.creatorStatus !== "SUSPENDED") {
+          data.creatorStatus = "SUSPENDED"
+          changed = true
+        }
         auditAction = AuditActions.CREATOR_SUSPENDED
         break
       case "unsuspend":
-        data.creatorStatus = "APPROVED"
+        if (target.creatorStatus === "SUSPENDED" || target.creatorStatus === "BANNED") {
+          data.creatorStatus = "APPROVED"
+          changed = true
+        }
         auditAction = AuditActions.CREATOR_REINSTATED
         break
       case "ban":
-        data.creatorStatus = "BANNED"
-        data.status = "BANNED"
-        data.bannedReason = parsed.data.reason
+        if (target.status !== "BANNED" || target.creatorStatus !== "BANNED") {
+          data.creatorStatus = "BANNED"
+          data.status = "BANNED"
+          data.bannedReason = parsed.data.reason ?? null
+          changed = true
+        }
         auditAction = AuditActions.ADMIN_USER_BANNED
         break
       case "unban":
-        data.creatorStatus = "APPROVED"
-        data.status = "ACTIVE"
-        data.bannedReason = null
+        if (target.status === "BANNED" || target.creatorStatus === "BANNED") {
+          data.creatorStatus = "APPROVED"
+          data.status = "ACTIVE"
+          data.bannedReason = null
+          changed = true
+        }
         auditAction = AuditActions.ADMIN_USER_RESTORED
         break
       case "verify":
-        data.isVerified = true
+        if (!target.isVerified) {
+          data.isVerified = true
+          changed = true
+        }
         auditAction = AuditActions.CREATOR_VERIFIED
         break
       case "unverify":
-        data.isVerified = false
+        if (target.isVerified) {
+          data.isVerified = false
+          changed = true
+        }
         auditAction = AuditActions.CREATOR_UNVERIFIED
         break
+    }
+
+    if (!changed) {
+      return NextResponse.json({
+        user: target,
+        idempotent: true,
+        message: `Already in target state for action: ${parsed.data.action}`,
+      })
     }
 
     const updated = await prisma.user.update({
@@ -98,9 +147,9 @@ export async function POST(
         userId: params.id,
         username: target.username,
         action: parsed.data.action,
-        reason: parsed.data.reason,
+        reason: parsed.data.reason ?? null,
       },
-      { entityType: "User", entityId: params.id }
+      { entityType: "User", entityId: params.id },
     )
 
     if (params.id !== ctx.id) {
@@ -109,13 +158,7 @@ export async function POST(
 
     return NextResponse.json({ user: updated })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
-        { status: 400 }
-      )
-    }
     console.error("Creator action error:", error)
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+    return serverErrorResponse()
   }
 }

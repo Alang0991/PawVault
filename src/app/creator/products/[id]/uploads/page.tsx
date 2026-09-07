@@ -17,7 +17,7 @@ interface UploadsPageProps {
 
 export default async function ProductUploadsPage({ params }: UploadsPageProps) {
   const user = await getServerUser()
-  if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
+  if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN", "FOUNDER"].includes(user.role)) {
     redirect("/auth/signin")
   }
 

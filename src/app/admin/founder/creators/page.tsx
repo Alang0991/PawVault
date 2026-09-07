@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Crown } from "lucide-react"
 import { AdminActionButton } from "@/components/admin-action-button"
+import { ApplicationActionForm } from "@/components/moderation/ApplicationActionForm"
+import { canManageCreatorsAsStaff } from "@/lib/creator-access"
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +25,7 @@ export default async function FounderCreatorsPage({
   searchParams: { status?: string }
 }) {
   const user = await getServerUser()
-  if (!user || user.role !== "FOUNDER") {
+  if (!user || !canManageCreatorsAsStaff(user.role)) {
     redirect("/admin")
   }
 
@@ -128,23 +130,29 @@ export default async function FounderCreatorsPage({
                     <Badge variant="secondary" className="text-xs">{a.status.replace("_", " ")}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
-                      <input type="hidden" name="action" value="approve" />
-                      <Button type="submit" size="sm">Approve</Button>
-                    </form>
-                    <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
-                      <input type="hidden" name="action" value="request_changes" />
-                      <input type="hidden" name="notes" value="" />
-                      <Button type="submit" size="sm" variant="secondary">Request Changes</Button>
-                    </form>
-                    <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
-                      <input type="hidden" name="action" value="under_review" />
-                      <Button type="submit" size="sm" variant="outline">Under Review</Button>
-                    </form>
-                    <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
-                      <input type="hidden" name="action" value="reject" />
-                      <Button type="submit" size="sm" variant="destructive">Reject</Button>
-                    </form>
+                    <ApplicationActionForm
+                      applicationId={a.id}
+                      action="approve"
+                      label="Approve"
+                    />
+                    <ApplicationActionForm
+                      applicationId={a.id}
+                      action="request_changes"
+                      label="Request Changes"
+                      variant="secondary"
+                    />
+                    <ApplicationActionForm
+                      applicationId={a.id}
+                      action="under_review"
+                      label="Under Review"
+                      variant="outline"
+                    />
+                    <ApplicationActionForm
+                      applicationId={a.id}
+                      action="reject"
+                      label="Reject"
+                      variant="destructive"
+                    />
                   </div>
                 </div>
               ))}

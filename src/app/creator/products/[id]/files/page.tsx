@@ -15,7 +15,7 @@ export default async function ProductFilesPage({
   params: { id: string }
 }) {
   const user = await getServerUser()
-  if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
+  if (!user || !["CREATOR", "VERIFIED_CREATOR", "ADMIN", "FOUNDER"].includes(user.role)) {
     redirect("/auth/signin")
   }
 
