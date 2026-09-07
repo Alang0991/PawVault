@@ -256,7 +256,7 @@ export default async function DashboardPage() {
                 ) : (
                   <div className="space-y-4">
                     {wishlistItems.map((item) => (
-                      <Link key={item.id} href={`/products/${item.product.slug}`}>
+                      <Link key={item.id} href={`/product/${item.product.slug}`}>
                         <div className="flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                           {item.product.media[0] && (
                             <Image

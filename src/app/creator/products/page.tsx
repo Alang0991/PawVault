@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { redirect } from "next/navigation"
+import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { ProductsList } from "./products-list"
 
@@ -18,6 +18,7 @@ export default async function CreatorProductsPage({
 
   const filter = (searchParams.filter || "all").toLowerCase()
 
+  // Scope query to authenticated creator's own products only
   const products = await prisma.product.findMany({
     where: { creatorId: user.id },
     include: {

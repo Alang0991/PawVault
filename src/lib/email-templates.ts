@@ -400,7 +400,7 @@ const templates: Partial<Record<EmailTemplateKey, TemplateRenderer>> = {
         ${d.changes ? `<p style="margin:0;"><strong>Changes:</strong> ${d.changes}</p>` : ""}
       </div>
       <div style="text-align:center;margin:24px 0;">
-        ${button("View Product", d.productUrl as string || `${APP_URL}/products/${d.productSlug}`)}
+        ${button("View Product", d.productUrl as string || `${APP_URL}/product/${d.productSlug}`)}
       </div>
       ${paragraph("You can download the updated version from your library.")}
     `),

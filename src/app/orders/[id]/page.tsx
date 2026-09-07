@@ -133,7 +133,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                       </Button>
                     )}
                     <Button size="sm" variant="outline" asChild>
-                      <Link href={`/products/${item.product.slug}`}>
+                      <Link href={`/product/${item.product.slug}`}>
                         <ExternalLink className="h-4 w-4 mr-1" /> View Product
                       </Link>
                     </Button>

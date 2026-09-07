@@ -190,7 +190,7 @@ function ProductRow({ product }: { product: ProductListItem }) {
           <div className="flex gap-2">
             {product.isPublished && (
               <Button asChild size="sm" variant="ghost">
-                <Link href={`/products/${product.slug}`} target="_blank">
+                <Link href={`/product/${product.slug}`} target="_blank">
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">View</span>
                 </Link>

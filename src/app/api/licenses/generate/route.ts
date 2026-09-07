@@ -28,24 +28,69 @@ export async function POST(request: Request) {
     const validated = generateSchema.parse(body)
 
     const isAdmin = ctx.role === "FOUNDER" || ctx.role === "ADMIN"
-    const targetUserId = isAdmin && validated.userId ? validated.userId : ctx.id
 
+    // Verify order exists, is completed, and includes this product
     const order = await prisma.order.findUnique({
       where: { id: validated.orderId },
+      include: {
+        items: {
+          where: { productId: validated['productId'] },
+          take: 1,
+        },
+        payments: true,
+      },
     })
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
+    if (order.items.length === 0) {
+      return NextResponse.json(
+        { error: "This product is not part of the specified order" },
+        { status: 400 }
+      )
+    }
+
+    // Verify payment is completed
+    if (order.status !== "COMPLETED" && order.status !== "PAID") {
+      return NextResponse.json(
+        { error: "Order payment is not completed" },
+        { status: 409 }
+      )
+    }
+
+    const payments = order.payments
+    const payment = Array.isArray(payments) ? payments[0] : payments
+    if (!payment || payment.status !== "COMPLETED") {
+      return NextResponse.json(
+        { error: "Payment verification failed" },
+        { status: 409 }
+      )
+    }
+
+    // Determine target user: must be the order buyer unless admin override
+    const buyerId = order.buyerId
+    if (!buyerId) {
+      return NextResponse.json({ error: "Order has no buyer" }, { status: 400 })
+    }
+    const targetUserId = isAdmin && validated.userId ? validated.userId : buyerId
+
     if (!isAdmin && order.buyerId !== ctx.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    }
+
+    if (!isAdmin && targetUserId !== order.buyerId) {
+      return NextResponse.json(
+        { error: "License can only be issued to the order buyer" },
+        { status: 403 }
+      )
     }
 
     const existing = await prisma.license.findFirst({
       where: {
         userId: targetUserId,
-        productId: validated.productId,
+        productId: validated['productId'],
         orderId: validated.orderId,
       },
     })
@@ -57,7 +102,7 @@ export async function POST(request: Request) {
     const license = await prisma.license.create({
       data: {
         userId: targetUserId,
-        productId: validated.productId,
+        productId: validated['productId'],
         orderId: validated.orderId,
         licenseKey: generateLicenseKey(),
         status: "ACTIVE",
@@ -73,7 +118,12 @@ export async function POST(request: Request) {
     await createAuditLog({
       userId: ctx.id,
       action: AuditActions.ORDER_COMPLETED,
-      details: { licenseId: license.id, productId: validated.productId },
+      details: {
+        licenseId: license.id,
+        productId: validated['productId'],
+        orderId: validated.orderId,
+        targetUserId,
+      },
     })
 
     return NextResponse.json(license, { status: 201 })

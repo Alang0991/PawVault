@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAuth } from "@/lib/session"
 import { z } from "zod"
 import { createAuditLog, AuditActions } from "@/lib/audit-logger"
+import { validateTaxonomy, getCanonicalTagIds } from "@/lib/taxonomy-validation"
 
 const updateProductSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -93,6 +94,16 @@ export async function PUT(
 
     const { tags, status, ...data } = validated
 
+    if (validated.categoryId || (tags && tags.length > 0)) {
+      const taxonomyCheck = await validateTaxonomy(validated.categoryId, tags)
+      if (!taxonomyCheck.valid) {
+        return NextResponse.json(
+          { error: taxonomyCheck.message, code: taxonomyCheck.error },
+          { status: 422 }
+        )
+      }
+    }
+
     const updateData: any = { ...data }
     if (status) {
       if (!["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)) {
@@ -119,18 +130,12 @@ export async function PUT(
 
       if (tags) {
         await tx.productTag.deleteMany({ where: { productId: params.id } })
-        const tagRecords = await Promise.all(
-          tags.map(async (name) => {
-            const slug = name.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "")
-            return tx.tag.upsert({
-              where: { slug },
-              update: {},
-              create: { name, slug },
-            })
-          }),
-        )
+        const canonicalTagIds = await getCanonicalTagIds(tags)
         await tx.productTag.createMany({
-          data: tagRecords.map((t) => ({ productId: params.id, tagId: t.id })),
+          data: canonicalTagIds.map((tagId) => ({
+            productId: params.id,
+            tagId,
+          })),
         })
       }
 
@@ -169,15 +174,34 @@ export async function DELETE(
     if (!owned) return NextResponse.json({ error: "Product not found" }, { status: 404 })
     if (owned === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-    await prisma.product.delete({ where: { id: params.id } })
+    // Check for historical references that would be destroyed by hard delete
+    const [orderItems, licenses, reviews, favorites] = await Promise.all([
+      prisma.orderItem.count({ where: { productId: params.id } }),
+      prisma.license.count({ where: { productId: params.id } }),
+      prisma.review.count({ where: { productId: params.id } }),
+      prisma.favorite.count({ where: { productId: params.id } }),
+    ])
+
+    const hasHistory = orderItems > 0 || licenses > 0 || reviews > 0 || favorites > 0
+
+    if (hasHistory) {
+      // Soft-delete: archive instead of hard delete to preserve historical records
+      await prisma.product.update({
+        where: { id: params.id },
+        data: { status: "ARCHIVED", isPublished: false },
+      })
+    } else {
+      // Safe to hard delete only when no historical references exist
+      await prisma.product.delete({ where: { id: params.id } })
+    }
 
     await createAuditLog({
       userId: user.id,
       action: AuditActions.PRODUCT_DELETED,
-      details: { productId: params.id },
+      details: { productId: params.id, softDelete: hasHistory },
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, archived: hasHistory })
   } catch (error) {
     console.error("Delete product error:", error)
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 })

@@ -42,6 +42,14 @@ export default async function BrowsePage({
 
   const where: any = {
     isPublished: true,
+    status: "PUBLISHED",
+    creator: {
+      creatorStatus: "APPROVED",
+      status: "ACTIVE",
+      store: {
+        visibility: "PUBLISHED",
+      },
+    },
     ...(searchParams.featured === "true" && { isFeatured: true }),
     ...(searchParams.category && { category: { slug: searchParams.category } }),
     ...(searchParams.free === "true" && { isFree: true }),

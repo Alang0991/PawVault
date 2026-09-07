@@ -39,7 +39,7 @@ export async function getCreatorAccess(): Promise<CreatorAccessResult> {
     }
   }
 
-  const isStaff = [ROLES.ADMIN, ROLES.FOUNDER, ROLES.MODERATOR].includes(user.role as any)
+  const isStaff = [ROLES.ADMIN, ROLES.FOUNDER].includes(user.role as any)
 
   if (isStaff) {
     return {

@@ -59,7 +59,7 @@ export default async function CreatorProductsPage() {
             <p className="text-gray-600 dark:text-gray-400">Manage your digital products</p>
           </div>
           <Button className="gradient-bg text-white" asChild>
-            <Link href="/dashboard/creator/products/new">
+            <Link href="/creator/products/new">
               <Plus className="h-4 w-4 mr-2" />
               New Product
             </Link>
@@ -74,8 +74,8 @@ export default async function CreatorProductsPage() {
               <p className="text-gray-500 dark:text-gray-400 mb-6">
                 Create your first product to start selling on PawVault
               </p>
-              <Button className="gradient-bg text-white" asChild>
-                <Link href="/dashboard/creator/products/new">
+               <Button className="gradient-bg text-white" asChild>
+                <Link href="/creator/products/new">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Product
                 </Link>
@@ -121,7 +121,7 @@ export default async function CreatorProductsPage() {
 
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" asChild>
-                      <Link href={`/products/${product.slug}`}>
+                      <Link href={`/product/${product.slug}`}>
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Link>

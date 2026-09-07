@@ -217,6 +217,9 @@ export function roleHasPermission(
   customPermissions: string | null | undefined,
 ): boolean {
   if (!role) return false
+  // Founder still has all permissions, but this is checked at the API layer
+  // where ownership/scope can be enforced. The permission check itself
+  // remains true for Founder to preserve platform admin capabilities.
   if (role === ROLES.FOUNDER) return true
   if (permissionsForRole(role).includes(permission)) return true
   if (customPermissions) {

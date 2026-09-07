@@ -121,15 +121,34 @@ export async function PATCH(
           { entityType: "Product", entityId: params.id },
         )
         break
-      case "delete":
-        await prisma.product.delete({ where: { id: params.id } })
+      case "delete": {
+        // Check for historical references that would be destroyed by hard delete
+        const [orderItems, licenses, reviews, favorites] = await Promise.all([
+          prisma.orderItem.count({ where: { productId: params.id } }),
+          prisma.license.count({ where: { productId: params.id } }),
+          prisma.review.count({ where: { productId: params.id } }),
+          prisma.favorite.count({ where: { productId: params.id } }),
+        ])
+
+        const hasHistory = orderItems > 0 || licenses > 0 || reviews > 0 || favorites > 0
+
+        if (hasHistory) {
+          await prisma.product.update({
+            where: { id: params.id },
+            data: { status: "ARCHIVED", isPublished: false },
+          })
+        } else {
+          await prisma.product.delete({ where: { id: params.id } })
+        }
+
         await logAdminAction(
           ctx.id,
           AuditActions.PRODUCT_DELETED,
-          { productId: params.id, productTitle: product.title, reason },
+          { productId: params.id, productTitle: product.title, reason, softDelete: hasHistory },
           { entityType: "Product", entityId: params.id },
         )
         break
+      }
     }
 
     return NextResponse.json({ success: true })

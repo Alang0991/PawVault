@@ -146,7 +146,7 @@ export async function PUT(
       )
     }
 
-    if (product.creatorId !== user.id && user.role !== "ADMIN") {
+    if (product.creatorId !== user.id && !["ADMIN", "FOUNDER"].includes(user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -208,15 +208,32 @@ export async function DELETE(
       )
     }
 
-    if (product.creatorId !== user.id && user.role !== "ADMIN") {
+    if (product.creatorId !== user.id && !["ADMIN", "FOUNDER"].includes(user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    await prisma.product.delete({
-      where: { slug: params.slug },
-    })
+    // Check for historical references that would be destroyed by hard delete
+    const [orderItems, licenses, reviews, favorites] = await Promise.all([
+      prisma.orderItem.count({ where: { productId: product.id } }),
+      prisma.license.count({ where: { productId: product.id } }),
+      prisma.review.count({ where: { productId: product.id } }),
+      prisma.favorite.count({ where: { productId: product.id } }),
+    ])
 
-    return NextResponse.json({ success: true })
+    const hasHistory = orderItems > 0 || licenses > 0 || reviews > 0 || favorites > 0
+
+    if (hasHistory) {
+      await prisma.product.update({
+        where: { slug: params.slug },
+        data: { status: "ARCHIVED", isPublished: false },
+      })
+    } else {
+      await prisma.product.delete({
+        where: { slug: params.slug },
+      })
+    }
+
+    return NextResponse.json({ success: true, archived: hasHistory })
   } catch (error) {
     console.error("Delete product error:", error)
     return NextResponse.json(
