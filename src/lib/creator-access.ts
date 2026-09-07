@@ -3,18 +3,127 @@ import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { ROLES } from "@/lib/roles"
 
-export async function requireCreatorAccess(userId: string, userRole: string) {
-  const fullUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { creatorStatus: true, role: true },
+export type CreatorAccessResult =
+  | { allowed: true; userId: string; creatorStatus: string; role: string }
+  | { allowed: false; error: string; status: number; code?: string }
+
+export async function getCreatorAccess(): Promise<CreatorAccessResult> {
+  const user = await getServerUser()
+
+  if (!user) {
+    return {
+      allowed: false,
+      error: "Authentication required",
+      status: 401,
+      code: "NOT_AUTHENTICATED",
+    }
+  }
+
+  const creatorStatus = user.creatorStatus ?? "NONE"
+
+  if (user.status === "BANNED") {
+    return {
+      allowed: false,
+      error: "Account is banned",
+      status: 403,
+      code: "USER_BANNED",
+    }
+  }
+
+  if (user.status === "SUSPENDED") {
+    return {
+      allowed: false,
+      error: "Account is suspended",
+      status: 403,
+      code: "USER_SUSPENDED",
+    }
+  }
+
+  const isStaff = [ROLES.ADMIN, ROLES.FOUNDER, ROLES.MODERATOR].includes(user.role as any)
+
+  if (isStaff) {
+    return {
+      allowed: true,
+      userId: user.id,
+      creatorStatus,
+      role: user.role,
+    }
+  }
+
+  if (creatorStatus === "SUSPENDED") {
+    return {
+      allowed: false,
+      error: "Creator account is suspended",
+      status: 403,
+      code: "CREATOR_SUSPENDED",
+    }
+  }
+
+  if (creatorStatus === "BANNED") {
+    return {
+      allowed: false,
+      error: "Creator account is banned",
+      status: 403,
+      code: "CREATOR_BANNED",
+    }
+  }
+
+  if (creatorStatus !== "APPROVED") {
+    const statusMessages: Record<string, string> = {
+      NONE: "You need to apply and be approved as a creator.",
+      APPLICATION_DRAFT: "Your creator application is not yet submitted.",
+      APPLICATION_SUBMITTED: "Your creator application has been submitted.",
+      UNDER_REVIEW: "Your creator application is under review.",
+      REJECTED: "Your creator application was rejected.",
+      WITHDRAWN: "Your creator application was withdrawn.",
+    }
+    return {
+      allowed: false,
+      error: statusMessages[creatorStatus] || "Creator account required",
+      status: 403,
+      code: "CREATOR_NOT_APPROVED",
+    }
+  }
+
+  return {
+    allowed: true,
+    userId: user.id,
+    creatorStatus,
+    role: user.role,
+  }
+}
+
+export async function requireCreatorAccess(): Promise<CreatorAccessResult> {
+  return getCreatorAccess()
+}
+
+export async function requireCreatorAccessForStore(userId: string): Promise<{
+  allowed: boolean
+  error?: string
+  status?: number
+  store?: { id: string; slug: string } | null
+  code?: string
+}> {
+  const access = await getCreatorAccess()
+
+  if (!access.allowed) {
+    return { allowed: false, error: access.error, status: access.status, code: access.code }
+  }
+
+  const store = await prisma.store.findUnique({
+    where: { userId },
+    select: { id: true, slug: true, visibility: true },
   })
 
-  const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
-  const isStaff = [ROLES.ADMIN, ROLES.FOUNDER, ROLES.MODERATOR].includes(userRole as any)
-  if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
-    return NextResponse.json({ error: "Creator account required" }, { status: 403 })
+  if (!store) {
+    return { allowed: false, error: "Store not found", status: 404, code: "STORE_NOT_FOUND" }
   }
-  return null
+
+  if (store.visibility === "SUSPENDED") {
+    return { allowed: false, error: "Store is suspended", status: 403, code: "STORE_SUSPENDED" }
+  }
+
+  return { allowed: true, store }
 }
 
 export const CREATOR_HUB_ROLES = [

@@ -123,7 +123,7 @@ export default async function StorePostPage({
             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1">
                 <User className="h-4 w-4" />
-                <Link href={`/profile/${post.user.username}`} className="hover:text-foreground">
+                <Link href={`/creators/${post.user.username}`} className="hover:text-foreground">
                   {ownerName}
                 </Link>
               </span>

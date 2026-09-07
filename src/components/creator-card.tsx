@@ -31,8 +31,7 @@ export function CreatorCard({ creator, featured, className }: CreatorCardProps) 
   const followers = creator.followersCount ?? 0
 
   return (
-    <Link
-      href={`/store/${storeSlug}`}
+    <div
       className={cn(
         "group block rounded-lg border bg-surface p-6 transition-all duration-200 hover:border-accent hover:shadow-card-hover",
         featured && "md:col-span-2 lg:col-span-1",
@@ -40,17 +39,21 @@ export function CreatorCard({ creator, featured, className }: CreatorCardProps) 
       )}
     >
       <div className="flex flex-col items-center text-center">
-        <Avatar className="h-16 w-16 border-2 border-background">
-          <AvatarImage src={creator.avatar || ""} alt={name} />
-          <AvatarFallback className="text-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white font-semibold">
-            {name[0]?.toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <Link href={`/creators/${creator.username}`} className="block">
+          <Avatar className="h-16 w-16 border-2 border-background cursor-pointer hover:ring-2 hover:ring-accent transition-all">
+            <AvatarImage src={creator.avatar || ""} alt={name} />
+            <AvatarFallback className="text-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white font-semibold">
+              {name[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
 
         <div className="mt-3 flex items-center gap-1.5 justify-center flex-wrap">
-          <span className="font-semibold text-sm text-text-primary">
-            {name}
-          </span>
+          <Link href={`/creators/${creator.username}`} className="hover:underline">
+            <span className="font-semibold text-sm text-text-primary">
+              {name}
+            </span>
+          </Link>
           {creator.isVerified && (
             <Badge
               variant="secondary"
@@ -94,14 +97,17 @@ export function CreatorCard({ creator, featured, className }: CreatorCardProps) 
         </div>
 
         <Button
+          asChild
           variant="outline"
           size="sm"
           className="mt-3 w-full group-hover:bg-accent group-hover:text-accent-foreground"
         >
-          View store
+          <Link href={`/store/${storeSlug}`}>
+            View store
+          </Link>
         </Button>
       </div>
-    </Link>
+    </div>
   )
 }
 

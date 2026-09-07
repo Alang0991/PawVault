@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { z } from "zod"
-import { requireCreatorAccess } from "@/lib/creator-access"
+import { getCreatorAccess } from "@/lib/creator-access"
 
 const draftSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -39,8 +39,10 @@ export async function PATCH(
       return NextResponse.json({ error: "You must be signed in to save a draft." }, { status: 401 })
     }
 
-    const forbidden = await requireCreatorAccess(user.id, user.role)
-    if (forbidden) return forbidden
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
+    }
 
     const product = await prisma.product.findUnique({ where: { id: params.id } })
     if (!product) {

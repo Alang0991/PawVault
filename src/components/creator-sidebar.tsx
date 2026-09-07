@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -29,6 +29,12 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+interface StoreInfo {
+  id: string
+  slug: string
+  name: string
+}
+
 const items = [
   { href: "/creator/dashboard", label: "Overview", icon: BarChart3 },
   { href: "/creator/products", label: "Products", icon: Package },
@@ -49,6 +55,27 @@ const items = [
 export function CreatorSidebar({ user }: { user?: { avatar?: string | null; displayName?: string | null; username?: string; role?: string } }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null)
+  const [storeLoading, setStoreLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchStore() {
+      try {
+        const res = await fetch("/api/creator/store")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.store) {
+            setStoreInfo(data.store)
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch store info:", error)
+      } finally {
+        setStoreLoading(false)
+      }
+    }
+    fetchStore()
+  }, [])
 
   return (
     <>
@@ -127,7 +154,7 @@ export function CreatorSidebar({ user }: { user?: { avatar?: string | null; disp
                 )
               })}
               <Link
-                href="/store/create"
+                href={storeInfo ? `/store/${storeInfo.slug}` : "/store/create"}
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
               >

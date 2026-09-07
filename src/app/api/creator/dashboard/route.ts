@@ -2,28 +2,19 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAuth } from "@/lib/session"
+import { getCreatorAccess } from "@/lib/creator-access"
 
 export async function GET() {
   try {
-    const user = await requireAuth()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
     }
 
-    const fullUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { creatorStatus: true, role: true },
-    })
-
-    const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
-    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
-    if (!isStaff && creatorStatus !== "APPROVED") {
-      return NextResponse.json({ error: "Creator account required" }, { status: 403 })
-    }
+    const userId = access.userId
 
     const store = await prisma.store.findUnique({
-      where: { userId: user.id },
+      where: { userId },
       select: { id: true, name: true, slug: true, logo: true, banner: true },
     })
 
@@ -36,11 +27,11 @@ export async function GET() {
     let products: any[] = []
 
     try {
-      totalProducts = await prisma.product.count({ where: { creatorId: user.id } })
-      publishedProducts = await prisma.product.count({ where: { creatorId: user.id, isPublished: true } })
-      draftProducts = await prisma.product.count({ where: { creatorId: user.id, isPublished: false } })
+      totalProducts = await prisma.product.count({ where: { creatorId: userId } })
+      publishedProducts = await prisma.product.count({ where: { creatorId: userId, isPublished: true } })
+      draftProducts = await prisma.product.count({ where: { creatorId: userId, isPublished: false } })
       reviews = await prisma.review.findMany({
-        where: { product: { creatorId: user.id } },
+        where: { product: { creatorId: userId } },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {
@@ -49,13 +40,13 @@ export async function GET() {
         },
       })
       licenses = await prisma.license.findMany({
-        where: { product: { creatorId: user.id } },
+        where: { product: { creatorId: userId } },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: { product: { select: { id: true, title: true, slug: true } } },
       })
       recentOrders = await prisma.order.findMany({
-        where: { items: { some: { product: { creatorId: user.id } } } },
+        where: { items: { some: { product: { creatorId: userId } } } },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {
@@ -64,7 +55,7 @@ export async function GET() {
         },
       })
       products = await prisma.product.findMany({
-        where: { creatorId: user.id },
+        where: { creatorId: userId },
         orderBy: { createdAt: "desc" },
         take: 8,
         include: {
@@ -83,7 +74,7 @@ export async function GET() {
 
     const completedOrders = await prisma.order.findMany({
       where: {
-        items: { some: { product: { creatorId: user.id } } },
+        items: { some: { product: { creatorId: userId } } },
         status: "COMPLETED",
       },
       select: { total: true },
@@ -114,11 +105,9 @@ export async function GET() {
 
     return NextResponse.json({
       user: {
-        id: user.id,
-        displayName: user.displayName,
-        username: user.username,
-        role: user.role,
-        avatar: user.avatar,
+        id: userId,
+        displayName: access.role,
+        role: access.role,
       },
       store,
       productCount: totalProducts,

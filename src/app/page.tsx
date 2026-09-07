@@ -8,7 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CategoryCard } from "@/components/category-card"
 import { CreatorCard } from "@/components/creator-card"
 import { AnnouncementBar } from "@/components/announcement-bar"
+import { StaffPicksSection } from "@/components/staff-picks-section"
+import { FollowingFeed } from "@/components/following-feed"
 import Link from "next/link"
+import { getServerUser } from "@/lib/session"
 import {
   Clock,
   Flame,
@@ -50,6 +53,7 @@ function enrich(products: any[]) {
 }
 
 export default async function Home() {
+  const user = await getServerUser()
   const [
     featuredProducts,
     trendingProducts,
@@ -58,6 +62,7 @@ export default async function Home() {
     spotlightCreator,
     categories,
     announcement,
+    staffPicks,
   ] = await Promise.all([
     prisma.product.findMany({
       where: { isPublished: true, isFeatured: true },
@@ -119,12 +124,54 @@ export default async function Home() {
       where: { isPublished: true, publishedAt: { not: null } },
       orderBy: { publishedAt: "desc" },
     }),
+    prisma.staffPick.findMany({
+      where: { isActive: true },
+      take: 6,
+      include: {
+        product: {
+          include: {
+            creator: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatar: true,
+                isVerified: true,
+              },
+            },
+            media: { where: { isThumbnail: true }, take: 1 },
+            reviews: { select: { rating: true } },
+            _count: { select: { favorites: true, reviews: true } },
+          },
+        },
+        staff: { select: { username: true, displayName: true } },
+      },
+    }),
   ])
 
   const featured = enrich(featuredProducts)
   const trending = enrich(trendingProducts)
   const newDropsList = enrich(newDrops)
   const freeList = enrich(freeProducts)
+
+  const enrichedStaffPicks = staffPicks.map((p: any) => {
+    const avgRating =
+      p.product.reviews.length > 0
+        ? p.product.reviews.reduce((s: number, r: any) => s + r.rating, 0) /
+          p.product.reviews.length
+        : 0
+    return {
+      id: p.id,
+      note: p.note,
+      createdAt: p.createdAt.toISOString(),
+      product: {
+        ...p.product,
+        rating: avgRating,
+        reviewCount: p.product.reviews.length,
+      },
+      staff: p.staff,
+    }
+  })
 
   const anyProducts =
     featured.length > 0 ||
@@ -196,6 +243,12 @@ export default async function Home() {
             </div>
           </section>
         )}
+
+        {enrichedStaffPicks.length > 0 && (
+          <StaffPicksSection picks={enrichedStaffPicks} />
+        )}
+
+        {user && <FollowingFeed userId={user.id} />}
 
         {featured.length > 0 && (
           <section>

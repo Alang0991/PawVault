@@ -147,6 +147,7 @@ async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
       })
 
       await createLicensesForOrder(order.id)
+      await createAllocationsForOrder(order.id)
     }
     return
   }
@@ -170,6 +171,39 @@ async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
     }
 
     await createLicensesForOrder(order.id)
+    await createAllocationsForOrder(order.id)
+  }
+}
+
+async function createAllocationsForOrder(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true, payments: true, creator: true },
+  })
+  if (!order || !order.creatorId) return
+
+  const existing = await prisma.creatorAllocation.count({ where: { orderId } })
+  if (existing > 0) return
+
+  for (const item of order.items) {
+    const gross = item.price * item.quantity
+    const fee = item.platformFeeShare
+    const net = item.creatorEarnings
+
+    await prisma.creatorAllocation.create({
+      data: {
+        orderId: order.id,
+        orderItemId: item.id,
+        creatorId: order.creatorId,
+        productId: item.productId,
+        grossAmount: gross,
+        discountAmount: 0,
+        taxAmount: 0,
+        platformFee: fee,
+        netAmount: net,
+        currency: order.currency,
+      },
+    })
   }
 }
 

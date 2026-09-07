@@ -1,73 +1,119 @@
 export const dynamic = "force-dynamic"
 
 import { prisma } from "@/lib/prisma"
-import Link from "next/link"
-import { notFound } from "next/navigation"
 import { ProductGrid } from "@/components/product-grid"
 import { SectionHeader } from "@/components/section-header"
-import { CategoryCard } from "@/components/category-card"
-import { Badge } from "@/components/ui/badge"
-import { Package } from "lucide-react"
+import { SearchBar } from "@/components/search-bar"
+import { SortSelect } from "@/components/sort-select"
+import { CategoryFilters } from "@/components/category-filters"
+import { EmptyBrowseState } from "@/components/empty-state"
+import { Pagination } from "@/components/pagination"
+import { BrowseSkeleton } from "@/components/browse-skeleton"
+import { Suspense } from "react"
+import { notFound } from "next/navigation"
+import Link from "next/link"
 
-async function getCategory(slug: string) {
-  const category = await prisma.category.findUnique({
-    where: { slug },
-    include: {
-      children: {
-        include: {
-          _count: {
-            select: {
-              products: {
-                where: { isPublished: true },
-              },
-            },
-          },
-        },
-      },
-      _count: {
-        select: {
-          products: {
-            where: { isPublished: true },
-          },
-        },
-      },
-    },
-  })
+const PAGE_SIZE = 24
 
-  if (!category) {
-    notFound()
+function browseOrderBy(sort: string): any {
+  return (
+    {
+      newest: { createdAt: "desc" },
+      oldest: { createdAt: "asc" },
+      "price-asc": { price: "asc" },
+      "price-desc": { price: "desc" },
+      popular: { favorites: { _count: "desc" } },
+      rating: { reviews: { _count: "desc" } },
+    }[sort] || { createdAt: "desc" }
+  )
+}
+
+function hasActiveFilters(searchParams: Record<string, string | undefined>) {
+  return Boolean(
+    searchParams.priceMin ||
+      searchParams.priceMax ||
+      searchParams.rating ||
+      searchParams.tags ||
+      searchParams.free ||
+      searchParams.onSale
+  )
+}
+
+async function CategoryContent({ slug, searchParams }: { slug: string; searchParams: any }) {
+  const category = await prisma.category.findUnique({ where: { slug } })
+  if (!category) notFound()
+
+  const page = Math.max(1, parseInt(searchParams.page || "1"))
+  const tagList = searchParams.tags
+    ? searchParams.tags.split(",").map((t: string) => t.trim()).filter(Boolean)
+    : []
+
+  const price: any = {}
+  if (searchParams.priceMin) price.gte = parseFloat(searchParams.priceMin)
+  if (searchParams.priceMax) price.lte = parseFloat(searchParams.priceMax)
+
+  const where: any = {
+    isPublished: true,
+    categoryId: category.id,
+    ...(searchParams.free === "true" && { isFree: true }),
+    ...(searchParams.onSale === "true" && { isOnSale: true }),
+    ...(searchParams.q && {
+      OR: [
+        { title: { contains: searchParams.q, mode: "insensitive" } },
+        { description: { contains: searchParams.q, mode: "insensitive" } },
+      ],
+    }),
+    ...(Object.keys(price).length > 0 && { price }),
+    ...(tagList.length > 0 && {
+      tags: { some: { tag: { slug: { in: tagList } } } },
+    }),
   }
 
-  const products = await prisma.product.findMany({
-    where: {
-      categoryId: category.id,
-      isPublished: true,
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          username: true,
-          displayName: true,
-          avatar: true,
-          isVerified: true,
+  const [products, total, subcategories, popularTags] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      orderBy: browseOrderBy(searchParams.sort || "newest"),
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      include: {
+        creator: {
+          select: { id: true, username: true, displayName: true, avatar: true },
         },
+        media: { where: { isThumbnail: true }, take: 1 },
+        reviews: { select: { rating: true } },
+        tags: { include: { tag: true } },
+        _count: { select: { favorites: true, reviews: true } },
       },
-      media: {
-        where: { isThumbnail: true },
-        take: 1,
-      },
-      reviews: {
-        select: { rating: true },
-      },
-      _count: {
-        select: { favorites: true, reviews: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+    }),
+    searchParams.rating
+      ? prisma.product.count({
+          where: {
+            ...where,
+            id: {
+              in: await prisma.review
+                .groupBy({
+                  by: ["productId"],
+                  _avg: { rating: true },
+                  having: { rating: { _avg: { gte: parseFloat(searchParams.rating) } } },
+                })
+                .then((r) => r.map((x) => x.productId)),
+            },
+          },
+        })
+      : prisma.product.count({ where }),
+    prisma.category.findMany({
+      where: { parentId: category.id },
+      include: { _count: { select: { products: true } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.tag.findMany({
+      include: { _count: { select: { products: true } } },
+      orderBy: { products: { _count: "desc" } },
+      take: 15,
+    }),
+  ])
 
-  const productsWithRating = products.map((p: any) => {
+  const productsWithRating = products.map((p) => {
     const avgRating =
       p.reviews.length > 0
         ? p.reviews.reduce((s: number, r: any) => s + r.rating, 0) / p.reviews.length
@@ -75,63 +121,105 @@ async function getCategory(slug: string) {
     return { ...p, rating: avgRating, reviewCount: p.reviews.length }
   })
 
-  return { category, products: productsWithRating }
-}
+  const totalPages = Math.ceil(total / PAGE_SIZE)
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const { category } = await getCategory(params.slug)
-  return {
-    title: `${category.name} - Category | PawVault`,
-    description: category.description || `Browse ${category.name} on PawVault.`,
-  }
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="mb-6">
+          <div className="flex items-center gap-2 text-sm text-text-muted mb-2">
+            <Link href="/categories" className="hover:text-accent">Categories</Link>
+            <span>/</span>
+            <span className="text-text-primary">{category.name}</span>
+          </div>
+          <SectionHeader
+            title={category.name}
+            subtitle={`${total} product${total === 1 ? "" : "s"} found`}
+          />
+          {category.description && (
+            <p className="text-sm text-text-secondary mt-2 max-w-2xl">
+              {category.description}
+            </p>
+          )}
+          <div className="mt-4 max-w-xl">
+            <SearchBar />
+          </div>
+        </div>
+
+        {subcategories.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-sm font-medium text-text-secondary mb-3">Subcategories</h3>
+            <div className="flex flex-wrap gap-2">
+              {subcategories.map((sub) => (
+                <Link
+                  key={sub.id}
+                  href={`/categories/${sub.slug}`}
+                  className="px-3 py-1.5 rounded-full border border-border text-sm text-text-secondary hover:border-accent hover:text-accent transition-colors"
+                >
+                  {sub.name} ({sub._count.products})
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+          <aside className="lg:col-span-1">
+            <CategoryFilters
+              categories={[category]}
+              popularTags={popularTags}
+              searchParams={searchParams}
+              tagList={tagList}
+            />
+          </aside>
+
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <SortSelect
+                current={searchParams.sort || "newest"}
+                params={searchParams}
+              />
+            </div>
+
+            <ProductGrid
+              products={productsWithRating}
+              emptyMessage={<EmptyBrowseState hasFilters={hasActiveFilters(searchParams)} />}
+            />
+
+            {totalPages > 1 && (
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                searchParams={searchParams}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default async function CategoryPage({
   params,
+  searchParams,
 }: {
   params: { slug: string }
+  searchParams: {
+    priceMin?: string
+    priceMax?: string
+    rating?: string
+    tags?: string
+    free?: string
+    onSale?: string
+    sort?: string
+    page?: string
+    q?: string
+  }
 }) {
-  const { category, products } = await getCategory(params.slug)
-  const productName = category._count.products === 1 ? "product" : "products"
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-10 md:py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text-primary">
-            {category.name}
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-text-muted">
-            <Badge variant="subtle">{category._count.products} {productName}</Badge>
-            {category.description && (
-              <span>{category.description}</span>
-            )}
-          </div>
-        </div>
-
-        {category.children.length > 0 && (
-          <section className="mb-10">
-            <h2 className="text-lg font-semibold text-text-primary mb-4">
-              Subcategories
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {category.children.map((child) => (
-                <CategoryCard key={child.id} category={child} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        <SectionHeader
-          title="Products"
-          subtitle={`${category._count.products} ${productName} in this category`}
-        />
-
-        <ProductGrid
-          products={products}
-          emptyMessage="No products in this category yet. Check back soon."
-        />
-      </div>
-    </div>
+    <Suspense fallback={<BrowseSkeleton />}>
+      <CategoryContent slug={params.slug} searchParams={searchParams} />
+    </Suspense>
   )
 }

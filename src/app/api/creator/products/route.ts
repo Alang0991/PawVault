@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/session"
+import { getCreatorAccess } from "@/lib/creator-access"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { createAuditLog, AuditActions } from "@/lib/audit-logger"
@@ -23,35 +23,20 @@ const createProductSchema = z.object({
   contentRating: z.enum(["SFW", "MATURE", "NSFW"]).default("SFW"),
 })
 
-async function requireCreatorAccess(userId: string, userRole: string) {
-  const fullUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { creatorStatus: true, role: true },
-  })
-
-  const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
-  const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(userRole)
-  if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
-    return NextResponse.json({ error: "Creator account required" }, { status: 403 })
-  }
-  return null
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
     }
 
-    const forbidden = await requireCreatorAccess(user.id, user.role)
-    if (forbidden) return forbidden
+    const userId = access.userId
 
     const body = await request.json()
     const validated = createProductSchema.parse(body)
 
     const store = await prisma.store.findUnique({
-      where: { userId: user.id },
+      where: { userId },
     })
 
     const baseSlug = (validated.slug?.trim() || validated.title)
@@ -67,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     const product = await prisma.product.create({
       data: {
-        creatorId: user.id,
+        creatorId: userId,
         storeId: store?.id,
         title: rest.title,
         subtitle: rest.subtitle,
@@ -107,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     await createAuditLog({
-      userId: user.id,
+      userId,
       action: AuditActions.PRODUCT_CREATED,
       details: { productId: product.id, title: product.title },
     })
@@ -130,16 +115,15 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireAuth()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
     }
 
-    const forbidden = await requireCreatorAccess(user.id, user.role)
-    if (forbidden) return forbidden
+    const userId = access.userId
 
     const products = await prisma.product.findMany({
-      where: { creatorId: user.id },
+      where: { creatorId: userId },
       include: {
         category: true,
         media: { orderBy: { order: "asc" } },

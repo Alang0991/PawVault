@@ -22,6 +22,9 @@ export async function getServerUser() {
       bio: true,
       isVerified: true,
       customPermissions: true,
+      creatorStatus: true,
+      creatorTermsAcceptedAt: true,
+      suspendedUntil: true,
     },
   })
 

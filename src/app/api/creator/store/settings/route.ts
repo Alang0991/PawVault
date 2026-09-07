@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAuth } from "@/lib/session"
+import { getCreatorAccess } from "@/lib/creator-access"
 import { z } from "zod"
 import { createAuditLog, AuditActions } from "@/lib/audit-logger"
 
@@ -17,23 +17,12 @@ const storeSettingsSchema = z.object({
 
 export async function GET() {
   try {
-    const user = await requireAuth()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
     }
 
-    const fullUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { creatorStatus: true, role: true },
-    })
-
-    const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
-    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
-    if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
-      return NextResponse.json({ error: "Creator account required" }, { status: 403 })
-    }
-
-    const store = await prisma.store.findUnique({ where: { userId: user.id } })
+    const store = await prisma.store.findUnique({ where: { userId: access.userId } })
     return NextResponse.json({ store })
   } catch (error) {
     console.error("Get store settings error:", error)
@@ -43,26 +32,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const fullUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { creatorStatus: true, role: true },
-    })
-
-    const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
-    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
-    if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
-      return NextResponse.json({ error: "Creator account required" }, { status: 403 })
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
     }
 
     const body = await request.json()
     const validated = storeSettingsSchema.parse(body)
 
-    const existing = await prisma.store.findUnique({ where: { userId: user.id } })
+    const existing = await prisma.store.findUnique({ where: { userId: access.userId } })
     if (existing) {
       return NextResponse.json({ error: "Store already exists. Use PUT to update." }, { status: 409 })
     }
@@ -76,7 +54,7 @@ export async function POST(request: Request) {
 
     const store = await prisma.store.create({
       data: {
-        userId: user.id,
+        userId: access.userId,
         name: validated.name,
         slug: validated.slug,
         description: validated.description,
@@ -86,7 +64,7 @@ export async function POST(request: Request) {
     })
 
     await createAuditLog({
-      userId: user.id,
+      userId: access.userId,
       action: AuditActions.USER_PROFILE_UPDATED,
       details: { storeId: store.id, slug: validated.slug, action: "store_created" },
     })
@@ -116,26 +94,15 @@ function storeSlugFromName(name: string): string {
 
 export async function PUT(request: Request) {
   try {
-    const user = await requireAuth()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const fullUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { creatorStatus: true, role: true },
-    })
-
-    const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
-    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
-    if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
-      return NextResponse.json({ error: "Creator account required" }, { status: 403 })
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
     }
 
     const body = await request.json()
     const validated = storeSettingsSchema.parse(body)
 
-    const store = await prisma.store.findUnique({ where: { userId: user.id } })
+    const store = await prisma.store.findUnique({ where: { userId: access.userId } })
     if (!store) {
       return NextResponse.json({ error: "Store not found. Create a store first." }, { status: 404 })
     }
@@ -160,7 +127,7 @@ export async function PUT(request: Request) {
     })
 
     await createAuditLog({
-      userId: user.id,
+      userId: access.userId,
       action: AuditActions.USER_PROFILE_UPDATED,
       details: { storeId: store.id, slug: validated.slug },
     })

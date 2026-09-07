@@ -137,6 +137,10 @@ model User {
   emailMessages           EmailMessage[]
   uploadSessions          UploadSession[]
   mediaProcessingJobs     MediaProcessingJob[]
+  staffPicksMade          StaffPick[]
+  promotionsCreated       PromotedProduct[]
+  stripeTransfersMade     StripeTransfer[]    @relation("StripeTransferCreator")
+  creatorAllocations       CreatorAllocation[] @relation("CreatorAllocationCreator")
 
   @@index([email])
   @@index([username])
@@ -245,6 +249,8 @@ model Product {
   bundleItems BundleItem[]
   cartItems   CartItem[]
   versions    ProductVersion[]
+  staffPicks  StaffPick[]
+  promotions  PromotedProduct[]
 
   @@index([slug])
   @@index([creatorId])
@@ -435,6 +441,8 @@ model Order {
   invoices   Invoice[]
   licenses   License[]
   downloads  Download[]
+  transfers  StripeTransfer[]
+  allocations CreatorAllocation[]
 
   @@index([buyerId])
   @@index([creatorId])
@@ -458,6 +466,7 @@ model OrderItem {
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  allocation CreatorAllocation?
 
   @@index([orderId])
   @@index([productId])
@@ -482,6 +491,7 @@ model Payment {
 
   order    Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   disputes StripeDispute[]
+  transfers StripeTransfer[]
 
   @@index([orderId])
   @@index([providerPaymentId])
@@ -499,6 +509,8 @@ model Refund {
   provider         String   @default("stripe")
   providerRefundId String?  @unique
   stripeAccountId  String?
+  itemIds          String?
+  isPartial        Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -836,18 +848,120 @@ model ModerationAction {
 }
 
 model Payout {
-  id          String    @id @default(cuid())
-  creatorId   String
-  amount      Float
-  status      String    @default("PENDING")
-  method      String
-  processedAt DateTime?
-  createdAt   DateTime  @default(now())
+  id               String    @id @default(cuid())
+  creatorId        String
+  amount           Float
+  status           String    @default("PENDING")
+  method           String
+  stripePayoutId   String?   @unique
+  currency         String    @default("USD")
+  availableAt      DateTime?
+  processedAt      DateTime?
+  createdAt        DateTime  @default(now())
 
   creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  allocations CreatorAllocation[]
 
   @@index([creatorId])
   @@index([status])
+  @@index([stripePayoutId])
+}
+
+model StripeTransfer {
+  id            String   @id @default(cuid())
+  orderId       String
+  creatorId     String
+  paymentId     String?
+  stripeTransferId String @unique
+  amount        Float
+  currency      String   @default("USD")
+  status        String   @default("PENDING")
+  failureCode   String?
+  failureMessage String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  creator User    @relation("StripeTransferCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  allocations CreatorAllocation[]
+
+  @@index([orderId])
+  @@index([creatorId])
+  @@index([stripeTransferId])
+  @@index([status])
+}
+
+model CreatorAllocation {
+  id                  String   @id @default(cuid())
+  orderId             String
+  orderItemId         String
+  creatorId           String
+  productId           String
+  grossAmount         Float
+  discountAmount      Float    @default(0)
+  taxAmount           Float    @default(0)
+  platformFee         Float    @default(0)
+  netAmount           Float
+  currency            String   @default("USD")
+  transferId          String?
+  payoutId            String?
+  isReversed          Boolean  @default(false)
+  reversedAt          DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  orderItem  OrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  creator    User            @relation("CreatorAllocationCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  transfer   StripeTransfer? @relation(fields: [transferId], references: [id], onDelete: SetNull)
+  payout     Payout?         @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+
+  @@unique([orderItemId])
+  @@index([orderId])
+  @@index([creatorId])
+  @@index([productId])
+  @@index([transferId])
+  @@index([payoutId])
+  @@index([isReversed])
+}
+
+model StaffPick {
+  id          String   @id @default(cuid())
+  productId   String
+  pickedBy    String
+  note        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  staff   User    @relation(fields: [pickedBy], references: [id], onDelete: Cascade)
+
+  @@unique([productId, pickedBy])
+  @@index([isActive])
+  @@index([productId])
+}
+
+model PromotedProduct {
+  id            String    @id @default(cuid())
+  productId     String
+  creatorId     String
+  stripeAccountId String?
+  status        String    @default("PENDING")
+  amount        Float
+  currency      String    @default("USD")
+  startsAt      DateTime?
+  endsAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  creator User    @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([productId])
+  @@index([creatorId])
 }
 
 model TaxRecord {

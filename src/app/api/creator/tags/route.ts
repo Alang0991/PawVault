@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { z } from "zod"
-import { requireCreatorAccess } from "@/lib/creator-access"
+import { getCreatorAccess } from "@/lib/creator-access"
 
 const createTagSchema = z.object({
   name: z.string().min(1).max(50),
@@ -17,8 +17,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const forbidden = await requireCreatorAccess(user.id, user.role)
-    if (forbidden) return forbidden
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
+    }
 
     const tags = await prisma.tag.findMany({
       include: {
@@ -57,8 +59,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const forbidden = await requireCreatorAccess(user.id, user.role)
-    if (forbidden) return forbidden
+    const access = await getCreatorAccess()
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
+    }
 
     const body = await request.json()
     const validated = createTagSchema.parse(body)

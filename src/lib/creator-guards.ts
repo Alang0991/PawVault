@@ -25,50 +25,46 @@ export async function requireActiveCreator(): Promise<{
     throw new Error("Authentication required.")
   }
 
-  const fullUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      displayName: true,
-      role: true,
-      status: true,
-      creatorStatus: true,
-    },
-  })
-
-  if (!fullUser) {
-    throw new Error("User not found.")
-  }
-
-  if (fullUser.status === "BANNED") {
+  if (user.status === "BANNED") {
     throw new Error("Account is banned.")
   }
 
-  if (fullUser.status === "SUSPENDED") {
-    const suspendedUntil = (fullUser as any).suspendedUntil as Date | null | undefined
+  if (user.status === "SUSPENDED") {
+    const suspendedUntil = user.suspendedUntil as Date | null | undefined
     if (suspendedUntil && suspendedUntil > new Date()) {
       throw new Error(`Account is suspended until ${suspendedUntil.toISOString()}.`)
     }
   }
 
-  const creatorStatus = (fullUser as any).creatorStatus ?? "NONE"
-  if (["SUSPENDED", "BANNED"].includes(creatorStatus)) {
+  const creatorStatus = user.creatorStatus ?? "NONE"
+
+  if (creatorStatus === "SUSPENDED") {
     throw new Error("Creator account is suspended.")
   }
 
+  if (creatorStatus === "BANNED") {
+    throw new Error("Creator account is banned.")
+  }
+
   if (creatorStatus !== "APPROVED") {
-    throw new Error("Creator account required.")
+    const statusMessages: Record<string, string> = {
+      NONE: "You need to apply and be approved as a creator.",
+      APPLICATION_DRAFT: "Your creator application is not yet submitted.",
+      APPLICATION_SUBMITTED: "Your creator application has been submitted.",
+      UNDER_REVIEW: "Your creator application is under review.",
+      REJECTED: "Your creator application was rejected.",
+      WITHDRAWN: "Your creator application was withdrawn.",
+    }
+    throw new Error(statusMessages[creatorStatus] || "Creator account required.")
   }
 
   return {
-    id: fullUser.id,
-    email: fullUser.email,
-    username: fullUser.username,
-    displayName: fullUser.displayName ?? null,
-    role: fullUser.role,
-    status: fullUser.status,
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    displayName: user.displayName ?? null,
+    role: user.role,
+    status: user.status,
     creatorStatus,
   }
 }

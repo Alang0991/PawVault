@@ -21,6 +21,13 @@ import {
   FileText,
   Tag,
   ExternalLink,
+  Star,
+  Clock,
+  Package,
+  Scale,
+  Cpu,
+  HardDrive,
+  ShieldCheck,
 } from "lucide-react"
 
 async function getProduct(slug: string) {
@@ -38,6 +45,7 @@ async function getProduct(slug: string) {
       },
       store: {
         select: {
+          slug: true,
           visibility: true,
         },
       },
@@ -69,6 +77,14 @@ async function getProduct(slug: string) {
         orderBy: { createdAt: "desc" },
         take: 10,
       },
+      versions: {
+        take: 1,
+        orderBy: { createdAt: "desc" },
+      },
+      staffPicks: {
+        where: { isActive: true },
+        take: 1,
+      },
     },
   })
 
@@ -86,7 +102,17 @@ async function getProduct(slug: string) {
       ? product.reviews.reduce((s, r) => s + r.rating, 0) / product.reviews.length
       : 0
 
-  return { ...product, rating: avgRating }
+  // Review distribution
+  const distribution = [5, 4, 3, 2, 1].map((stars) => {
+    const count = product.reviews.filter((r) => r.rating === stars).length
+    return {
+      stars,
+      count,
+      percentage: product.reviews.length > 0 ? Math.round((count / product.reviews.length) * 100) : 0,
+    }
+  })
+
+  return { ...product, rating: avgRating, reviewCount: product.reviews.length, distribution }
 }
 
 async function getMoreFromCreator(creatorId: string, excludeId: string) {
@@ -225,8 +251,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
             </div>
 
             <Link
-              href={`/store/${product.creator.username}`}
-              className="flex items-center gap-3"
+              href={`/creators/${product.creator.username}`}
+              className="flex items-center gap-3 hover:bg-muted p-2 -mx-2 rounded-lg transition-colors"
             >
               <Avatar className="h-10 w-10 border">
                 <AvatarImage src={product.creator.avatar || ""} alt={creatorName} />
@@ -243,7 +269,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                     <StatusBadge type="verified" size="sm" />
                   )}
                 </div>
-                <p className="text-xs text-text-muted">Creator</p>
+                <p className="text-xs text-text-muted">View profile</p>
               </div>
             </Link>
 
@@ -312,10 +338,13 @@ export default async function ProductPage({ params }: { params: { slug: string }
             <Separator />
 
             <Tabs defaultValue="description" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="description">Description</TabsTrigger>
                 <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews ({product.reviews.length})</TabsTrigger>
+                <TabsTrigger value="reviews">
+                  Reviews ({product.reviews.length})
+                </TabsTrigger>
+                <TabsTrigger value="versions">Versions</TabsTrigger>
               </TabsList>
 
               <TabsContent value="description" className="mt-4">
@@ -404,57 +433,125 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 )}
               </TabsContent>
 
+              <TabsContent value="versions" className="mt-4">
+                {product.versions && product.versions.length > 0 ? (
+                  <div className="space-y-3">
+                    {product.versions.map((v: any) => (
+                      <Card key={v.id}>
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base">
+                              Version {v.version}
+                            </CardTitle>
+                            {v.isCurrent && (
+                              <Badge variant="success" size="sm">Current</Badge>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {v.releaseNotes && (
+                            <p className="text-sm text-text-secondary whitespace-pre-wrap">
+                              {v.releaseNotes}
+                            </p>
+                          )}
+                          {v.changelog && (
+                            <p className="text-xs text-text-muted mt-2">
+                              {v.changelog}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-text-muted py-8 text-center">
+                    No version history available yet.
+                  </p>
+                )}
+              </TabsContent>
+
               <TabsContent value="reviews" className="mt-4">
                 {product.reviews.length === 0 ? (
                   <p className="text-sm text-text-muted py-8 text-center">
                     No reviews yet. Be the first to review.
                   </p>
                 ) : (
-                  <div className="space-y-4">
-                    {product.reviews.map((review) => (
-                      <Card key={review.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage
-                                src={review.user.avatar || ""}
-                                alt={review.user.displayName || review.user.username}
-                              />
-                              <AvatarFallback className="text-xs">
-                                {(review.user.displayName || review.user.username)[0]?.toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-sm">
-                                {review.user.displayName || review.user.username}
-                              </p>
-                              <div className="flex items-center">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Rating
-                                    key={i}
-                                    rating={i < review.rating ? 1 : 0}
-                                    size="sm"
-                                    showCount={false}
+                  <div className="space-y-6">
+                    {/* Review distribution */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Rating Distribution</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-4">
+                          <div className="text-3xl font-bold">
+                            {product.rating.toFixed(1)}
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            {product.distribution.map((d: any) => (
+                              <div key={d.stars} className="flex items-center gap-2 text-sm">
+                                <span className="w-8 text-right">{d.stars}★</span>
+                                <div className="flex-1 h-2 bg-surface-subtle rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-amber-400"
+                                    style={{ width: `${d.percentage}%` }}
                                   />
-                                ))}
+                                </div>
+                                <span className="w-8 text-text-muted">{d.count}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Reviews list */}
+                    <div className="space-y-4">
+                      {product.reviews.map((review) => (
+                        <Card key={review.id}>
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage
+                                  src={review.user.avatar || ""}
+                                  alt={review.user.displayName || review.user.username}
+                                />
+                                <AvatarFallback className="text-xs">
+                                  {(review.user.displayName || review.user.username)[0]?.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-sm">
+                                  {review.user.displayName || review.user.username}
+                                </p>
+                                <div className="flex items-center">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Rating
+                                      key={i}
+                                      rating={i < review.rating ? 1 : 0}
+                                      size="sm"
+                                      showCount={false}
+                                    />
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          {review.title && (
-                            <p className="font-medium text-sm text-text-primary mb-1">
-                              {review.title}
-                            </p>
-                          )}
-                          {review.content && (
-                            <p className="text-sm text-text-secondary">
-                              {review.content}
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardHeader>
+                          <CardContent>
+                            {review.title && (
+                              <p className="font-medium text-sm text-text-primary mb-1">
+                                {review.title}
+                              </p>
+                            )}
+                            {review.content && (
+                              <p className="text-sm text-text-secondary">
+                                {review.content}
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -470,7 +567,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 More from {creatorName}
               </h2>
               <Link
-                href={`/store/${product.creator.username}`}
+                href={product.store?.slug ? `/store/${product.store.slug}` : `/store/${product.creator.username}`}
                 className="text-sm text-text-secondary hover:text-accent flex items-center gap-1"
               >
                 View store <ExternalLink className="h-3 w-3" />

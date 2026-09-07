@@ -1,12 +1,20 @@
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { rateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const querySchema = z.object({
+  q: z.string().min(1).max(200),
+  limit: z.string().optional(),
+  type: z.string().optional(),
+})
 
 export async function GET(request: Request) {
   try {
-    const rateLimitResult = rateLimit(request, 30, 60_000)
+    const rateLimitResult = rateLimit(request, 60, 60_000)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
@@ -14,18 +22,25 @@ export async function GET(request: Request) {
       )
     }
     const { searchParams } = new URL(request.url)
-    const query = searchParams.get('q') || ''
-    const type = searchParams.get('type') || 'all'
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const parsed = querySchema.safeParse({
+      q: searchParams.get('q') || '',
+      limit: searchParams.get('limit') || undefined,
+      type: searchParams.get('type') || undefined,
+    })
 
-    if (!query) {
-      return NextResponse.json({ products: [], creators: [], total: 0 })
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid query' }, { status: 400 })
     }
 
-    const results: { products: any[]; creators: any[]; total: number } = {
+    const query = parsed.data.q.trim()
+    const limit = Math.min(50, parseInt(parsed.data.limit || '10'))
+    const type = parsed.data.type || 'all'
+
+    const results: { products: any[]; creators: any[]; categories: any[]; tags: any[]; total: number } = {
       products: [],
       creators: [],
+      categories: [],
+      tags: [],
       total: 0,
     }
 
@@ -42,32 +57,21 @@ export async function GET(request: Request) {
         },
         include: {
           creator: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              avatar: true,
-            },
+            select: { id: true, username: true, displayName: true, avatar: true },
           },
-          media: {
-            where: { isThumbnail: true },
-            take: 1,
-          },
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
+          media: { where: { isThumbnail: true }, take: 1 },
+          category: { select: { id: true, name: true, slug: true } },
+          tags: { include: { tag: true } },
+          reviews: { select: { rating: true } },
+          _count: { select: { favorites: true, reviews: true } },
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
-        skip: offset,
       })
       results.products = products.map((p) => ({
         ...p,
-        contentRating: p.contentRating,
+        rating: p.reviews.length > 0 ? p.reviews.reduce((s, r) => s + r.rating, 0) / p.reviews.length : 0,
+        reviewCount: p.reviews.length,
       }))
       results.total += results.products.length
     }
@@ -92,20 +96,39 @@ export async function GET(request: Request) {
           salesCount: true,
           rating: true,
           isVerified: true,
-          store: {
-            select: {
-              name: true,
-              slug: true,
-              logo: true,
-            },
-          },
+          store: { select: { name: true, slug: true } },
         },
         orderBy: { salesCount: 'desc' },
         take: limit,
-        skip: offset,
       })
       results.creators = creators
       results.total += creators.length
+    }
+
+    // Search categories
+    if (type === 'all' || type === 'categories') {
+      const categories = await prisma.category.findMany({
+        where: {
+          name: { contains: query, mode: 'insensitive' },
+        },
+        include: { _count: { select: { products: { where: { isPublished: true } } } } },
+        take: limit,
+      })
+      results.categories = categories
+      results.total += categories.length
+    }
+
+    // Search tags
+    if (type === 'all' || type === 'tags') {
+      const tags = await prisma.tag.findMany({
+        where: {
+          name: { contains: query, mode: 'insensitive' },
+        },
+        include: { _count: { select: { products: true } } },
+        take: limit,
+      })
+      results.tags = tags
+      results.total += tags.length
     }
 
     return NextResponse.json(results, { headers: getRateLimitHeaders(rateLimitResult) })

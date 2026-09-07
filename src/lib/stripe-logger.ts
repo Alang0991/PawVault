@@ -7,6 +7,7 @@ export interface StripeLogFields {
   creatorId?: string
   stripeObjectId?: string
   stripeAccountId?: string
+  transferId?: string
   result?: 'success' | 'skipped' | 'ignored' | 'error'
   category?: string
   endpoint?: string
