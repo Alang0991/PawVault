@@ -51,6 +51,7 @@ export function ApplicationActionForm({
         try {
           const data = await res.json()
           msg = data?.error || msg
+          if (data?.reason) msg += ` (${data.reason})`
         } catch {}
         setError(msg)
         return
