@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic"
 
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +11,7 @@ import { ProductGrid } from "@/components/product-grid"
 import { Rating } from "@/components/rating"
 import { FollowButton } from "@/components/follow-button"
 import { Store, ExternalLink, Calendar, Package, Users } from "lucide-react"
+import { Metadata } from "next"
 
 interface Props {
   params: { username: string }
@@ -112,6 +114,46 @@ function formatDate(date: Date): string {
   }).format(date)
 }
 
+async function generateCreatorMetadata(username: string): Promise<Metadata> {
+  const creator = await getCreator(username)
+
+  if (!creator) {
+    return {
+      title: "Creator Not Found | PawVault",
+      description: "This creator profile does not exist on PawVault.",
+    }
+  }
+
+  const name = creator.displayName || creator.username
+  const description = creator.bio || creator.store?.description || `Browse products by ${name} on PawVault.`
+  const url = `https://pawvault.com/creators/${creator.username}`
+
+  return {
+    title: `${name} (@${creator.username}) | PawVault`,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title: name,
+      description,
+      url,
+      type: "profile",
+      locale: "en-US",
+      ...(creator.avatar ? { images: creator.avatar } : {}),
+    },
+    twitter: {
+      card: creator.avatar ? "summary_large_image" : "summary",
+      title: name,
+      description,
+    },
+  }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  return generateCreatorMetadata(params.username)
+}
+
 export default async function CreatorProfilePage({ params }: Props) {
   const creator = await getCreator(params.username)
 
@@ -129,9 +171,10 @@ export default async function CreatorProfilePage({ params }: Props) {
     <div className="min-h-screen bg-background">
       <div className="relative h-48 md:h-64 bg-gradient-to-r from-purple-600 to-rose-500">
         {creator.store?.banner && (
-          <img
+          <Image
             src={creator.store.banner}
             alt=""
+            fill
             className="w-full h-full object-cover"
           />
         )}
