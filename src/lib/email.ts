@@ -183,6 +183,64 @@ const templates = {
       </div>
     `,
   }),
+
+  creatorApplicationApproved: (data: EmailTemplateData) => ({
+    subject: 'Your Creator Application Has Been Approved',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #28a745;">Welcome to the Creator Program!</h1>
+        <p>Hi ${data.name || 'there'},</p>
+        <p>Great news! Your creator application has been approved.</p>
+        <p>You can now:</p>
+        <ul>
+          <li>Create your storefront</li>
+          <li>Upload and sell digital products</li>
+          <li>Connect with buyers worldwide</li>
+        </ul>
+        <p>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/creator/dashboard" 
+             style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Go to Creator Dashboard
+          </a>
+        </p>
+        <p>Best regards,<br>The PawVault Team</p>
+      </div>
+    `,
+  }),
+
+  creatorApplicationRejected: (data: EmailTemplateData) => ({
+    subject: 'Update on Your Creator Application',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #dc3545;">Creator Application Update</h1>
+        <p>Hi ${data.name || 'there'},</p>
+        <p>Thank you for applying to become a PawVault creator. After careful review, we're unable to approve your application at this time.</p>
+        ${data.reason ? `<div style="background-color: #f8d7da; padding: 20px; border-radius: 5px; margin: 20px 0;"><p><strong>Reason:</strong> ${data.reason}</p></div>` : ''}
+        <p>You're welcome to reapply in the future. If you have any questions, please contact our support team.</p>
+        <p>Best regards,<br>The PawVault Team</p>
+      </div>
+    `,
+  }),
+
+  creatorApplicationChangesRequested: (data: EmailTemplateData) => ({
+    subject: 'Changes Requested for Your Creator Application',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #ffc107;">Creator Application Update</h1>
+        <p>Hi ${data.name || 'there'},</p>
+        <p>We've reviewed your creator application and would like to request some changes before we can proceed.</p>
+        ${data.reason ? `<div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 20px 0;"><p><strong>Notes:</strong> ${data.reason}</p></div>` : ''}
+        <p>Please update your application and resubmit it for review.</p>
+        <p>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/become-creator" 
+             style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Update Application
+          </a>
+        </p>
+        <p>Best regards,<br>The PawVault Team</p>
+      </div>
+    `,
+  }),
 }
 
 // Create email transporter
@@ -331,5 +389,36 @@ export async function sendAccountWarningEmail(
     name: name || '',
     reason,
     actionRequired,
+  })
+}
+
+export async function sendCreatorApplicationApprovedEmail(
+  email: string,
+  name?: string
+): Promise<boolean> {
+  return sendTemplateEmail('creatorApplicationApproved', email, {
+    name: name || '',
+  })
+}
+
+export async function sendCreatorApplicationRejectedEmail(
+  email: string,
+  name?: string,
+  reason?: string
+): Promise<boolean> {
+  return sendTemplateEmail('creatorApplicationRejected', email, {
+    name: name || '',
+    reason: reason || '',
+  })
+}
+
+export async function sendCreatorApplicationChangesRequestedEmail(
+  email: string,
+  name?: string,
+  reason?: string
+): Promise<boolean> {
+  return sendTemplateEmail('creatorApplicationChangesRequested', email, {
+    name: name || '',
+    reason: reason || '',
   })
 }

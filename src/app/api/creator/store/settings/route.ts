@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getServerUser } from "@/lib/session"
+import { requireAuth } from "@/lib/session"
 import { z } from "zod"
 import { createAuditLog, AuditActions } from "@/lib/audit-logger"
 
@@ -17,12 +17,19 @@ const storeSettingsSchema = z.object({
 
 export async function GET() {
   try {
-    const user = await getServerUser()
+    const user = await requireAuth()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
+    const fullUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { creatorStatus: true, role: true },
+    })
+
+    const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
+    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
+    if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
       return NextResponse.json({ error: "Creator account required" }, { status: 403 })
     }
 
@@ -36,12 +43,19 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const user = await getServerUser()
+    const user = await requireAuth()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
+    const fullUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { creatorStatus: true, role: true },
+    })
+
+    const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
+    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
+    if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
       return NextResponse.json({ error: "Creator account required" }, { status: 403 })
     }
 
@@ -67,6 +81,7 @@ export async function POST(request: Request) {
         slug: validated.slug,
         description: validated.description,
         socialLinks: validated.socialLinks ? JSON.stringify(validated.socialLinks) : undefined,
+        visibility: "PUBLISHED",
       },
     })
 
@@ -101,12 +116,19 @@ function storeSlugFromName(name: string): string {
 
 export async function PUT(request: Request) {
   try {
-    const user = await getServerUser()
+    const user = await requireAuth()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
+    const fullUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { creatorStatus: true, role: true },
+    })
+
+    const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
+    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
+    if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
       return NextResponse.json({ error: "Creator account required" }, { status: 403 })
     }
 

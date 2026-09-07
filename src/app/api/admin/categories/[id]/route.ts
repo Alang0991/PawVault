@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdminOrFounder } from "@/lib/server-auth"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const updateCategorySchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -13,7 +14,7 @@ const updateCategorySchema = z.object({
   parentId: z.string().nullable().optional(),
 })
 
-async function updateCategory(id: string, data: z.infer<typeof updateCategorySchema>, ctx: Awaited<ReturnType<typeof requireAdminOrFounder>>) {
+async function updateCategory(id: string, data: z.infer<typeof updateCategorySchema>, ctx: Awaited<ReturnType<typeof requirePermission>>) {
   const category = await prisma.category.findUnique({ where: { id } })
   if (!category) {
     throw new Error("Category not found")
@@ -39,7 +40,7 @@ async function updateCategory(id: string, data: z.infer<typeof updateCategorySch
   return updated
 }
 
-async function deleteCategory(id: string, ctx: Awaited<ReturnType<typeof requireAdminOrFounder>>) {
+async function deleteCategory(id: string, ctx: Awaited<ReturnType<typeof requirePermission>>) {
   const category = await prisma.category.findUnique({
     where: { id },
     include: { _count: { select: { products: true, children: true } } },
@@ -67,7 +68,7 @@ export async function PUT(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireAdminOrFounder()
+    const ctx = await requirePermission(PERMISSIONS.CATEGORIES_MANAGE)
 
     const body = await request.json().catch(() => null)
     const parsed = updateCategorySchema.safeParse(body)
@@ -94,7 +95,7 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireAdminOrFounder()
+    const ctx = await requirePermission(PERMISSIONS.CATEGORIES_MANAGE)
 
     await deleteCategory(params.id, ctx)
     return NextResponse.json({ success: true })
@@ -124,7 +125,7 @@ export async function POST(
         return NextResponse.json({ error: "Invalid input." }, { status: 400 })
       }
       try {
-        const ctx = await requireAdminOrFounder()
+        const ctx = await requirePermission(PERMISSIONS.CATEGORIES_MANAGE)
         const updated = await updateCategory(params.id, parsed.data, ctx)
         return NextResponse.json({ category: updated })
       } catch (error) {
@@ -132,7 +133,7 @@ export async function POST(
       }
     } else if (method === "DELETE") {
       try {
-        const ctx = await requireAdminOrFounder()
+        const ctx = await requirePermission(PERMISSIONS.CATEGORIES_MANAGE)
         await deleteCategory(params.id, ctx)
         return NextResponse.json({ success: true })
       } catch (error) {

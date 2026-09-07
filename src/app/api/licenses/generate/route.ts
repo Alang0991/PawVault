@@ -3,9 +3,10 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
 import { prisma } from "@/lib/prisma"
-import { getServerUser } from "@/lib/session"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
 import { createAuditLog, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const generateSchema = z.object({
   productId: z.string(),
@@ -21,16 +22,13 @@ function generateLicenseKey(): string {
 
 export async function POST(request: Request) {
   try {
-    const user = await getServerUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const ctx = await requirePermission(PERMISSIONS.ORDERS_MANAGE)
 
     const body = await request.json()
     const validated = generateSchema.parse(body)
 
-    const isAdmin = user.role === "ADMIN"
-    const targetUserId = isAdmin && validated.userId ? validated.userId : user.id
+    const isAdmin = ctx.role === "FOUNDER" || ctx.role === "ADMIN"
+    const targetUserId = isAdmin && validated.userId ? validated.userId : ctx.id
 
     const order = await prisma.order.findUnique({
       where: { id: validated.orderId },
@@ -40,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    if (!isAdmin && order.buyerId !== user.id) {
+    if (!isAdmin && order.buyerId !== ctx.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -73,7 +71,7 @@ export async function POST(request: Request) {
     })
 
     await createAuditLog({
-      userId: user.id,
+      userId: ctx.id,
       action: AuditActions.ORDER_COMPLETED,
       details: { licenseId: license.id, productId: validated.productId },
     })

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { z } from "zod"
+import { requireCreatorAccess } from "@/lib/creator-access"
 
 const updateProductTagsSchema = z.object({
   tagIds: z.array(z.string()),
@@ -18,6 +19,9 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const forbidden = await requireCreatorAccess(user.id, user.role)
+    if (forbidden) return forbidden
 
     const product = await prisma.product.findUnique({
       where: { id: params.id },
@@ -60,6 +64,9 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const forbidden = await requireCreatorAccess(user.id, user.role)
+    if (forbidden) return forbidden
 
     const product = await prisma.product.findUnique({
       where: { id: params.id },

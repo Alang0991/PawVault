@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getServerUser } from "@/lib/session"
+import { requireFounder } from "@/lib/server-auth"
 import { z } from "zod"
 import { logFounderAction, AuditActions } from "@/lib/audit-logger"
+import { notifyAccountUpdate } from "@/lib/account-sync"
 
 const schema = z.object({
   identifier: z.string().min(1),
@@ -12,10 +13,7 @@ const schema = z.object({
 })
 
 export async function POST(request: Request) {
-  const user = await getServerUser()
-  if (!user || user.role !== "FOUNDER") {
-    return NextResponse.json({ error: "Founder only." }, { status: 403 })
-  }
+  const ctx = await requireFounder()
 
   let payload: any = {}
   const contentType = request.headers.get("content-type") || ""
@@ -44,7 +42,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cannot modify Founder." }, { status: 403 })
   }
 
-  if (target.id === user.id) {
+  if (target.id === ctx.id) {
     return NextResponse.json({ error: "Cannot modify yourself." }, { status: 403 })
   }
 
@@ -55,15 +53,19 @@ export async function POST(request: Request) {
   })
 
   await logFounderAction(
-    user.id,
+    ctx.id,
     AuditActions.STAFF_CREATED,
     { previousRole, newRole: parsed.data.role, targetEmail: target.email, targetUsername: target.username },
     { entityType: "User", entityId: target.id },
   )
 
+  if (target.id !== ctx.id) {
+    notifyAccountUpdate()
+  }
+
   if (parsed.data.role === "MODERATOR" || previousRole === "MODERATOR" || parsed.data.role === "ADMIN" || previousRole === "ADMIN") {
     await logFounderAction(
-      user.id,
+      ctx.id,
       parsed.data.role === "MODERATOR" && previousRole === "USER"
         ? AuditActions.STAFF_PROMOTED
         : AuditActions.STAFF_PROMOTED,

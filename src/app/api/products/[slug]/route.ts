@@ -50,10 +50,11 @@ export async function GET(
 
     if (!currentUser) {
       baseWhere.isPublished = true
+      baseWhere.status = "PUBLISHED"
     } else {
       const product = await prisma.product.findUnique({
         where: { slug: params.slug },
-        select: { creatorId: true, isPublished: true },
+        select: { creatorId: true, isPublished: true, status: true },
       })
 
       if (!product) {
@@ -63,8 +64,8 @@ export async function GET(
         )
       }
 
-      const isOwner = product.creatorId === currentUser.id || currentUser.role === "ADMIN"
-      if (!isOwner && !product.isPublished) {
+      const isOwner = product.creatorId === currentUser.id || ["ADMIN", "FOUNDER"].includes(currentUser.role)
+      if (!isOwner && (!product.isPublished || product.status !== "PUBLISHED")) {
         return NextResponse.json(
           { error: "Product not found" },
           { status: 404 }
@@ -73,6 +74,7 @@ export async function GET(
 
       if (!isOwner) {
         baseWhere.isPublished = true
+        baseWhere.status = "PUBLISHED"
       }
     }
 

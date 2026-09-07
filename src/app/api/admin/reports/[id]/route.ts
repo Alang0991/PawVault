@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdminOrFounder } from "@/lib/server-auth"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const reportActionSchema = z.object({
   action: z.enum(["approve", "remove", "warn", "ban", "investigate", "dismiss"]),
@@ -15,7 +16,7 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireAdminOrFounder()
+    const ctx = await requirePermission(PERMISSIONS.REPORTS_RESOLVE)
 
     const fd = await request.formData().catch(() => null)
     let payload: any

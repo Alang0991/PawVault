@@ -2,10 +2,10 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getServerUser } from "@/lib/session"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
-import { isAdminOrFounder } from "@/lib/roles"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const moderationActionSchema = z.object({
   reportId: z.string(),
@@ -14,10 +14,7 @@ const moderationActionSchema = z.object({
 
 export async function GET() {
   try {
-    const user = await getServerUser()
-    if (!user || !isAdminOrFounder(user.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const ctx = await requirePermission(PERMISSIONS.REPORTS_VIEW)
 
     const reports = await prisma.report.findMany({
       include: {
@@ -43,6 +40,9 @@ export async function GET() {
 
     return NextResponse.json({ reports: formattedReports })
   } catch (error) {
+    if (error instanceof Error && (error as any).status) {
+      return NextResponse.json({ error: error.message }, { status: (error as any).status })
+    }
     console.error("Get moderation reports error:", error)
     return NextResponse.json(
       { error: "Something went wrong" },
@@ -53,10 +53,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const user = await getServerUser()
-    if (!user || !isAdminOrFounder(user.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const ctx = await requirePermission(PERMISSIONS.REPORTS_RESOLVE)
 
     const body = await request.json()
     const validated = moderationActionSchema.parse(body)
@@ -107,9 +104,9 @@ export async function POST(request: Request) {
       await tx.moderationAction.create({
         data: {
           reportId: validated.reportId,
-          adminId: user.id,
+          adminId: ctx.id,
           action: validated.action.toUpperCase(),
-          notes: `Action taken by staff ${user.username}`,
+          notes: `Action taken by staff ${ctx.username}`,
         },
       })
       await tx.report.update({
@@ -124,7 +121,7 @@ export async function POST(request: Request) {
         data: { status: "BANNED" },
       })
       await logAdminAction(
-        user.id,
+        ctx.id,
         AuditActions.ADMIN_USER_BANNED,
         { reason: report.reason, source: "moderation", reportId: report.id },
         { entityType: "User", entityId: report.reportedId },
@@ -137,7 +134,7 @@ export async function POST(request: Request) {
         data: { isPublished: false },
       })
       await logAdminAction(
-        user.id,
+        ctx.id,
         AuditActions.ADMIN_PRODUCT_REMOVED,
         { reason: report.reason, source: "moderation", reportId: report.id },
         { entityType: "Product", entityId: report.reportedId },
@@ -145,7 +142,7 @@ export async function POST(request: Request) {
     }
 
     await logAdminAction(
-      user.id,
+      ctx.id,
       auditAction,
       { action: validated.action, status: newStatus },
       { entityType: "Report", entityId: report.id },

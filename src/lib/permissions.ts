@@ -201,10 +201,19 @@ export function permissionsForRole(role: string | null | undefined): Permission[
 export function roleHasPermission(
   role: string | null | undefined,
   permission: Permission,
+  customPermissions: string | null | undefined,
 ): boolean {
   if (!role) return false
   if (role === ROLES.FOUNDER) return true
-  return permissionsForRole(role).includes(permission)
+  if (permissionsForRole(role).includes(permission)) return true
+  if (customPermissions) {
+    const customList = customPermissions
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean)
+    if (customList.includes(permission)) return true
+  }
+  return false
 }
 
 export function isFounderRole(role: string | null | undefined): boolean {

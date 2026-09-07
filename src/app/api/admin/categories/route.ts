@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdminOrFounder } from "@/lib/server-auth"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const createCategorySchema = z.object({
   name: z.string().min(1).max(100),
@@ -15,7 +16,7 @@ const createCategorySchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const ctx = await requireAdminOrFounder()
+    const ctx = await requirePermission(PERMISSIONS.CATEGORIES_MANAGE)
 
     const body = await request.json().catch(() => null)
     const parsed = createCategorySchema.safeParse(body)

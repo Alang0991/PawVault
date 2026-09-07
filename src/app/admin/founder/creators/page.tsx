@@ -10,11 +10,24 @@ import { AdminActionButton } from "@/components/admin-action-button"
 
 export const dynamic = "force-dynamic"
 
-export default async function FounderCreatorsPage() {
+const APPLICATION_STATUSES = [
+  "PENDING",
+  "UNDER_REVIEW",
+  "APPROVED",
+  "REJECTED",
+] as const
+
+export default async function FounderCreatorsPage({
+  searchParams,
+}: {
+  searchParams: { status?: string }
+}) {
   const user = await getServerUser()
   if (!user || user.role !== "FOUNDER") {
     redirect("/admin")
   }
+
+  const activeStatus = (searchParams.status || "PENDING") as typeof APPLICATION_STATUSES[number]
 
   const [creators, applications] = await Promise.all([
     prisma.user.findMany({
@@ -23,9 +36,9 @@ export default async function FounderCreatorsPage() {
       select: { id: true, username: true, displayName: true, email: true, role: true, isVerified: true, isFeatured: true, createdAt: true },
     }),
     prisma.creatorApplication.findMany({
-      where: { status: "PENDING" },
+      where: { status: activeStatus },
       orderBy: { createdAt: "desc" },
-      include: { user: { select: { username: true, email: true } } },
+      include: { user: { select: { username: true, email: true, displayName: true } } },
     }),
   ])
 
@@ -33,7 +46,7 @@ export default async function FounderCreatorsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Creators</h1>
-        <p className="text-sm text-muted-foreground">{creators.length} creators · {applications.length} pending applications</p>
+        <p className="text-sm text-muted-foreground">{creators.length} creators · {applications.length} {activeStatus.toLowerCase()} applications</p>
       </div>
 
       <Card>
@@ -79,23 +92,54 @@ export default async function FounderCreatorsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Pending creator applications</CardTitle>
+          <div className="flex flex-col gap-4">
+            <CardTitle className="text-base">Creator applications</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              {APPLICATION_STATUSES.map((status) => (
+                <Button
+                  key={status}
+                  asChild
+                  variant={activeStatus === status ? "default" : "secondary"}
+                  size="sm"
+                >
+                  <Link href={`?status=${status}`}>
+                    {status.replace("_", " ")}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {applications.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No pending applications.</p>
+            <p className="text-sm text-muted-foreground">No {activeStatus.toLowerCase()} applications.</p>
           ) : (
             <div className="space-y-2">
               {applications.map((a) => (
-                <div key={a.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                  <div>
-                    <p className="font-medium text-sm">{a.displayName}</p>
-                    <p className="text-xs text-muted-foreground">{a.user.email} · @{a.user.username}</p>
+                <div key={a.id} className="flex flex-col gap-3 border-b pb-4 last:border-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">{a.user.displayName || a.user.username}</p>
+                      <p className="text-xs text-muted-foreground">{a.user.email} · @{a.user.username}</p>
+                      {a.notes && (
+                        <p className="text-xs text-muted-foreground mt-1 italic">{a.notes}</p>
+                      )}
+                    </div>
+                    <Badge variant="secondary" className="text-xs">{a.status.replace("_", " ")}</Badge>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
                     <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
                       <input type="hidden" name="action" value="approve" />
                       <Button type="submit" size="sm">Approve</Button>
+                    </form>
+                    <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
+                      <input type="hidden" name="action" value="request_changes" />
+                      <input type="hidden" name="notes" value="" />
+                      <Button type="submit" size="sm" variant="secondary">Request Changes</Button>
+                    </form>
+                    <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
+                      <input type="hidden" name="action" value="under_review" />
+                      <Button type="submit" size="sm" variant="outline">Under Review</Button>
                     </form>
                     <form action={`/api/admin/creators/application/${a.id}`} method="POST" className="flex gap-1">
                       <input type="hidden" name="action" value="reject" />

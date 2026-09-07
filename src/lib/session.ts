@@ -21,6 +21,7 @@ export async function getServerUser() {
       avatar: true,
       bio: true,
       isVerified: true,
+      customPermissions: true,
     },
   })
 

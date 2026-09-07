@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getServerUser } from "@/lib/session"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
 import { logFounderAction, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
+import { notifyAccountUpdate } from "@/lib/account-sync"
 
 const schema = z.object({
   userId: z.string(),
@@ -13,10 +15,7 @@ const schema = z.object({
 })
 
 export async function POST(request: Request) {
-  const user = await getServerUser()
-  if (!user || !["ADMIN", "FOUNDER"].includes(user.role)) {
-    return NextResponse.json({ error: "Admin only." }, { status: 403 })
-  }
+  const ctx = await requirePermission(PERMISSIONS.STAFF_MANAGE)
 
   const fd = await request.formData().catch(() => null)
   let payload: any
@@ -41,7 +40,7 @@ export async function POST(request: Request) {
   if (target.role === "FOUNDER") {
     return NextResponse.json({ error: "Cannot modify Founder." }, { status: 403 })
   }
-  if (target.id === user.id) {
+  if (target.id === ctx.id) {
     return NextResponse.json({ error: "Cannot modify yourself." }, { status: 403 })
   }
 
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
   await prisma.userModeration.create({
     data: {
       userId: target.id,
-      actorId: user.id,
+      actorId: ctx.id,
       action: parsed.data.action,
       reason,
       expiresAt: data.suspendedUntil ?? null,
@@ -77,11 +76,15 @@ export async function POST(request: Request) {
       : AuditActions.ADMIN_USER_RESTORED
 
   await logFounderAction(
-    user.id,
+    ctx.id,
     auditAction,
     { status: parsed.data.action, reason },
     { entityType: "User", entityId: target.id },
   )
+
+  if (target.id !== ctx.id) {
+    notifyAccountUpdate()
+  }
 
   return NextResponse.json({ success: true })
 }

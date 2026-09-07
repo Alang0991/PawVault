@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAdminOrFounder } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { invalidateUserSessions } from "@/lib/creator-guards"
 
 const statusSchema = z.object({
   status: z.enum(["ACTIVE", "SUSPENDED", "BANNED"]),
@@ -60,6 +61,11 @@ export async function POST(
     }
 
     await prisma.user.update({ where: { id: target.id }, data })
+
+    if (parsed.data.status === "BANNED" || parsed.data.status === "SUSPENDED") {
+      await invalidateUserSessions(target.id)
+    }
+
     await prisma.userModeration.create({
       data: {
         userId: target.id,

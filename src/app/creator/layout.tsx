@@ -1,10 +1,11 @@
-import { getServerUser } from "@/lib/session"
+import { requireAuth } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { CreatorSidebar } from "@/components/creator-sidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Store } from "lucide-react"
+import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
 
@@ -13,13 +14,21 @@ export default async function CreatorLayout({
 }: {
   children: React.ReactNode
 }) {
-  const user = await getServerUser()
-
+  const user = await requireAuth()
   if (!user) {
     redirect("/auth/signin")
   }
 
-  if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
+  const fullUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { creatorStatus: true, role: true },
+  })
+
+  const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
+  const hasCreatorAccess = ["APPROVED"].includes(creatorStatus)
+  const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
+
+  if (!hasCreatorAccess && !isStaff) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-16">
         <div className="container mx-auto px-4 max-w-xl">
@@ -34,11 +43,10 @@ export default async function CreatorLayout({
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                You need a creator account to access the Creator Hub. Set up your
-                storefront to start selling digital products on PawVault.
+                You need an approved creator account to access the Creator Hub. Apply to start selling digital products on PawVault.
               </p>
               <Button asChild className="w-full gradient-bg text-white">
-                <Link href="/store/create">Create your store</Link>
+                <Link href="/become-creator">Apply to Become a Creator</Link>
               </Button>
             </CardContent>
           </Card>

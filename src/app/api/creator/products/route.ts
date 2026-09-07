@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from "next/server"
-import { getServerUser } from "@/lib/session"
+import { requireAuth } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { createAuditLog, AuditActions } from "@/lib/audit-logger"
 
 const createProductSchema = z.object({
   title: z.string().min(1).max(200),
@@ -22,16 +23,29 @@ const createProductSchema = z.object({
   contentRating: z.enum(["SFW", "MATURE", "NSFW"]).default("SFW"),
 })
 
+async function requireCreatorAccess(userId: string, userRole: string) {
+  const fullUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { creatorStatus: true, role: true },
+  })
+
+  const creatorStatus = (fullUser as any)?.creatorStatus ?? "NONE"
+  const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(userRole)
+  if (!["APPROVED"].includes(creatorStatus) && !isStaff) {
+    return NextResponse.json({ error: "Creator account required" }, { status: 403 })
+  }
+  return null
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const user = await getServerUser()
+    const user = await requireAuth()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+    const forbidden = await requireCreatorAccess(user.id, user.role)
+    if (forbidden) return forbidden
 
     const body = await request.json()
     const validated = createProductSchema.parse(body)
@@ -63,11 +77,12 @@ export async function POST(request: NextRequest) {
         categoryId: rest.categoryId,
         isFree: rest.isFree,
         isOnSale: rest.isOnSale,
-        isPublished: rest.isPublished,
+        isPublished: false,
         unityVersion: rest.unityVersion,
         vrcSdkVersion: rest.vrcSdkVersion,
         contentRating: rest.contentRating,
         slug,
+        status: "DRAFT",
       },
     })
 
@@ -91,6 +106,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    await createAuditLog({
+      userId: user.id,
+      action: AuditActions.PRODUCT_CREATED,
+      details: { productId: product.id, title: product.title },
+    })
+
     return NextResponse.json(product, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -109,26 +130,33 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getServerUser()
+    const user = await requireAuth()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const forbidden = await requireCreatorAccess(user.id, user.role)
+    if (forbidden) return forbidden
+
     const products = await prisma.product.findMany({
       where: { creatorId: user.id },
       include: {
+        category: true,
+        media: { orderBy: { order: "asc" } },
+        files: { orderBy: { createdAt: "asc" } },
+        tags: { include: { tag: true } },
         _count: {
           select: {
             reviews: true,
             wishlistItems: true,
-            orderItems: true
-          }
-        }
+            orderItems: true,
+          },
+        },
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json(products)
+    return NextResponse.json({ products })
   } catch (error) {
     console.error("Error fetching products:", error)
     return NextResponse.json(

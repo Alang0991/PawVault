@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await prisma.product.findUnique({
-    where: { slug: params.slug, isPublished: true },
+    where: { slug: params.slug, isPublished: true, status: "PUBLISHED" },
     select: { title: true, description: true, creator: { select: { username: true, displayName: true } } },
   })
 
@@ -110,7 +110,14 @@ export default async function ProductPage({ params }: { params: { slug: string }
   }
 
   const user = await getServerUser()
-  const isCreator = user?.id === product.creatorId
+  const isOwner = user?.id === product.creatorId
+  const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user?.role || "")
+  const isVisible = product.status === "PUBLISHED" && product.isPublished
+
+  if (!isVisible && !isOwner && !isStaff) {
+    notFound()
+  }
+
   const hasPurchased = user ? await prisma.order.findFirst({
     where: {
       buyerId: user.id,
@@ -118,7 +125,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
       items: { some: { productId: product.id } },
     },
   }) : null
-  const canDownload = isCreator || !!hasPurchased
+  const canDownload = isOwner || isStaff || !!hasPurchased
 
   const avgRating = product.reviews.length > 0
     ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length

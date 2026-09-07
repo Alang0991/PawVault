@@ -2,15 +2,16 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdminOrFounder } from "@/lib/server-auth"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const updateOrderSchema = z.object({
   status: z.enum(["PENDING", "PAID", "COMPLETED", "CANCELLED", "REFUNDED"]),
 })
 
-async function updateOrder(id: string, data: z.infer<typeof updateOrderSchema>, ctx: Awaited<ReturnType<typeof requireAdminOrFounder>>) {
+async function updateOrder(id: string, data: z.infer<typeof updateOrderSchema>, ctx: Awaited<ReturnType<typeof requirePermission>>) {
   const order = await prisma.order.findUnique({
     where: { id },
     select: { id: true, status: true, total: true },
@@ -42,7 +43,7 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireAdminOrFounder()
+    const ctx = await requirePermission(PERMISSIONS.ORDERS_MANAGE)
 
     const body = await request.json().catch(() => null)
     const parsed = updateOrderSchema.safeParse(body)
@@ -79,7 +80,7 @@ export async function POST(
         return NextResponse.json({ error: "Invalid input." }, { status: 400 })
       }
       try {
-        const ctx = await requireAdminOrFounder()
+    const ctx = await requirePermission(PERMISSIONS.ORDERS_MANAGE)
         await updateOrder(params.id, parsed.data, ctx)
         return NextResponse.json({ success: true })
       } catch (error) {

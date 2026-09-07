@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -18,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { SearchBar } from "@/components/search-bar"
 import { useHeaderCounts } from "@/components/header-counts"
 import { ROLES } from "@/lib/roles"
+import { useAccountState } from "@/hooks/use-account-state"
 import {
   ShoppingCart,
   Heart,
@@ -33,7 +35,6 @@ import {
   Store,
   X,
 } from "lucide-react"
-import { useState } from "react"
 
 const NavLinks = [
   { href: "/browse", label: "Browse" },
@@ -42,11 +43,12 @@ const NavLinks = [
 ]
 
 export default function Header() {
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
   const { wishlist, cart } = useHeaderCounts()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { account, isLoading } = useAccountState()
 
-  const role = session?.user?.role
+  const role = account?.user?.role || session?.user?.role
   const isFounder = role === ROLES.FOUNDER
   const isAdmin = role === ROLES.ADMIN
   const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(role || "")
@@ -54,7 +56,7 @@ export default function Header() {
     role || ""
   )
 
-  const displayName = session?.user?.name || ""
+  const displayName = account?.user?.displayName || session?.user?.name || ""
   const initials =
     displayName
       ?.split(" ")
@@ -154,15 +156,15 @@ export default function Header() {
               </Button>
             )}
 
-            {session ? (
+            {sessionStatus === "authenticated" && !isLoading ? (
               <AccountMenu
                 isFounder={isFounder}
                 isStaff={isStaff}
                 isCreator={isCreator}
-                avatar={session.user?.image || ""}
+                avatar={account?.user?.avatar || session?.user?.image || ""}
                 initials={initials}
                 name={displayName}
-                email={session.user?.email || ""}
+                email={account?.user?.email || session?.user?.email || ""}
               />
             ) : (
               <Button variant="ghost" size="sm" asChild>
@@ -209,17 +211,17 @@ export default function Header() {
             </div>
 
             <div className="pt-2 pb-4 space-y-2 border-t">
-              {session ? (
+              {sessionStatus === "authenticated" && !isLoading ? (
                 <>
                   <div className="flex items-center gap-3 px-3 py-2">
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={session.user?.image || ""} alt={displayName} />
+                      <AvatarImage src={account?.user?.avatar || session?.user?.image || ""} alt={displayName} />
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-medium text-sm">{displayName}</p>
                       <p className="text-xs text-text-muted">
-                        {session.user?.email}
+                        {account?.user?.email || session?.user?.email}
                       </p>
                     </div>
                   </div>

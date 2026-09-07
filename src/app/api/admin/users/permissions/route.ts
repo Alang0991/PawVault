@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { requireFounder } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { notifyAccountUpdate } from "@/lib/account-sync"
 
 const permissionsSchema = z.object({
   userId: z.string(),
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
       { userId: parsed.data.userId, customPermissions: permissionsValue },
       { entityType: "User", entityId: parsed.data.userId },
     )
+
+    notifyAccountUpdate()
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -2,9 +2,10 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdminOrFounder } from "@/lib/server-auth"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const updateCouponSchema = z.object({
   code: z.string().min(1).max(50).optional(),
@@ -15,7 +16,7 @@ const updateCouponSchema = z.object({
   expiresAt: z.string().datetime().nullable().optional(),
 })
 
-async function updateCoupon(id: string, data: z.infer<typeof updateCouponSchema>, ctx: Awaited<ReturnType<typeof requireAdminOrFounder>>) {
+async function updateCoupon(id: string, data: z.infer<typeof updateCouponSchema>, ctx: Awaited<ReturnType<typeof requirePermission>>) {
   const coupon = await prisma.coupon.findUnique({ where: { id } })
   if (!coupon) {
     throw new Error("Coupon not found")
@@ -43,7 +44,7 @@ async function updateCoupon(id: string, data: z.infer<typeof updateCouponSchema>
   return updated
 }
 
-async function deleteCoupon(id: string, ctx: Awaited<ReturnType<typeof requireAdminOrFounder>>) {
+async function deleteCoupon(id: string, ctx: Awaited<ReturnType<typeof requirePermission>>) {
   const coupon = await prisma.coupon.findUnique({ where: { id } })
   if (!coupon) {
     throw new Error("Coupon not found")
@@ -64,7 +65,7 @@ export async function PUT(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireAdminOrFounder()
+    const ctx = await requirePermission(PERMISSIONS.DISCOUNTS_MANAGE)
 
     const body = await request.json().catch(() => null)
     const parsed = updateCouponSchema.safeParse(body)
@@ -91,7 +92,7 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireAdminOrFounder()
+    const ctx = await requirePermission(PERMISSIONS.DISCOUNTS_MANAGE)
 
     await deleteCoupon(params.id, ctx)
     return NextResponse.json({ success: true })
@@ -123,7 +124,7 @@ export async function POST(
         return NextResponse.json({ error: "Invalid input." }, { status: 400 })
       }
       try {
-        const ctx = await requireAdminOrFounder()
+        const ctx = await requirePermission(PERMISSIONS.DISCOUNTS_MANAGE)
         const updated = await updateCoupon(params.id, parsed.data, ctx)
         return NextResponse.json({ coupon: updated })
       } catch (error) {
@@ -131,7 +132,7 @@ export async function POST(
       }
     } else if (method === "DELETE") {
       try {
-        const ctx = await requireAdminOrFounder()
+        const ctx = await requirePermission(PERMISSIONS.DISCOUNTS_MANAGE)
         await deleteCoupon(params.id, ctx)
         return NextResponse.json({ success: true })
       } catch (error) {

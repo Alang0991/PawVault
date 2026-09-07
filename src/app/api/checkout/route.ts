@@ -72,6 +72,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'You cannot purchase your own products' }, { status: 400 })
   }
 
+  const unavailableItems = cart.items.filter(
+    (item) => !item.product.isPublished || (item.product.status !== 'PUBLISHED')
+  )
+  if (unavailableItems.length > 0) {
+    return NextResponse.json({ error: 'One or more products are no longer available' }, { status: 400 })
+  }
+
   if (user) {
     const ownedProductIds = new Set(
       (await prisma.license.findMany({

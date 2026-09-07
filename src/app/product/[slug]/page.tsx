@@ -36,6 +36,11 @@ async function getProduct(slug: string) {
           isVerified: true,
         },
       },
+      store: {
+        select: {
+          visibility: true,
+        },
+      },
       category: { select: { id: true, name: true, slug: true } },
       media: { orderBy: { order: "asc" } },
       files: {
@@ -68,6 +73,13 @@ async function getProduct(slug: string) {
   })
 
   if (!product) notFound()
+
+  if (product.status !== "PUBLISHED" || !product.isPublished || product.store?.visibility !== "PUBLISHED") {
+    const user = await getServerUser()
+    if (!user || (product.creatorId !== user.id && !["ADMIN", "FOUNDER"].includes(user.role))) {
+      notFound()
+    }
+  }
 
   const avgRating =
     product.reviews.length > 0

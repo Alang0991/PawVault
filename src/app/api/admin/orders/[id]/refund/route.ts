@@ -2,8 +2,9 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { requireFounder } from "@/lib/server-auth"
+import { requirePermission } from "@/lib/server-auth"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const bodySchema = z.object({
   amount: z.number().positive(),
@@ -15,7 +16,7 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireFounder()
+    const ctx = await requirePermission(PERMISSIONS.REFUNDS_MANAGE)
 
     const fd = await request.formData().catch(() => null)
     let payload: any

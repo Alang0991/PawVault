@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
+import { requireCreatorAccess } from "@/lib/creator-access"
 
 export async function POST(
   request: Request,
@@ -13,6 +14,9 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: "You must be signed in." }, { status: 401 })
     }
+
+    const forbidden = await requireCreatorAccess(user.id, user.role)
+    if (forbidden) return forbidden
 
     const media = await prisma.productMedia.findUnique({
       where: { id: params.mediaId },

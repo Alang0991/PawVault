@@ -68,6 +68,10 @@ export async function GET(request: Request) {
 
     const where: any = {
       isPublished: true,
+      status: "PUBLISHED",
+      store: {
+        visibility: "PUBLISHED",
+      },
       ...(category && { category: { slug: category } }),
       ...(featured === "true" && { isFeatured: true }),
       ...(creator && { creator: { username: creator } }),
@@ -189,7 +193,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    if (!["CREATOR", "VERIFIED_CREATOR", "ADMIN"].includes(user.role)) {
+    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
+    const creatorStatus = (user as any).creatorStatus ?? "NONE"
+    if (!isStaff && creatorStatus !== "APPROVED") {
       return NextResponse.json({ error: "Creator account required" }, { status: 403 })
     }
 
@@ -217,6 +223,7 @@ export async function POST(request: Request) {
         creatorId: user.id,
         storeId: store?.id,
         slug,
+        status: "DRAFT",
       },
     })
 

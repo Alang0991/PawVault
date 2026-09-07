@@ -17,6 +17,7 @@ const updateProductSchema = z.object({
   isFree: z.boolean().optional(),
   isOnSale: z.boolean().optional(),
   isPublished: z.boolean().optional(),
+  status: z.enum(["DRAFT", "PENDING_REVIEW", "PUBLISHED", "HIDDEN", "ARCHIVED", "REJECTED", "SUSPENDED"]).optional(),
   version: z.string().optional(),
   unityVersion: z.string().optional(),
   vrcSdkVersion: z.string().optional(),
@@ -35,7 +36,7 @@ const updateProductSchema = z.object({
 async function getOwnedProduct(id: string, userId: string, role: string) {
   const product = await prisma.product.findUnique({ where: { id } })
   if (!product) return null
-  if (product.creatorId !== userId && role !== "ADMIN") return "forbidden" as const
+  if (product.creatorId !== userId && !["ADMIN", "FOUNDER"].includes(role)) return "forbidden" as const
   return product
 }
 
@@ -64,7 +65,7 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    if (product.creatorId !== user.id && user.role !== "ADMIN") {
+    if (product.creatorId !== user.id && !["ADMIN", "FOUNDER"].includes(user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -90,12 +91,30 @@ export async function PUT(
     const body = await request.json()
     const validated = updateProductSchema.parse(body)
 
-    const { tags, ...data } = validated
+    const { tags, status, ...data } = validated
+
+    const updateData: any = { ...data }
+    if (status) {
+      if (!["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)) {
+        if (status === "PUBLISHED") {
+          return NextResponse.json(
+            { error: "Creators cannot directly publish products. Submit for review instead." },
+            { status: 403 }
+          )
+        }
+      }
+      updateData.status = status
+      if (status === "PUBLISHED") {
+        updateData.isPublished = true
+      } else if (status === "DRAFT" || status === "ARCHIVED" || status === "REJECTED" || status === "SUSPENDED") {
+        updateData.isPublished = false
+      }
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const product = await tx.product.update({
         where: { id: params.id },
-        data,
+        data: updateData,
       })
 
       if (tags) {
@@ -118,10 +137,11 @@ export async function PUT(
       return product
     })
 
+    const auditAction = status === "PUBLISHED" ? AuditActions.PRODUCT_PUBLISHED : AuditActions.PRODUCT_UPDATED
     await createAuditLog({
       userId: user.id,
-      action: data.isPublished ? AuditActions.PRODUCT_PUBLISHED : AuditActions.PRODUCT_UPDATED,
-      details: { productId: params.id },
+      action: auditAction,
+      details: { productId: params.id, status },
     })
 
     return NextResponse.json({ product: updated })

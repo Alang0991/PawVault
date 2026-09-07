@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google"
 import DiscordProvider from "next-auth/providers/discord"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { invalidateUserSessions } from "@/lib/creator-guards"
 
 const isProduction = process.env.NODE_ENV === "production"
 
@@ -37,11 +38,13 @@ export const authOptions: NextAuthOptions = {
         }
 
         if ((user as any).status === "BANNED") {
+          await invalidateUserSessions(user.id)
           return null
         }
         if ((user as any).status === "SUSPENDED") {
           const until = (user as any).suspendedUntil as Date | null | undefined
           if (until && new Date(until) > new Date()) {
+            await invalidateUserSessions(user.id)
             return null
           }
         }

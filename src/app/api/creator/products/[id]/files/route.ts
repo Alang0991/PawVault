@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
+import { requireCreatorAccess } from "@/lib/creator-access"
 
 export async function GET(
   _request: Request,
@@ -13,6 +14,9 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const forbidden = await requireCreatorAccess(user.id, user.role)
+    if (forbidden) return forbidden
 
     const product = await prisma.product.findUnique({
       where: { id: params.id },

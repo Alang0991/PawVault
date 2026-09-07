@@ -2,21 +2,19 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getServerUser } from "@/lib/session"
+import { requirePermission } from "@/lib/server-auth"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export async function GET(request: Request) {
   try {
-    const user = await getServerUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const ctx = await requirePermission(PERMISSIONS.ORDERS_MANAGE)
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
 
     const where =
-      user.role === "ADMIN" ? {} : { userId: user.id }
+      ctx.role === "FOUNDER" || ctx.role === "ADMIN" ? {} : { userId: ctx.id }
 
     const [licenses, total] = await Promise.all([
       prisma.license.findMany({

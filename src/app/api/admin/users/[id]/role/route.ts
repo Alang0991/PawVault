@@ -2,10 +2,12 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getServerUser } from "@/lib/session"
+import { requirePermission } from "@/lib/server-auth"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
-import { isFounder, isAdminOrFounder } from "@/lib/roles"
+import { isFounder } from "@/lib/roles"
+import { PERMISSIONS } from "@/lib/permissions"
+import { notifyAccountUpdate } from "@/lib/account-sync"
 
 const updateRoleSchema = z.object({
   role: z.enum(["USER", "CREATOR", "VERIFIED_CREATOR", "MODERATOR", "ADMIN", "FOUNDER"]),
@@ -23,14 +25,7 @@ export async function PUT(
   { params }: { params: { id: string } },
 ) {
   try {
-    const user = await getServerUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    if (!isAdminOrFounder(user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+    const ctx = await requirePermission(PERMISSIONS.STAFF_MANAGE)
 
     const body = await request.json()
     const validated = updateRoleSchema.parse(body)
@@ -43,23 +38,23 @@ export async function PUT(
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const isSelf = target.id === user.id
+    const isSelf = target.id === ctx.id
 
-    if (validated.role === "FOUNDER" && !isFounder(user.role)) {
+    if (validated.role === "FOUNDER" && !isFounder(ctx.role)) {
       return NextResponse.json(
         { error: "Only the platform Founder can grant the FOUNDER role." },
         { status: 403 }
       )
     }
 
-    if (target.role === "FOUNDER" && !isFounder(user.role)) {
+    if (target.role === "FOUNDER" && !isFounder(ctx.role)) {
       return NextResponse.json(
         { error: "Only the platform Founder can modify a Founder account." },
         { status: 403 }
       )
     }
 
-    if (isSelf && validated.role !== user.role) {
+    if (isSelf && validated.role !== ctx.role) {
       return NextResponse.json(
         { error: "You cannot change your own role." },
         { status: 403 }
@@ -95,11 +90,15 @@ export async function PUT(
     }
 
     await logAdminAction(
-      user.id,
+      ctx.id,
       action,
       { previousRole, newRole: validated.role, targetEmail: target.email, targetUsername: target.username },
       { entityType: "User", entityId: target.id },
     )
+
+    if (target.id !== ctx.id) {
+      notifyAccountUpdate()
+    }
 
     return NextResponse.json({ user: updated })
   } catch (error) {

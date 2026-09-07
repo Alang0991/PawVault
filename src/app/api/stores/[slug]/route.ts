@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getServerUser } from "@/lib/session"
 import { rateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
+import { StoreVisibility } from "@prisma/client"
 
 export async function GET(
   request: Request,
@@ -16,8 +18,18 @@ export async function GET(
         { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
       )
     }
-    let store = await prisma.store.findUnique({
-      where: { slug: params.slug },
+    const currentUser = await getServerUser()
+    const isStaff = currentUser ? ["ADMIN", "FOUNDER", "MODERATOR"].includes(currentUser.role) : false
+
+    const visibilityFilter = isStaff
+      ? { OR: [{ visibility: "PUBLISHED" as StoreVisibility }, { visibility: { not: "PUBLISHED" as StoreVisibility } }] }
+      : { visibility: "PUBLISHED" as StoreVisibility }
+
+    let store = await prisma.store.findFirst({
+      where: {
+        slug: params.slug,
+        ...visibilityFilter,
+      },
       include: {
         user: {
           select: {
@@ -30,7 +42,10 @@ export async function GET(
           },
         },
         products: {
-          where: { isPublished: true },
+          where: {
+            isPublished: true,
+            status: "PUBLISHED",
+          },
           include: {
             media: {
               where: { isThumbnail: true },
@@ -57,6 +72,7 @@ export async function GET(
         where: { username: params.slug },
         include: {
           store: {
+            where: visibilityFilter,
             include: {
               user: {
                 select: {
@@ -69,7 +85,10 @@ export async function GET(
                 },
               },
               products: {
-                where: { isPublished: true },
+                where: {
+                  isPublished: true,
+                  status: "PUBLISHED",
+                },
                 include: {
                   creator: {
                     select: {

@@ -11,6 +11,7 @@ export type AuthContext = {
   displayName: string | null
   role: Role
   status: string
+  customPermissions: string | null
 }
 
 export class AuthorizationError extends Error {
@@ -41,6 +42,7 @@ export async function requireUser(): Promise<AuthContext> {
     displayName: user.displayName ?? null,
     role: user.role as Role,
     status: (user as any).status ?? "ACTIVE",
+    customPermissions: (user as any).customPermissions ?? null,
   }
 }
 
@@ -59,7 +61,7 @@ export async function requireRole(min: Role): Promise<AuthContext> {
 
 export async function requirePermission(permission: Permission): Promise<AuthContext> {
   const ctx = await requireUser()
-  if (!roleHasPermission(ctx.role, permission)) {
+  if (!roleHasPermission(ctx.role, permission, ctx.customPermissions)) {
     await logSecurityEvent(AuditActions.SECURITY_PRIVILEGE_ESCALATION_BLOCKED, {
       attempted: permission,
       actual: ctx.role,
