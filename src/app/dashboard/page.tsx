@@ -107,7 +107,7 @@ export default async function DashboardPage() {
   const { recentOrders, wishlistItems, licenses, products } = await getDashboardData(user.id)
 
   const isCreator = ["CREATOR", "VERIFIED_CREATOR", "ADMIN", "FOUNDER"].includes(user.role)
-  const isAdmin = ["ADMIN", "FOUNDER"].includes(user.role)
+  const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
                 </Link>
               </Button>
             )}
-            {isAdmin && (
+            {isStaff && (
               <Button asChild variant="outline">
                 <Link href="/moderation">
                   <Shield className="h-4 w-4 mr-2" />

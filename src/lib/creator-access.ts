@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
-import { ROLES } from "@/lib/roles"
+import { ROLES, isStaff } from "@/lib/roles"
 
 export type CreatorAccessResult =
   | { allowed: true; userId: string; creatorStatus: string; role: string }
@@ -39,9 +39,9 @@ export async function getCreatorAccess(): Promise<CreatorAccessResult> {
     }
   }
 
-  const isStaff = [ROLES.ADMIN, ROLES.FOUNDER].includes(user.role as any)
+  const staff = isStaff(user.role)
 
-  if (isStaff) {
+  if (staff) {
     return {
       allowed: true,
       userId: user.id,

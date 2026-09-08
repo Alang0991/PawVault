@@ -2,10 +2,12 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requireAdminOrFounder } from "@/lib/server-auth"
+import { getServerUser } from "@/lib/session"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
 import { invalidateUserSessions } from "@/lib/creator-guards"
+import { roleHasPermission } from "@/lib/permissions"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const statusSchema = z.object({
   status: z.enum(["ACTIVE", "SUSPENDED", "BANNED"]),
@@ -17,7 +19,10 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requireAdminOrFounder()
+    const ctx = await getServerUser()
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     const fd = await request.formData().catch(() => null)
     let payload: any
@@ -43,6 +48,28 @@ export async function POST(
     }
     if (target.id === ctx.id) {
       return NextResponse.json({ error: "Cannot modify yourself." }, { status: 403 })
+    }
+
+    const customPermissions = (ctx as any).customPermissions ?? null
+
+    if (parsed.data.status === "BANNED") {
+      if (!roleHasPermission(ctx.role, PERMISSIONS.USERS_BAN, customPermissions)) {
+        return NextResponse.json({ error: "Missing permission: users.ban" }, { status: 403 })
+      }
+    } else if (parsed.data.status === "SUSPENDED") {
+      if (!roleHasPermission(ctx.role, PERMISSIONS.USERS_SUSPEND, customPermissions)) {
+        return NextResponse.json({ error: "Missing permission: users.suspend" }, { status: 403 })
+      }
+    } else if (parsed.data.status === "ACTIVE") {
+      if (target.status === "BANNED") {
+        if (!roleHasPermission(ctx.role, PERMISSIONS.USERS_UNBAN, customPermissions)) {
+          return NextResponse.json({ error: "Missing permission: users.unban" }, { status: 403 })
+        }
+      } else if (target.status === "SUSPENDED") {
+        if (!roleHasPermission(ctx.role, PERMISSIONS.USERS_SUSPEND, customPermissions)) {
+          return NextResponse.json({ error: "Missing permission: users.suspend" }, { status: 403 })
+        }
+      }
     }
 
     const reason = parsed.data.reason?.trim() || null

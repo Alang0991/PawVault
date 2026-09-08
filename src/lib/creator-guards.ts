@@ -83,6 +83,6 @@ export function canAccessProduct(product: {
 }, userId: string | null, userRole: string | null) {
   if (isProductVisible(product)) return true
   if (userId && product.creatorId === userId) return true
-  if (userRole === "ADMIN" || userRole === "FOUNDER") return true
+  if (userRole === "ADMIN" || userRole === "FOUNDER" || userRole === "MODERATOR") return true
   return false
 }

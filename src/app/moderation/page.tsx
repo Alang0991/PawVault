@@ -28,7 +28,7 @@ export default async function ModerationPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                You do not have permission to access moderation tools. Only administrators and platform owners can view this area.
+                You do not have permission to access moderation tools. Only platform owners, administrators, and moderators can view this area.
               </p>
               <Button asChild className="w-full">
                 <Link href="/">Return Home</Link>

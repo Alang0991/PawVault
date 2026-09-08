@@ -35,7 +35,7 @@ export default function ModerationPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    if (!session || session.user?.role !== 'ADMIN') {
+    if (!session || !['ADMIN', 'FOUNDER', 'MODERATOR'].includes(session.user?.role || '')) {
       router.replace('/auth/signin')
       return
     }

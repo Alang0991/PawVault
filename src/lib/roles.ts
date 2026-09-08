@@ -38,3 +38,7 @@ export function hasRoleAtLeast(actualRole: string | null | undefined, required: 
   const needed = ROLE_RANK[required] ?? 0
   return actual >= needed
 }
+
+export function canAccessModeration(role: string | null | undefined): boolean {
+  return isStaff(role)
+}
