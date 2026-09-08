@@ -203,6 +203,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.REPORTS_RESOLVE,
   ],
   CREATOR: [],
+  VERIFIED_CREATOR: [],
   USER: [],
 }
 

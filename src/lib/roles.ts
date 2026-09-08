@@ -3,6 +3,7 @@ export const ROLES = {
   ADMIN: "ADMIN",
   MODERATOR: "MODERATOR",
   CREATOR: "CREATOR",
+  VERIFIED_CREATOR: "VERIFIED_CREATOR",
   USER: "USER",
 } as const
 
@@ -12,6 +13,7 @@ export const ROLE_RANK: Record<Role, number> = {
   FOUNDER: 100,
   ADMIN: 80,
   MODERATOR: 60,
+  VERIFIED_CREATOR: 50,
   CREATOR: 40,
   USER: 10,
 }

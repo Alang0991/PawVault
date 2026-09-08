@@ -35,13 +35,30 @@ export async function requireUser(): Promise<AuthContext> {
   if (!user) {
     throw new AuthenticationError("Authentication required.")
   }
+
+  const status = (user as any).status ?? "ACTIVE"
+  if (status === "BANNED") {
+    throw new AuthorizationError("Account is banned.")
+  }
+  if (status === "SUSPENDED") {
+    const u = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { suspendedUntil: true },
+    })
+    if (u?.suspendedUntil && u.suspendedUntil > new Date()) {
+      throw new AuthorizationError(
+        `Account is suspended until ${u.suspendedUntil.toISOString()}.`,
+      )
+    }
+  }
+
   return {
     id: user.id,
     email: user.email,
     username: user.username,
     displayName: user.displayName ?? null,
     role: user.role as Role,
-    status: (user as any).status ?? "ACTIVE",
+    status,
     customPermissions: (user as any).customPermissions ?? null,
   }
 }

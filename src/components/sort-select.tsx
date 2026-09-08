@@ -9,7 +9,6 @@ const SORT_OPTIONS = [
   { value: "price-asc", label: "Price: Low to High" },
   { value: "price-desc", label: "Price: High to Low" },
   { value: "popular", label: "Most Popular" },
-  { value: "best-selling", label: "Best Selling" },
   { value: "rating", label: "Highest Rated" },
 ]
 

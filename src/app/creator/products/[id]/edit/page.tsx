@@ -118,20 +118,19 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       const res = await fetch(`/api/creator/products/${id}/autosave`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: f.title,
-          slug: f.slug || undefined,
-          subtitle: f.subtitle || null,
-          description: f.description || null,
-          categoryId: f.categoryId || null,
-          tags: f.tags,
-          price: f.isFree ? 0 : Number(f.price) || 0,
-          salePrice: f.salePrice ? Number(f.salePrice) : null,
-          isFree: f.isFree,
-          isOnSale: f.isOnSale,
-          isPublished: published,
-          contentRating: f.contentRating,
-        }),
+          body: JSON.stringify({
+            title: f.title,
+            slug: f.slug || undefined,
+            subtitle: f.subtitle || null,
+            description: f.description || null,
+            categoryId: f.categoryId || null,
+            tags: f.tags,
+            price: f.isFree ? 0 : Number(f.price) || 0,
+            salePrice: f.salePrice ? Number(f.salePrice) : null,
+            isFree: f.isFree,
+            isOnSale: f.isOnSale,
+            contentRating: f.contentRating,
+          }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -490,13 +489,46 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
             <Card className="border-red-200">
               <CardHeader>
                 <CardTitle>Visibility</CardTitle>
-                <CardDescription>Publish or unpublish this product.</CardDescription>
+                <CardDescription>Submit your product for review to publish it.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <label className="flex items-center gap-3 text-sm">
-                  <Switch checked={published} onCheckedChange={setPublished} />
-                  <span>{published ? "Published (visible to buyers)" : "Draft (only you can see it)"}</span>
-                </label>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className={published ? "text-green-600" : "text-text-secondary"}>
+                    {published ? "Published" : "Draft"}
+                  </span>
+                  <span className="text-xs text-text-muted">
+                    {published ? "Visible to buyers" : "Only you can see it"}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={async () => {
+                      await fetch(`/api/creator/products/${id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: "PENDING_REVIEW", isPublished: true }),
+                      })
+                      setPublished(true)
+                    }}
+                    disabled={loading}
+                  >
+                    Submit for Review
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      await fetch(`/api/creator/products/${id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: "DRAFT", isPublished: false }),
+                      })
+                      setPublished(false)
+                    }}
+                    disabled={loading}
+                  >
+                    Unpublish
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             <Card className="border-red-300 mt-4">

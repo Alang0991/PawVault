@@ -36,6 +36,8 @@ enum ProductStatus {
   ARCHIVED
   REJECTED
   SUSPENDED
+  CHANGES_REQUESTED
+  REMOVED
 }
 
 enum StoreVisibility {
@@ -333,7 +335,12 @@ model Category {
   description String?
   icon        String?
   parentId    String?
+  displayOrder Int     @default(0)
+  isActive    Boolean  @default(true)
+  seoTitle    String?
+  seoDescription String?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children Category[] @relation("CategoryHierarchy")
@@ -341,17 +348,25 @@ model Category {
 
   @@index([slug])
   @@index([parentId])
+  @@index([displayOrder])
+  @@index([isActive])
 }
 
 model Tag {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  description String?
+  tagType   String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   products ProductTag[]
 
   @@index([slug])
+  @@index([isActive])
+  @@index([tagType])
 }
 
 model ProductTag {

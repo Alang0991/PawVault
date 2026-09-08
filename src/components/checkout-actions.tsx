@@ -18,6 +18,7 @@ interface CheckoutOrder {
 interface CheckoutResult {
   multiCreator: boolean
   orders: CheckoutOrder[]
+  freeAcquisition?: boolean
 }
 
 const formatCurrency = (amount: number) =>
@@ -44,6 +45,11 @@ export function CheckoutActions({ cartId }: CheckoutActionsProps) {
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || "Could not start checkout. Please try again.")
+        return
+      }
+
+      if (data.freeAcquisition) {
+        window.location.href = "/library"
         return
       }
 

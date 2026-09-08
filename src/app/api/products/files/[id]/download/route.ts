@@ -35,14 +35,24 @@ export async function GET(
 
       await recordLicenseAccess(user.id, productFile.productId)
 
+      const license = await prisma.license.findFirst({
+        where: { userId: user.id, productId: productFile.productId },
+      })
+
       await prisma.download.create({
         data: {
           userId: user.id,
           productId: productFile.productId,
-          orderId: (await prisma.license.findFirst({
-            where: { userId: user.id, productId: productFile.productId },
-          }))?.orderId ?? '',
+          orderId: license?.orderId ?? '',
           fileId: productFile.id,
+        },
+      })
+
+      await prisma.productFile.update({
+        where: { id: productFile.id },
+        data: {
+          downloadCount: { increment: 1 },
+          lastDownloadedAt: new Date(),
         },
       })
     }

@@ -7,7 +7,10 @@ export async function createLicenseKey(): Promise<string> {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   const segments = [4, 4, 4, 4]
   const key = segments.map(() =>
-    Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    Array.from({ length: 4 }, () => {
+      const idx = crypto.getRandomValues(new Uint32Array(1))[0] % chars.length
+      return chars[idx]
+    }).join('')
   ).join('-')
   return key
 }

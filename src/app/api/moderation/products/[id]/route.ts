@@ -2,10 +2,10 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { requirePermission } from "@/lib/server-auth"
+import { getServerUser } from "@/lib/session"
 import { z } from "zod"
 import { logAdminAction, AuditActions } from "@/lib/audit-logger"
-import { PERMISSIONS } from "@/lib/permissions"
+import { PERMISSIONS, roleHasPermission } from "@/lib/permissions"
 import { createAuditLog } from "@/lib/audit-logger"
 
 const actionSchema = z.object({
@@ -19,7 +19,16 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requirePermission(PERMISSIONS.PRODUCTS_MANAGE)
+    const user = await getServerUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const isModerator = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
+    const hasManagePermission = roleHasPermission(user.role, PERMISSIONS.PRODUCTS_MANAGE, (user as any).customPermissions)
+    if (!isModerator && !hasManagePermission) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const body = await request.json().catch(() => null)
     const parsed = actionSchema.safeParse(body)
@@ -42,7 +51,7 @@ export async function POST(
     const { action, reason, creatorReason } = parsed.data
 
     // Prevent self-approval where policy requires independent review
-    if (action === "approve" && product.creatorId === ctx.id) {
+    if (action === "approve" && product.creatorId === user.id) {
       return NextResponse.json(
         { error: "You cannot approve your own product. Policy requires independent review." },
         { status: 403 }
@@ -52,9 +61,9 @@ export async function POST(
     const validTransitions: Record<string, string[]> = {
       approve: ["PENDING_REVIEW", "REJECTED", "CHANGES_REQUESTED"],
       reject: ["PENDING_REVIEW", "CHANGES_REQUESTED"],
-      request_changes: ["PENDING_REVIEW", "APPROVED"],
-      suspend: ["PUBLISHED", "APPROVED", "PENDING_REVIEW"],
-      remove: ["PUBLISHED", "APPROVED", "PENDING_REVIEW", "SUSPENDED", "REJECTED"],
+      request_changes: ["PENDING_REVIEW", "PUBLISHED"],
+      suspend: ["PUBLISHED", "PENDING_REVIEW"],
+      remove: ["PUBLISHED", "PENDING_REVIEW", "SUSPENDED", "REJECTED"],
       restore: ["SUSPENDED", "REMOVED", "REJECTED"],
     }
 
@@ -91,7 +100,7 @@ export async function POST(
       await tx.productModeration.create({
         data: {
           productId: params.id,
-          actorId: ctx.id,
+          actorId: user.id,
           action: action.toUpperCase(),
           reason: reason || null,
           notes: creatorReason || null,
@@ -101,7 +110,7 @@ export async function POST(
 
     // Audit log
     await logAdminAction(
-      ctx.id,
+      user.id,
       action === "approve" ? AuditActions.PRODUCT_PUBLISHED : AuditActions.ADMIN_MODERATION_ACTION,
       {
         productId: params.id,
@@ -117,7 +126,7 @@ export async function POST(
     )
 
     await createAuditLog({
-      userId: ctx.id,
+      userId: user.id,
       action: `MODERATION_${action.toUpperCase()}`,
       details: {
         productId: params.id,
@@ -161,7 +170,16 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const ctx = await requirePermission(PERMISSIONS.PRODUCTS_VIEW)
+    const user = await getServerUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const isModerator = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
+    const hasViewPermission = roleHasPermission(user.role, PERMISSIONS.PRODUCTS_VIEW, (user as any).customPermissions)
+    if (!isModerator && !hasViewPermission) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const product = await prisma.product.findUnique({
       where: { id: params.id },

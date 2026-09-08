@@ -85,7 +85,7 @@ export async function POST(
       )
     }
 
-    const allowedStatuses = ["PENDING", "UNDER_REVIEW"]
+    const allowedStatuses = ["PENDING", "UNDER_REVIEW", "CHANGES_REQUESTED"]
     if (!allowedStatuses.includes(currentStatus)) {
       return NextResponse.json(
         { error: `Application is in unexpected status ${currentStatus}` },
@@ -106,7 +106,7 @@ export async function POST(
         auditAction = AuditActions.CREATOR_APPLICATION_REJECTED
         break
       case "request_changes":
-        newStatus = "PENDING"
+        newStatus = "CHANGES_REQUESTED"
         auditAction = AuditActions.CREATOR_APPLICATION_REVIEWED
         break
       case "under_review":
@@ -161,18 +161,45 @@ export async function POST(
         application.user.email,
         application.user.displayName || application.user.username,
       ).catch((err) => console.error("Failed to send approval email:", err))
+      await prisma.notification.create({
+        data: {
+          userId: application.userId,
+          type: "CREATOR_APPROVAL",
+          title: "Creator Application Approved",
+          content: "Your creator application has been approved. You can now start creating products.",
+          isRead: false,
+        },
+      })
     } else if (action === "reject") {
       sendCreatorApplicationRejectedEmail(
         application.user.email,
         application.user.displayName || application.user.username,
         parsed.data.notes,
       ).catch((err) => console.error("Failed to send rejection email:", err))
+      await prisma.notification.create({
+        data: {
+          userId: application.userId,
+          type: "CREATOR_APPROVAL",
+          title: "Creator Application Rejected",
+          content: parsed.data.notes || "Your creator application was not approved.",
+          isRead: false,
+        },
+      })
     } else if (action === "request_changes") {
       sendCreatorApplicationChangesRequestedEmail(
         application.user.email,
         application.user.displayName || application.user.username,
         parsed.data.notes,
       ).catch((err) => console.error("Failed to send changes requested email:", err))
+      await prisma.notification.create({
+        data: {
+          userId: application.userId,
+          type: "CREATOR_APPROVAL",
+          title: "Changes Requested",
+          content: parsed.data.notes || "Please update your creator application with the requested changes.",
+          isRead: false,
+        },
+      })
     }
 
     return NextResponse.json({ success: true, application: updated })

@@ -76,6 +76,38 @@ export async function POST(
       },
     })
 
+    if (parsed.data.status === "BANNED") {
+      await prisma.notification.create({
+        data: {
+          userId: target.id,
+          type: "ACCOUNT",
+          title: "Account Banned",
+          content: reason || "Your account has been banned.",
+          isRead: false,
+        },
+      })
+    } else if (parsed.data.status === "SUSPENDED") {
+      await prisma.notification.create({
+        data: {
+          userId: target.id,
+          type: "ACCOUNT",
+          title: "Account Suspended",
+          content: reason || "Your account has been suspended.",
+          isRead: false,
+        },
+      })
+    } else {
+      await prisma.notification.create({
+        data: {
+          userId: target.id,
+          type: "ACCOUNT",
+          title: "Account Restored",
+          content: "Your account has been restored.",
+          isRead: false,
+        },
+      })
+    }
+
     const auditAction =
       parsed.data.status === "BANNED" ? AuditActions.ADMIN_USER_BANNED
         : parsed.data.status === "SUSPENDED" ? AuditActions.ADMIN_USER_SUSPENDED

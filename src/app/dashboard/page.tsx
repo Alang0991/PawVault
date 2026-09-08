@@ -289,7 +289,10 @@ export default async function DashboardPage() {
                     <Link href="/orders">My Orders</Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full justify-start">
-                    <Link href="/downloads">Downloads</Link>
+                    <Link href="/library">
+                      <Download className="h-4 w-4 mr-2" />
+                      Downloads
+                    </Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full justify-start">
                     <Link href="/account/settings">

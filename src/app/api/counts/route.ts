@@ -2,13 +2,9 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
-import { getServerUser } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
-  const user = await getServerUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') || 'products'
 
@@ -42,7 +38,26 @@ export async function GET(request: Request) {
   if (type === 'categories') {
     const categories = await prisma.category.findMany({
       where: { parentId: null },
-      include: { _count: { select: { products: { where: { isPublished: true } } } } },
+      include: {
+        _count: {
+          select: {
+            products: {
+              where: {
+                isPublished: true,
+                status: 'PUBLISHED',
+                creator: {
+                  creatorStatus: 'APPROVED',
+                  status: 'ACTIVE',
+                },
+                store: {
+                  visibility: 'PUBLISHED',
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
       take: 8,
     })
     return NextResponse.json({ categories })

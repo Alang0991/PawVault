@@ -30,7 +30,7 @@ export async function recordWebhookEvent(event: Stripe.Event, endpoint: WebhookE
       if (existing && existing.status === 'PROCESSING') {
         return { alreadyProcessed: true }
       }
-      return { alreadyProcessed: true }
+      return { alreadyProcessed: false }
     }
     throw err
   }

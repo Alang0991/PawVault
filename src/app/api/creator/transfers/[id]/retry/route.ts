@@ -19,7 +19,13 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null)
   const parsed = retrySchema.safeParse(body)
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
+  if (!parsed.success) {
+    const first = parsed.error.errors[0]
+    return NextResponse.json(
+      { error: first?.message || 'Invalid request', code: 'VALIDATION_ERROR' },
+      { status: 400 },
+    )
+  }
 
   const transfer = await prisma.stripeTransfer.findUnique({
     where: { id: parsed.data.transferId },
@@ -36,22 +42,22 @@ export async function POST(request: Request) {
 
   const stripe = requireStripe()
 
-const destination = transfer.order.stripeAccountId
-    if (!destination) {
-      return NextResponse.json({ error: 'No Stripe account configured' }, { status: 400 })
-    }
+  const destination = transfer.order.stripeAccountId
+  if (!destination) {
+    return NextResponse.json({ error: 'No Stripe account configured' }, { status: 400 })
+  }
 
-    try {
-      const newTransfer = await stripe.transfers.create({
-        amount: Math.round(transfer.amount * 100),
-        currency: transfer.currency.toLowerCase(),
-        destination,
-        metadata: {
-          pawvaultOrderId: transfer.orderId,
-          pawvaultCreatorId: transfer.creatorId,
-          retryOf: transfer.stripeTransferId,
-        },
-      })
+  try {
+    const newTransfer = await stripe.transfers.create({
+      amount: Math.round(transfer.amount * 100),
+      currency: transfer.currency.toLowerCase(),
+      destination,
+      metadata: {
+        pawvaultOrderId: transfer.orderId,
+        pawvaultCreatorId: transfer.creatorId,
+        retryOf: transfer.stripeTransferId,
+      },
+    })
 
     await prisma.stripeTransfer.update({
       where: { id: transfer.id },

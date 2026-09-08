@@ -23,7 +23,13 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null)
   const parsed = refundSchema.safeParse(body)
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
+  if (!parsed.success) {
+    const first = parsed.error.errors[0]
+    return NextResponse.json(
+      { error: first?.message || "Invalid request", code: "VALIDATION_ERROR" },
+      { status: 400 },
+    )
+  }
 
   const order = await prisma.order.findUnique({
     where: { id: parsed.data.orderId },

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerUser, requireAuth } from "@/lib/session"
 import { z } from "zod"
 import { rateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
+import { validateTaxonomy, getCanonicalTagIds } from "@/lib/taxonomy-validation"
 
 const createProductSchema = z.object({
   title: z.string().min(1).max(200),
@@ -202,6 +203,16 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validated = createProductSchema.parse(body)
 
+    if (validated.categoryId) {
+      const taxonomyCheck = await validateTaxonomy(validated.categoryId, validated.tags)
+      if (!taxonomyCheck.valid) {
+        return NextResponse.json(
+          { error: taxonomyCheck.message, code: taxonomyCheck.error },
+          { status: 422 }
+        )
+      }
+    }
+
     const store = await prisma.store.findUnique({
       where: { userId: user.id },
     })
@@ -230,23 +241,20 @@ export async function POST(request: Request) {
     if (tags && tags.length > 0) {
       const tagRecords = await Promise.all(
         tags.map(async (tagName) => {
-          const slug = tagName.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "")
+          const tagSlug = tagName
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, "")
+            .replace(/[\s_-]+/g, "-")
+            .replace(/^-+|-+$/g, "")
           return prisma.tag.upsert({
-            where: { slug },
+            where: { slug: tagSlug || tagName.toLowerCase() },
             update: {},
-            create: {
-              name: tagName,
-              slug,
-            },
+            create: { name: tagName, slug: tagSlug || tagName.toLowerCase() },
           })
         })
       )
-
       await prisma.productTag.createMany({
-        data: tagRecords.map((tag) => ({
-          productId: product.id,
-          tagId: tag.id,
-        })),
+        data: tagRecords.map((tag) => ({ productId: product.id, tagId: tag.id })),
       })
     }
 

@@ -165,19 +165,18 @@ export default function CreateProductPage() {
       const res = await fetch(`/api/creator/products/${productId}/autosave`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.title,
-          slug: form.slug || undefined,
-          subtitle: form.subtitle || null,
-          description: form.description || null,
-          price: form.isFree ? 0 : Number(form.price) || 0,
-          salePrice: form.salePrice ? Number(form.salePrice) : null,
-          categoryId: form.categoryId || null,
-          tags: form.tags,
-          isFree: form.isFree,
-          isOnSale: form.isOnSale,
-          isPublished: form.isPublished,
-        }),
+          body: JSON.stringify({
+            title: form.title,
+            slug: form.slug || undefined,
+            subtitle: form.subtitle || null,
+            description: form.description || null,
+            price: form.isFree ? 0 : Number(form.price) || 0,
+            salePrice: form.salePrice ? Number(form.salePrice) : null,
+            categoryId: form.categoryId || null,
+            tags: form.tags,
+            isFree: form.isFree,
+            isOnSale: form.isOnSale,
+          }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -221,20 +220,22 @@ export default function CreateProductPage() {
     }
     try {
       const id = productId || (await ensureDraft())
-      setForm((f) => ({ ...f, isPublished: true }))
-      const res = await fetch(`/api/creator/products/${id}/autosave`, {
-        method: "PATCH",
+      const res = await fetch(`/api/creator/products/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, isPublished: true, price: form.isFree ? 0 : Number(form.price) || 0 }),
+        body: JSON.stringify({
+          status: "PENDING_REVIEW",
+          isPublished: true,
+        }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        setError(err.error || "We couldn't publish this product.")
+        setError(err.error || "We couldn't submit this product for review.")
         return
       }
       router.push("/creator/products")
     } catch {
-      setError("We couldn't publish this product. Please try again.")
+      setError("We couldn't submit this product. Please try again.")
     }
   }
 

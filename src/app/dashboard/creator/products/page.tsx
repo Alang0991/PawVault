@@ -127,7 +127,7 @@ export default async function CreatorProductsPage() {
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" className="flex-1" asChild>
-                      <Link href={`/dashboard/creator/products/${product.id}`}>
+                      <Link href={`/creator/products/${product.id}/edit`}>
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Link>

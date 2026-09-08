@@ -161,14 +161,6 @@ export default async function CreatorsPage({ searchParams }: Props) {
             </div>
 
             <div className="flex justify-center gap-4 mt-8">
-              {cursor && (
-                <Button variant="outline" asChild>
-                  <Link href={`/creators?sort=${sort}`}>
-                    <ChevronLeft className="h-4 w-4 mr-2" />
-                    Previous
-                  </Link>
-                </Button>
-              )}
               {hasMore && (
                 <Button variant="outline" asChild>
                   <Link href={`/creators?sort=${sort}&cursor=${nextCursor}`}>

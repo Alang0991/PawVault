@@ -1,0 +1,1 @@
+-- Resolved: columns already exist in database

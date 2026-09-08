@@ -81,6 +81,11 @@ export async function GET(request: Request) {
       const creators = await prisma.user.findMany({
         where: {
           role: { in: ['CREATOR', 'VERIFIED_CREATOR'] },
+          creatorStatus: 'APPROVED',
+          status: 'ACTIVE',
+          store: {
+            visibility: 'PUBLISHED',
+          },
           OR: [
             { username: { contains: query, mode: 'insensitive' } },
             { displayName: { contains: query, mode: 'insensitive' } },

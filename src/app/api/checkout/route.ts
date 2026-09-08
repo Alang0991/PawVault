@@ -8,7 +8,68 @@ import { getStripe, stripeConnectEnabled } from '@/lib/stripe'
 import { getPlatformFeeConfig, calculatePlatformFee, calculateCreatorEarnings, toStripeAmount } from '@/lib/platform-fees'
 import { stripeLog } from '@/lib/stripe-logger'
 import { createAuditLog, AuditActions } from '@/lib/audit-logger'
+import { ensureUniqueLicenseKey } from '@/lib/license'
 import { z } from 'zod'
+
+async function createAllocationsForOrder(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true, payments: true, creator: true },
+  })
+  if (!order || !order.creatorId) return
+
+  const existing = await prisma.creatorAllocation.count({ where: { orderId } })
+  if (existing > 0) return
+
+  for (const item of order.items) {
+    const gross = item.price * item.quantity
+    const fee = item.platformFeeShare
+    const net = item.creatorEarnings
+
+    await prisma.creatorAllocation.create({
+      data: {
+        orderId: order.id,
+        orderItemId: item.id,
+        creatorId: order.creatorId,
+        productId: item.productId,
+        grossAmount: gross,
+        discountAmount: 0,
+        taxAmount: 0,
+        platformFee: fee,
+        netAmount: net,
+        currency: order.currency,
+      },
+    })
+  }
+}
+
+async function createLicensesForOrder(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: { include: { product: true } } },
+  })
+
+  if (!order || !order.buyerId) return
+
+  for (const item of order.items) {
+    const existing = await prisma.license.findFirst({
+      where: { userId: order.buyerId, productId: item.productId },
+    })
+
+    if (existing) continue
+
+    const licenseKey = await ensureUniqueLicenseKey()
+    await prisma.license.create({
+      data: {
+        userId: order.buyerId,
+        productId: item.productId,
+        orderId: order.id,
+        licenseKey,
+        status: 'ACTIVE',
+      },
+    })
+  }
+}
 
 const checkoutSchema = z.object({
   cartId: z.string().min(1),
@@ -151,6 +212,7 @@ export async function POST(request: Request) {
 
   const total = Math.max(0, subtotal - discount)
   const discountRatio = subtotal > 0 ? (subtotal - discount) / subtotal : 1
+  const isFreeCart = total === 0
 
   const orderGroup = await prisma.orderGroup.create({
     data: {
@@ -182,7 +244,8 @@ export async function POST(request: Request) {
         discount: group.subtotal - adjustedSubtotal,
         total: adjustedSubtotal,
         currency: feeConfig.currency,
-        status: 'PENDING',
+        status: isFreeCart ? 'PAID' : 'PENDING',
+        paidAt: isFreeCart ? new Date() : undefined,
         stripeAccountId: group.stripeAccountId ?? null,
         applicationFeeAmount: adjustedFee,
         items: {
@@ -205,6 +268,13 @@ export async function POST(request: Request) {
         },
       },
     })
+
+    if (isFreeCart) {
+      await createLicensesForOrder(order.id)
+      await createAllocationsForOrder(order.id)
+      orders.push({ id: order.id, checkoutUrl: '', creatorId: group.creatorId, total: order.total })
+      continue
+    }
 
     let checkoutUrl: string
     try {
@@ -271,11 +341,21 @@ export async function POST(request: Request) {
     orders.push({ id: order.id, checkoutUrl, creatorId: group.creatorId, total: order.total })
   }
 
-  if (couponRecord) {
+  if (couponRecord || isFreeCart) {
     await createAuditLog({
       userId: user?.id,
       action: AuditActions.ORDER_CREATED,
-      details: { orderGroupId: orderGroup.id, couponCode: couponRecord.code, total },
+      details: { orderGroupId: orderGroup.id, couponCode: couponRecord?.code, total, isFreeCart },
+    })
+  }
+
+  if (isFreeCart) {
+    return NextResponse.json({
+      orderGroupId: orderGroup.id,
+      orders,
+      checkoutUrl: '',
+      multiCreator: orders.length > 1,
+      freeAcquisition: true,
     })
   }
 

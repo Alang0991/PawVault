@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "ProductStatus" ADD VALUE 'CHANGES_REQUESTED';
+ALTER TYPE "ProductStatus" ADD VALUE 'REMOVED';

@@ -39,7 +39,7 @@ export async function hasProductAccess(userId: string, productId: string): Promi
     where: { userId, productId },
   })
 
-  const hasAccess = license ? license.status === 'ACTIVE' : true
+  const hasAccess = license ? license.status === 'ACTIVE' : false
 
   return {
     hasAccess,

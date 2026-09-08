@@ -48,8 +48,8 @@ export default async function SettingsPage() {
     location: user.location || "",
   }
 
-  const isCreator = ["CREATOR", "VERIFIED_CREATOR", "ADMIN", "OWNER"].includes(user.role)
-  const isAdmin = ["ADMIN", "OWNER"].includes(user.role)
+  const isCreator = ["CREATOR", "VERIFIED_CREATOR", "ADMIN", "FOUNDER"].includes(user.role)
+  const isAdmin = ["ADMIN", "FOUNDER"].includes(user.role)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">

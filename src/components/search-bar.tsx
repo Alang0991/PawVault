@@ -61,7 +61,7 @@ export function SearchBar() {
             id: c.id,
             title: c.displayName || c.username,
             subtitle: "Creator",
-             href: `/store/${c.username}`,
+             href: `/creators/${c.username}`,
             image: c.avatar || undefined,
           })),
         ]

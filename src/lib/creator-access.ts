@@ -131,6 +131,7 @@ export const CREATOR_HUB_ROLES = [
   "VERIFIED_CREATOR",
   ROLES.ADMIN,
   ROLES.FOUNDER,
+  ROLES.MODERATOR,
 ] as const
 
 export function canAccessCreatorHub(user: { role: string } | null | undefined): boolean {

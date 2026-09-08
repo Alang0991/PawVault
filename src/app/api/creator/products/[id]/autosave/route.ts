@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { z } from "zod"
 import { getCreatorAccess } from "@/lib/creator-access"
+import { validateTaxonomy, getCanonicalTagIds } from "@/lib/taxonomy-validation"
 
 const draftSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -67,7 +68,17 @@ export async function PATCH(
       )
     }
 
-    const { tags, slug, ...data } = parsed.data
+    const { tags, slug, isPublished, ...data } = parsed.data
+
+    if (parsed.data.categoryId || (tags && tags.length > 0)) {
+      const taxonomyCheck = await validateTaxonomy(parsed.data.categoryId || undefined, tags)
+      if (!taxonomyCheck.valid) {
+        return NextResponse.json(
+          { error: taxonomyCheck.message, code: taxonomyCheck.error },
+          { status: 422 }
+        )
+      }
+    }
 
     let nextSlug: string | undefined
     if (typeof slug === "string" && slug.trim().length > 0 && slug.trim() !== product.slug) {
@@ -108,22 +119,12 @@ export async function PATCH(
       if (Array.isArray(tags)) {
         await tx.productTag.deleteMany({ where: { productId: product.id } })
         if (tags.length > 0) {
-          const tagRecords = await Promise.all(
-            tags.map(async (name) => {
-              const tagSlug = name
-                .toLowerCase()
-                .replace(/[^\w\s-]/g, "")
-                .replace(/[\s_-]+/g, "-")
-                .replace(/^-+|-+$/g, "")
-              return tx.tag.upsert({
-                where: { slug: tagSlug || name.toLowerCase() },
-                update: {},
-                create: { name, slug: tagSlug || name.toLowerCase() },
-              })
-            }),
-          )
+          const canonicalTagIds = await getCanonicalTagIds(tags)
           await tx.productTag.createMany({
-            data: tagRecords.map((t) => ({ productId: product.id, tagId: t.id })),
+            data: canonicalTagIds.map((tagId) => ({
+              productId: product.id,
+              tagId,
+            })),
           })
         }
       }

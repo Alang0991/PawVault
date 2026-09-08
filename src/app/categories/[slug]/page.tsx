@@ -12,6 +12,31 @@ import { BrowseSkeleton } from "@/components/browse-skeleton"
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const category = await prisma.category.findUnique({
+    where: { slug: params.slug },
+    select: { name: true, description: true, seoTitle: true, seoDescription: true, parent: { select: { name: true, slug: true } } },
+  })
+
+  if (!category) {
+    return { title: "Category Not Found" }
+  }
+
+  const title = category.seoTitle || `${category.name} | PawVault`
+  const description = category.seoDescription || category.description || `Browse ${category.name} on PawVault.`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+  }
+}
 
 const PAGE_SIZE = 24
 

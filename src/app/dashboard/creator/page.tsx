@@ -127,12 +127,12 @@ export default async function CreatorDashboardPage() {
             <h1 className="text-3xl font-bold mb-2 gradient-text">Creator Dashboard</h1>
             <p className="text-gray-600 dark:text-gray-400">Manage your products and track your performance</p>
           </div>
-          <Button className="gradient-bg text-white" asChild>
-            <Link href="/dashboard/creator/products/new">
-              <Plus className="h-4 w-4 mr-2" />
-              New Product
-            </Link>
-          </Button>
+              <Button className="gradient-bg text-white" asChild>
+                <Link href="/creator/products/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Product
+                </Link>
+              </Button>
         </div>
 
         {/* Stats Cards */}
@@ -200,12 +200,12 @@ export default async function CreatorDashboardPage() {
                   <div className="text-center py-8">
                     <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                     <p className="text-gray-500 dark:text-gray-400 mb-4">No products yet</p>
-                    <Button className="gradient-bg text-white" asChild>
-                      <Link href="/dashboard/creator/products/new">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Your First Product
-                      </Link>
-                    </Button>
+                       <Button className="gradient-bg text-white" asChild>
+                         <Link href="/creator/products/new">
+                           <Plus className="h-4 w-4 mr-2" />
+                           Create Your First Product
+                         </Link>
+                       </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -301,16 +301,16 @@ export default async function CreatorDashboardPage() {
               <CardContent>
                 <div className="space-y-2">
                   <Button asChild variant="ghost" className="w-full justify-start">
-                    <Link href="/dashboard/creator/products">Manage Products</Link>
+                    <Link href="/creator/products">Manage Products</Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full justify-start">
-                    <Link href="/dashboard/creator/analytics">Analytics</Link>
+                    <Link href="/creator/analytics">Analytics</Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full justify-start">
-                    <Link href="/dashboard/creator/payouts">Payouts</Link>
+                    <Link href="/creator/payouts">Payouts</Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full justify-start">
-                    <Link href="/dashboard/creator/settings">Store Settings</Link>
+                    <Link href="/creator/store/settings">Store Settings</Link>
                   </Button>
                 </div>
               </CardContent>

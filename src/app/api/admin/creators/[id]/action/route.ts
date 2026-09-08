@@ -140,6 +140,48 @@ export async function POST(
       await invalidateUserSessions(params.id)
     }
 
+    if (parsed.data.action === "suspend") {
+      await prisma.notification.create({
+        data: {
+          userId: target.id,
+          type: "ACCOUNT",
+          title: "Account Suspended",
+          content: parsed.data.reason || "Your creator account has been suspended.",
+          isRead: false,
+        },
+      })
+    } else if (parsed.data.action === "ban") {
+      await prisma.notification.create({
+        data: {
+          userId: target.id,
+          type: "ACCOUNT",
+          title: "Account Banned",
+          content: parsed.data.reason || "Your account has been banned.",
+          isRead: false,
+        },
+      })
+    } else if (parsed.data.action === "unsuspend") {
+      await prisma.notification.create({
+        data: {
+          userId: target.id,
+          type: "ACCOUNT",
+          title: "Account Reinstated",
+          content: "Your creator account has been reinstated.",
+          isRead: false,
+        },
+      })
+    } else if (parsed.data.action === "unban") {
+      await prisma.notification.create({
+        data: {
+          userId: target.id,
+          type: "ACCOUNT",
+          title: "Account Unbanned",
+          content: "Your account has been unbanned.",
+          isRead: false,
+        },
+      })
+    }
+
     await logAdminAction(
       ctx.id,
       auditAction,

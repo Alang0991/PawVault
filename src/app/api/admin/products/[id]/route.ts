@@ -38,9 +38,19 @@ export async function PATCH(
 
     switch (action) {
       case "publish":
-        await prisma.product.update({
-          where: { id: params.id },
-          data: { isPublished: true, status: "PUBLISHED" },
+        await prisma.$transaction(async (tx) => {
+          await tx.product.update({
+            where: { id: params.id },
+            data: { isPublished: true, status: "PUBLISHED" },
+          })
+          await tx.productModeration.create({
+            data: {
+              productId: params.id,
+              actorId: ctx.id,
+              action: "APPROVE",
+              reason: reason || null,
+            },
+          })
         })
         await logAdminAction(
           ctx.id,
@@ -48,11 +58,30 @@ export async function PATCH(
           { productId: params.id, productTitle: product.title, reason },
           { entityType: "Product", entityId: params.id },
         )
+        await prisma.notification.create({
+          data: {
+            userId: product.creatorId,
+            type: "MODERATION",
+            title: "Product Approved",
+            content: `Your product "${product.title}" has been approved and is now live.`,
+            isRead: false,
+          },
+        })
         break
       case "unpublish":
-        await prisma.product.update({
-          where: { id: params.id },
-          data: { isPublished: false, status: "DRAFT" },
+        await prisma.$transaction(async (tx) => {
+          await tx.product.update({
+            where: { id: params.id },
+            data: { isPublished: false, status: "DRAFT" },
+          })
+          await tx.productModeration.create({
+            data: {
+              productId: params.id,
+              actorId: ctx.id,
+              action: "REJECT",
+              reason: reason || null,
+            },
+          })
         })
         await logAdminAction(
           ctx.id,
@@ -60,11 +89,30 @@ export async function PATCH(
           { productId: params.id, productTitle: product.title, reason },
           { entityType: "Product", entityId: params.id },
         )
+        await prisma.notification.create({
+          data: {
+            userId: product.creatorId,
+            type: "MODERATION",
+            title: "Product Unpublished",
+            content: `Your product "${product.title}" has been unpublished.`,
+            isRead: false,
+          },
+        })
         break
       case "hide":
-        await prisma.product.update({
-          where: { id: params.id },
-          data: { isPublished: false, status: "HIDDEN" },
+        await prisma.$transaction(async (tx) => {
+          await tx.product.update({
+            where: { id: params.id },
+            data: { isPublished: false, status: "HIDDEN" },
+          })
+          await tx.productModeration.create({
+            data: {
+              productId: params.id,
+              actorId: ctx.id,
+              action: "HIDE",
+              reason: reason || null,
+            },
+          })
         })
         await logAdminAction(
           ctx.id,
@@ -72,11 +120,30 @@ export async function PATCH(
           { productId: params.id, productTitle: product.title, action: "hide", reason },
           { entityType: "Product", entityId: params.id },
         )
+        await prisma.notification.create({
+          data: {
+            userId: product.creatorId,
+            type: "MODERATION",
+            title: "Product Hidden",
+            content: `Your product "${product.title}" has been hidden from the marketplace.`,
+            isRead: false,
+          },
+        })
         break
       case "suspend":
-        await prisma.product.update({
-          where: { id: params.id },
-          data: { isPublished: false, status: "SUSPENDED" },
+        await prisma.$transaction(async (tx) => {
+          await tx.product.update({
+            where: { id: params.id },
+            data: { isPublished: false, status: "SUSPENDED" },
+          })
+          await tx.productModeration.create({
+            data: {
+              productId: params.id,
+              actorId: ctx.id,
+              action: "SUSPEND",
+              reason: reason || null,
+            },
+          })
         })
         await logAdminAction(
           ctx.id,
@@ -84,6 +151,15 @@ export async function PATCH(
           { productId: params.id, productTitle: product.title, action: "suspend", reason },
           { entityType: "Product", entityId: params.id },
         )
+        await prisma.notification.create({
+          data: {
+            userId: product.creatorId,
+            type: "MODERATION",
+            title: "Product Suspended",
+            content: `Your product "${product.title}" has been suspended.`,
+            isRead: false,
+          },
+        })
         break
       case "archive":
         await prisma.product.update({
