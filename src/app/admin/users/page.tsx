@@ -29,7 +29,7 @@ export default async function AdminUsersPage() {
     },
   })
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !["ADMIN", "FOUNDER"].includes(user.role)) {
     redirect("/")
   }
 

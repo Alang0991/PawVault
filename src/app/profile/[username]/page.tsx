@@ -23,9 +23,10 @@ export const dynamic = "force-dynamic"
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   const user = await getServerUser()
+  const isFounder = user?.role === "FOUNDER"
 
   const profileUser = await prisma.user.findFirst({
-    where: { username: params.username },
+    where: { username: params.username, ...(!isFounder && { isInternal: false }) },
     include: {
       store: {
         select: {

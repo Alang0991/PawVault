@@ -17,6 +17,7 @@ async function SearchContent({ q, type }: { q: string; type: string }) {
     prisma.product.findMany({
       where: {
         isPublished: true,
+        creator: { isInternal: false },
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
@@ -35,6 +36,7 @@ async function SearchContent({ q, type }: { q: string; type: string }) {
     prisma.user.findMany({
       where: {
         role: { in: ["CREATOR", "VERIFIED_CREATOR"] },
+        isInternal: false,
         OR: [
           { username: { contains: q, mode: "insensitive" } },
           { displayName: { contains: q, mode: "insensitive" } },
@@ -56,7 +58,17 @@ async function SearchContent({ q, type }: { q: string; type: string }) {
       take: 8,
     }),
     prisma.tag.findMany({
-      where: { name: { contains: q, mode: "insensitive" } },
+      where: {
+        name: { contains: q, mode: "insensitive" },
+        products: {
+          some: {
+            product: {
+              isPublished: true,
+              creator: { isInternal: false },
+            },
+          },
+        },
+      },
       include: { _count: { select: { products: true } } },
       take: 12,
     }),

@@ -49,8 +49,13 @@ interface StoreData {
 }
 
 async function getStoreData(slug: string): Promise<StoreData | null> {
+  const currentUser = await getServerUser()
+  const isFounder = currentUser?.role === "FOUNDER"
   const store = await prisma.store.findUnique({
-    where: { slug },
+    where: {
+        slug,
+        user: { ...(!isFounder && { isInternal: false }) },
+      },
     include: {
       user: {
         select: {
@@ -95,7 +100,7 @@ async function getStoreData(slug: string): Promise<StoreData | null> {
   }
 
   const profileUser = await prisma.user.findFirst({
-    where: { username: slug },
+    where: { username: slug, ...(!isFounder && { isInternal: false }) },
     include: {
       store: {
         include: {

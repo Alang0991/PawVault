@@ -1,6 +1,6 @@
 import { getServerUser } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
-import { Role, ROLES, isFounder, isAdminOrFounder, hasRoleAtLeast } from "@/lib/roles"
+import { Role, ROLES, isFounder, isAdminOrFounder, hasRoleAtLeast, canSeeInternalAccounts } from "@/lib/roles"
 import { Permission, PERMISSIONS, roleHasPermission } from "@/lib/permissions"
 import { logSecurityEvent, AuditActions } from "@/lib/audit-logger"
 
@@ -12,6 +12,31 @@ export type AuthContext = {
   role: Role
   status: string
   customPermissions: string | null
+}
+
+export async function getViewerRole(): Promise<string | null> {
+  const user = await getServerUser()
+  return user?.role ?? null
+}
+
+export function internalAccountFilter<T extends string | undefined>(
+  whereClause: any,
+  role: string | null,
+  target: "user" | "creator" = "user",
+): any {
+  if (canSeeInternalAccounts(role)) {
+    return whereClause
+  }
+  if (!whereClause[target]) {
+    whereClause[target] = {}
+  }
+  whereClause[target].isInternal = false
+  return whereClause
+}
+
+export async function getViewerContext(): Promise<{ role: string | null; id: string | null }> {
+  const user = await getServerUser()
+  return { role: user?.role ?? null, id: user?.id ?? null }
 }
 
 export class AuthorizationError extends Error {

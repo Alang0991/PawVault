@@ -64,25 +64,25 @@ export default async function Home() {
     announcement,
   ] = await Promise.all([
     prisma.product.findMany({
-      where: { isPublished: true, isFeatured: true },
+      where: { isPublished: true, isFeatured: true, creator: { isInternal: false } },
       take: 4,
       include: PRODUCT_CARD_FIELDS,
       orderBy: { createdAt: "desc" },
     }),
     prisma.product.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, creator: { isInternal: false } },
       take: 8,
       include: PRODUCT_CARD_FIELDS,
       orderBy: { favorites: { _count: "desc" } },
     }),
     prisma.product.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, creator: { isInternal: false } },
       take: 8,
       include: PRODUCT_CARD_FIELDS,
       orderBy: { createdAt: "desc" },
     }),
     prisma.product.findMany({
-      where: { isPublished: true, isFree: true },
+      where: { isPublished: true, isFree: true, creator: { isInternal: false } },
       take: 8,
       include: PRODUCT_CARD_FIELDS,
       orderBy: { createdAt: "desc" },
@@ -90,6 +90,7 @@ export default async function Home() {
     prisma.user.findFirst({
       where: {
         role: { in: ["CREATOR", "VERIFIED_CREATOR"] },
+        isInternal: false,
         store: { isNot: null },
       },
       orderBy: { salesCount: "desc" },
@@ -128,7 +129,13 @@ export default async function Home() {
   let staffPicks: any[] = []
   try {
     staffPicks = await prisma.staffPick.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        product: {
+          isPublished: true,
+          creator: { isInternal: false },
+        },
+      },
       take: 6,
       include: {
         product: {

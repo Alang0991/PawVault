@@ -80,6 +80,7 @@ async function CategoryContent({ slug, searchParams }: { slug: string; searchPar
   const where: any = {
     isPublished: true,
     categoryId: category.id,
+    creator: { isInternal: false },
     ...(searchParams.free === "true" && { isFree: true }),
     ...(searchParams.onSale === "true" && { isOnSale: true }),
     ...(searchParams.q && {

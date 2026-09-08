@@ -12,21 +12,28 @@ import { Rating } from "@/components/rating"
 import { FollowButton } from "@/components/follow-button"
 import { Store, ExternalLink, Calendar, Package, Users } from "lucide-react"
 import { Metadata } from "next"
+import { getServerUser } from "@/lib/session"
+import { canSeeInternalAccounts } from "@/lib/roles"
 
 interface Props {
   params: { username: string }
 }
 
-async function getCreator(username: string) {
-  const creator = await prisma.user.findFirst({
-    where: {
-      username,
-      creatorStatus: "APPROVED",
-      status: "ACTIVE",
-      store: {
-        visibility: "PUBLISHED",
-      },
+async function getCreator(username: string, role?: string | null) {
+  const where: any = {
+    username,
+    creatorStatus: "APPROVED",
+    status: "ACTIVE",
+    store: {
+      visibility: "PUBLISHED",
     },
+  }
+  if (!canSeeInternalAccounts(role)) {
+    where.isInternal = false
+  }
+
+  const creator = await prisma.user.findFirst({
+    where,
     select: {
       id: true,
       username: true,
@@ -114,8 +121,11 @@ function formatDate(date: Date): string {
   }).format(date)
 }
 
-async function generateCreatorMetadata(username: string): Promise<Metadata> {
-  const creator = await getCreator(username)
+async function generateCreatorMetadata(
+  username: string,
+  role?: string | null,
+): Promise<Metadata> {
+  const creator = await getCreator(username, role)
 
   if (!creator) {
     return {
@@ -151,11 +161,13 @@ async function generateCreatorMetadata(username: string): Promise<Metadata> {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return generateCreatorMetadata(params.username)
+  const user = await getServerUser()
+  return generateCreatorMetadata(params.username, user?.role ?? null)
 }
 
 export default async function CreatorProfilePage({ params }: Props) {
-  const creator = await getCreator(params.username)
+  const user = await getServerUser()
+  const creator = await getCreator(params.username, user?.role ?? null)
 
   if (!creator) {
     notFound()

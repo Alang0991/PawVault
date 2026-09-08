@@ -49,6 +49,7 @@ export async function GET(request: Request) {
       const products = await prisma.product.findMany({
         where: {
           isPublished: true,
+          creator: { isInternal: false },
           OR: [
             { title: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
@@ -83,6 +84,7 @@ export async function GET(request: Request) {
           role: { in: ['CREATOR', 'VERIFIED_CREATOR'] },
           creatorStatus: 'APPROVED',
           status: 'ACTIVE',
+          isInternal: false,
           store: {
             visibility: 'PUBLISHED',
           },

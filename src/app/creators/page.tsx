@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Users, Package, Store, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { getServerUser } from "@/lib/session"
+import { canSeeInternalAccounts } from "@/lib/roles"
 
 interface Props {
   searchParams: { [key: string]: string | string[] | undefined }
@@ -14,7 +16,7 @@ interface Props {
 
 const PAGE_SIZE = 24
 
-async function getCreators(sort: string = "sales", cursor?: string) {
+async function getCreators(sort: string = "sales", cursor?: string, role?: string | null) {
   const orderBy: Record<string, object> = {
     sales: { salesCount: "desc" as const },
     newest: { createdAt: "desc" as const },
@@ -26,6 +28,7 @@ async function getCreators(sort: string = "sales", cursor?: string) {
     where: {
       creatorStatus: "APPROVED",
       status: "ACTIVE",
+      isInternal: false,
       store: {
         visibility: "PUBLISHED",
       },
@@ -59,22 +62,23 @@ async function getCreators(sort: string = "sales", cursor?: string) {
   return { creators: items, hasMore, nextCursor }
 }
 
-async function getTotalCounts() {
+async function getTotalCounts(role?: string | null) {
+  const creatorWhere: any = {
+    creatorStatus: "APPROVED",
+    status: "ACTIVE",
+    store: { visibility: "PUBLISHED" },
+  }
+  if (!canSeeInternalAccounts(role)) {
+    creatorWhere.isInternal = false
+  }
+
   const [creatorCount, productCount, followerCount] = await Promise.all([
-    prisma.user.count({
-      where: {
-        creatorStatus: "APPROVED",
-        status: "ACTIVE",
-        store: { visibility: "PUBLISHED" },
-      },
-    }),
+    prisma.user.count(creatorWhere),
     prisma.product.count({
       where: {
         isPublished: true,
         creator: {
-          creatorStatus: "APPROVED",
-          status: "ACTIVE",
-          store: { visibility: "PUBLISHED" },
+          isInternal: false,
         },
       },
     }),
@@ -83,7 +87,11 @@ async function getTotalCounts() {
         following: {
           creatorStatus: "APPROVED",
           status: "ACTIVE",
+          isInternal: false,
           store: { visibility: "PUBLISHED" },
+        },
+        follower: {
+          isInternal: false,
         },
       },
     }),
@@ -95,9 +103,11 @@ async function getTotalCounts() {
 export default async function CreatorsPage({ searchParams }: Props) {
   const sort = typeof searchParams.sort === "string" ? searchParams.sort : "sales"
   const cursor = typeof searchParams.cursor === "string" ? searchParams.cursor : undefined
+  const user = await getServerUser()
+  const role = user?.role ?? null
 
   const [{ creators, hasMore, nextCursor }, { creatorCount, productCount, followerCount }] =
-    await Promise.all([getCreators(sort, cursor), getTotalCounts()])
+    await Promise.all([getCreators(sort, cursor, role), getTotalCounts(role)])
 
   const sortOptions = [
     { value: "sales", label: "Top Sales" },

@@ -1,5 +1,4 @@
 import { getServerUser } from "@/lib/session"
-import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Link from "next/link"
-import { ArrowLeft, Shield } from "lucide-react"
+import { ArrowLeft, Shield, AlertTriangle } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -32,12 +31,37 @@ interface UserPageProps {
 
 export default async function ModerationUserPage({ params }: UserPageProps) {
   const user = await getServerUser()
-  if (!user || !["ADMIN", "FOUNDER"].includes(user.role)) {
-    redirect("/moderation")
+  if (!user || !["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-16">
+        <div className="container mx-auto px-4 max-w-xl">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <CardTitle>Access Denied</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                You do not have permission to access this area. Only platform owners, administrators, and moderators can view this section.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/moderation">Return to Moderation</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
+  const isFounder = user.role === "FOUNDER"
+
   const targetUser = await prisma.user.findUnique({
-    where: { id: params.id },
+    where: { id: params.id, ...(!isFounder && { isInternal: false }) },
     select: {
       id: true,
       email: true,

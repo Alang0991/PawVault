@@ -28,6 +28,7 @@ export async function GET(
     let store = await prisma.store.findFirst({
       where: {
         slug: params.slug,
+        user: { isInternal: false },
         ...visibilityFilter,
       },
       include: {
@@ -69,7 +70,7 @@ export async function GET(
 
     if (!store) {
       const profileUser = await prisma.user.findFirst({
-        where: { username: params.slug },
+        where: { username: params.slug, isInternal: false },
         include: {
           store: {
             where: visibilityFilter,

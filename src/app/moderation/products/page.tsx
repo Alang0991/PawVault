@@ -1,33 +1,60 @@
 import { getServerUser } from "@/lib/session"
-import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { Package, Shield, AlertTriangle, CheckCircle, XCircle, Edit2, Archive, RotateCcw } from "lucide-react"
 import { ModerationProductRow } from "./moderation-product-row"
+import { AlertTriangle as AlertTriangleIcon } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function ModerationProductsPage() {
   const user = await getServerUser()
   if (!user || !["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)) {
-    redirect("/moderation")
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-16">
+        <div className="container mx-auto px-4 max-w-xl">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center">
+                  <AlertTriangleIcon className="h-6 w-6" />
+                </div>
+                <CardTitle>Access Denied</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                You do not have permission to access this area. Only platform owners, administrators, and moderators can view this section.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/moderation">Return to Moderation</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   let products: any[] = []
   try {
+    const user = await getServerUser()
+    const isFounder = user?.role === "FOUNDER"
     products = await prisma.product.findMany({
       where: {
         status: {
           in: ["PENDING_REVIEW", "CHANGES_REQUESTED", "APPROVED", "SUSPENDED", "REJECTED"] as any[],
         },
+        ...(!isFounder && { creator: { isInternal: false } }),
       },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: {
         creator: {
-          select: { id: true, username: true, displayName: true, email: true },
+          select: { id: true, username: true, displayName: true, email: true, isInternal: true },
         },
         category: true,
         media: {

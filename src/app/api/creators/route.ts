@@ -21,6 +21,7 @@ export async function GET(request: Request) {
       where: {
         creatorStatus: "APPROVED",
         status: "ACTIVE",
+        isInternal: false,
         store: {
           visibility: "PUBLISHED",
         },
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
       where: {
         creatorStatus: "APPROVED",
         status: "ACTIVE",
+        isInternal: false,
         store: {
           visibility: "PUBLISHED",
         },

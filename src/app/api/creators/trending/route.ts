@@ -16,6 +16,7 @@ export async function GET() {
     const trendingCreators = await prisma.user.findMany({
       where: {
         role: { in: ['CREATOR', 'VERIFIED_CREATOR'] },
+        isInternal: false,
       },
       select: {
         id: true,

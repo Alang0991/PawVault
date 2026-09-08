@@ -17,6 +17,7 @@ export async function GET() {
       where: {
         isFeatured: true,
         isPublished: true,
+        creator: { isInternal: false },
       },
       include: {
         creator: {

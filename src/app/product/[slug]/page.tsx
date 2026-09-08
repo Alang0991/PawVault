@@ -41,6 +41,7 @@ async function getProduct(slug: string) {
           displayName: true,
           avatar: true,
           isVerified: true,
+          isInternal: true,
         },
       },
       store: {
@@ -90,9 +91,9 @@ async function getProduct(slug: string) {
 
   if (!product) notFound()
 
-  if (product.status !== "PUBLISHED" || !product.isPublished || product.store?.visibility !== "PUBLISHED") {
+  if (product.status !== "PUBLISHED" || !product.isPublished || product.store?.visibility !== "PUBLISHED" || product.creator.isInternal) {
     const user = await getServerUser()
-    if (!user || (product.creatorId !== user.id && !["ADMIN", "FOUNDER"].includes(user.role))) {
+    if (!user || (product.creatorId !== user.id && user.role !== "FOUNDER")) {
       notFound()
     }
   }
@@ -117,7 +118,7 @@ async function getProduct(slug: string) {
 
 async function getMoreFromCreator(creatorId: string, excludeId: string) {
   const products = await prisma.product.findMany({
-    where: { creatorId, isPublished: true, id: { not: excludeId } },
+    where: { creatorId, isPublished: true, id: { not: excludeId }, creator: { isInternal: false } },
     take: 4,
     include: {
       creator: {
@@ -141,7 +142,7 @@ async function getMoreFromCreator(creatorId: string, excludeId: string) {
 async function getRelatedProducts(categoryId: string | null, excludeId: string) {
   if (!categoryId) return []
   const products = await prisma.product.findMany({
-    where: { categoryId, isPublished: true, id: { not: excludeId } },
+    where: { categoryId, isPublished: true, id: { not: excludeId }, creator: { isInternal: false } },
     take: 4,
     include: {
       creator: {

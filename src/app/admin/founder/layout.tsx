@@ -80,7 +80,13 @@ const NAV_GROUPS = [
 export default async function FounderLayout({ children }: { children: ReactNode }) {
   const user = await getServerUser()
   if (!user || user.role !== "FOUNDER") {
-    redirect("/admin")
+    if (user?.role === "ADMIN") {
+      redirect("/admin")
+    }
+    if (user?.role === "MODERATOR") {
+      redirect("/moderation")
+    }
+    redirect("/")
   }
 
   return (

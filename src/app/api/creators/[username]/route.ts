@@ -17,6 +17,7 @@ export async function GET(
         username: params.username,
         creatorStatus: "APPROVED",
         status: "ACTIVE",
+        isInternal: false,
         store: {
           visibility: "PUBLISHED",
         },

@@ -46,6 +46,7 @@ export default async function BrowsePage({
     creator: {
       creatorStatus: "APPROVED",
       status: "ACTIVE",
+      isInternal: false,
       store: {
         visibility: "PUBLISHED",
       },

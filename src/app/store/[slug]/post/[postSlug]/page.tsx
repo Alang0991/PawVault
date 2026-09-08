@@ -12,12 +12,16 @@ import { ShareButton } from "@/components/share-button"
 import { AdultContentPreview } from "@/components/adult-content-preview"
 import { sanitizePostContent, sanitizeSocialUrl } from "@/lib/sanitizer"
 import { Metadata } from "next"
+import { getServerUser } from "@/lib/session"
 
 export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: { params: { slug: string; postSlug: string } }): Promise<Metadata> {
+  const currentUser = await getServerUser()
+  const isFounder = currentUser?.role === "FOUNDER"
+
   const user = await prisma.user.findFirst({
-    where: { username: params.slug },
+    where: { username: params.slug, ...(!isFounder && { isInternal: false }) },
     select: { id: true, username: true, displayName: true },
   })
 
@@ -35,11 +39,14 @@ export async function generateMetadata({ params }: { params: { slug: string; pos
   return {
     title: `${post.title} | PawVault`,
     description,
+    alternates: {
+      canonical: `https://pawvault.com/store/${user.username}/post/${post.slug}`,
+    },
     openGraph: {
       title: post.title,
       description,
-      type: "article",
       url: `https://pawvault.com/store/${user.username}/post/${post.slug}`,
+      type: "article",
     },
     twitter: {
       card: "summary_large_image",
@@ -54,8 +61,11 @@ export default async function StorePostPage({
 }: {
   params: { slug: string; postSlug: string }
 }) {
+  const currentUser = await getServerUser()
+  const isFounder = currentUser?.role === "FOUNDER"
+
   const user = await prisma.user.findFirst({
-    where: { username: params.slug },
+    where: { username: params.slug, ...(!isFounder && { isInternal: false }) },
     select: { id: true, username: true, displayName: true, avatar: true },
   })
 

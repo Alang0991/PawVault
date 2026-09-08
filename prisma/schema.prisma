@@ -83,6 +83,7 @@ model User {
   rating         Float    @default(0)
   isVerified     Boolean  @default(false)
   isFeatured     Boolean  @default(false)
+  isInternal     Boolean  @default(false)
   suspendedUntil DateTime?
   suspendedReason String?
   bannedReason   String?

@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       where: {
         creatorId: { in: followedIds },
         isPublished: true,
+        creator: { isInternal: false },
       },
       include: {
         creator: {
@@ -44,7 +45,7 @@ export async function GET(request: Request) {
       skip: offset,
     }),
     prisma.product.count({
-      where: { creatorId: { in: followedIds }, isPublished: true },
+      where: { creatorId: { in: followedIds }, isPublished: true, creator: { isInternal: false } },
     }),
   ])
 

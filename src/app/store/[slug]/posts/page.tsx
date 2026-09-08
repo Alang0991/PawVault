@@ -8,6 +8,7 @@ import { notFound } from "next/navigation"
 import { formatDate } from "@/lib/helpers"
 import { Calendar, User, FileText, ExternalLink } from "lucide-react"
 import { AdultContentPreview } from "@/components/adult-content-preview"
+import { getServerUser } from "@/lib/session"
 
 export const dynamic = "force-dynamic"
 
@@ -40,8 +41,11 @@ export default async function StorePostsPage({
 }: {
   params: { slug: string }
 }) {
+  const currentUser = await getServerUser()
+  const isFounder = currentUser?.role === "FOUNDER"
+
   const user = await prisma.user.findFirst({
-    where: { username: params.slug },
+    where: { username: params.slug, ...(!isFounder && { isInternal: false }) },
     select: { id: true, username: true, displayName: true, avatar: true },
   })
 

@@ -10,12 +10,12 @@ export async function GET(request: Request) {
 
   if (type === 'products') {
     const [total, newToday, freeCount, onSaleCount] = await Promise.all([
-      prisma.product.count({ where: { isPublished: true } }),
+      prisma.product.count({ where: { isPublished: true, creator: { isInternal: false } } }),
       prisma.product.count({
-        where: { isPublished: true, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+        where: { isPublished: true, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }, creator: { isInternal: false } },
       }),
-      prisma.product.count({ where: { isPublished: true, isFree: true } }),
-      prisma.product.count({ where: { isPublished: true, isOnSale: true } }),
+      prisma.product.count({ where: { isPublished: true, isFree: true, creator: { isInternal: false } } }),
+      prisma.product.count({ where: { isPublished: true, isOnSale: true, creator: { isInternal: false } } }),
     ])
 
     return NextResponse.json({ total, newToday, freeCount, onSaleCount })
@@ -23,11 +23,12 @@ export async function GET(request: Request) {
 
   if (type === 'creators') {
     const [total, newToday] = await Promise.all([
-      prisma.user.count({ where: { role: { in: ['CREATOR', 'VERIFIED_CREATOR'] } } }),
+      prisma.user.count({ where: { role: { in: ['CREATOR', 'VERIFIED_CREATOR'] }, isInternal: false } }),
       prisma.user.count({
         where: {
           role: { in: ['CREATOR', 'VERIFIED_CREATOR'] },
           createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          isInternal: false,
         },
       }),
     ])
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
                 creator: {
                   creatorStatus: 'APPROVED',
                   status: 'ACTIVE',
+                  isInternal: false,
                 },
                 store: {
                   visibility: 'PUBLISHED',
@@ -65,6 +67,17 @@ export async function GET(request: Request) {
 
   if (type === 'tags') {
     const tags = await prisma.tag.findMany({
+      where: {
+        products: {
+          some: {
+            product: {
+              isPublished: true,
+              status: 'PUBLISHED',
+              creator: { isInternal: false },
+            },
+          },
+        },
+      },
       include: { _count: { select: { products: true } } },
       orderBy: { products: { _count: 'desc' } },
       take: 15,

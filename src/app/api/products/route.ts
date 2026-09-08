@@ -70,6 +70,9 @@ export async function GET(request: Request) {
     const where: any = {
       isPublished: true,
       status: "PUBLISHED",
+      creator: {
+        isInternal: false,
+      },
       store: {
         visibility: "PUBLISHED",
       },

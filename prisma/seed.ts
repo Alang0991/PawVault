@@ -21,7 +21,7 @@ async function main() {
 
   const creator = await prisma.user.upsert({
     where: { email: 'creator@pawvault.com' },
-    update: {},
+    update: { isInternal: true },
     create: {
       email: 'creator@pawvault.com',
       username: 'creator',
@@ -30,6 +30,7 @@ async function main() {
       role: 'VERIFIED_CREATOR',
       isVerified: true,
       creatorStatus: 'APPROVED',
+      isInternal: true,
     },
   })
 

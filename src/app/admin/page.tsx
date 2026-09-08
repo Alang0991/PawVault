@@ -10,8 +10,38 @@ import { Users, Shield, Settings, Activity, BarChart3, AlertTriangle } from "luc
 
 export default async function AdminPage() {
   const user = await getServerUser()
-  if (!user || !["ADMIN", "FOUNDER"].includes(user.role)) {
-    redirect("/")
+  if (!user) {
+    redirect("/auth/signin")
+  }
+
+  if (!["ADMIN", "FOUNDER"].includes(user.role)) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-16">
+        <div className="container mx-auto px-4 max-w-xl">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <CardTitle>Access Denied</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                You do not have permission to access the admin panel. Only administrators and the platform founder can view this area.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/moderation">Go to Moderation</Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full">
+                <Link href="/">Return Home</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   const isFounder = user.role === "FOUNDER"
@@ -22,10 +52,10 @@ export default async function AdminPage() {
     pendingReports,
     staffCount,
   ] = await Promise.all([
-    prisma.user.count().catch(() => 0),
-    prisma.product.count().catch(() => 0),
+    prisma.user.count({ where: { isInternal: false } }).catch(() => 0),
+    prisma.product.count({ where: { creator: { isInternal: false } } }).catch(() => 0),
     prisma.report.count({ where: { status: "PENDING" } }).catch(() => 0),
-    prisma.user.count({ where: { role: { in: ["MODERATOR", "ADMIN", "FOUNDER"] } } }).catch(() => 0),
+    prisma.user.count({ where: { role: { in: ["MODERATOR", "ADMIN", "FOUNDER"] }, isInternal: false } }).catch(() => 0),
   ])
 
   const sections = [

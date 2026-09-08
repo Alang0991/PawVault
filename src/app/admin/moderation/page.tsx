@@ -1,13 +1,14 @@
-'use client'
+export const dynamic = "force-dynamic"
 
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AlertTriangle, CheckCircle, XCircle, Users, FileText, MessageSquare } from 'lucide-react'
+import { getServerUser } from "@/lib/session"
+import { redirect } from "next/navigation"
+import { prisma } from "@/lib/prisma"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AlertTriangle, CheckCircle, XCircle, Users, FileText, MessageSquare } from "lucide-react"
+import Link from "next/link"
 
 interface Report {
   id: string
@@ -26,58 +27,63 @@ interface Report {
   }
 }
 
-export default function ModerationPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [reports, setReports] = useState<Report[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('pending')
-
-  useEffect(() => {
-    if (status === 'loading') return
-    if (!session || !['ADMIN', 'FOUNDER', 'MODERATOR'].includes(session.user?.role || '')) {
-      router.replace('/auth/signin')
-      return
-    }
-
-    async function fetchReports() {
-      try {
-        const res = await fetch('/api/admin/moderation')
-        if (res.ok) {
-          const data = await res.json()
-          setReports(data.reports || [])
-        } else if (res.status === 401 || res.status === 403) {
-          router.replace('/auth/signin')
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchReports()
-  }, [session, status, router])
-
-  const handleAction = async (reportId: string, action: 'approve' | 'remove' | 'warn' | 'ban') => {
-    try {
-      const res = await fetch('/api/admin/moderation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reportId, action }),
-      })
-      if (res.ok) {
-        setReports(reports.map(r => 
-          r.id === reportId 
-            ? { ...r, status: action === 'approve' ? 'dismissed' : 'resolved' }
-            : r
-        ))
-      }
-    } catch (error) {
-    }
+export default async function ModerationPage() {
+  const user = await getServerUser()
+  if (!user) {
+    redirect("/auth/signin")
   }
 
-  const filteredReports = reports.filter(report => {
-    if (activeTab === 'all') return true
-    return report.status === activeTab
-  })
+  if (!["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-16">
+        <div className="container mx-auto px-4 max-w-xl">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <CardTitle>Access Denied</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                You do not have permission to access moderation tools. Only platform owners, administrators, and moderators can view this area.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/">Return Home</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  let reports: Report[] = []
+  try {
+    const dbReports = await prisma.report.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        reporter: { select: { username: true, displayName: true } },
+      },
+    })
+    reports = dbReports.map((r: any) => ({
+      id: r.id,
+      type: r.reportedType as Report['type'],
+      reason: r.reason,
+      status: r.status as Report['status'],
+      createdAt: r.createdAt.toISOString(),
+      reporter: {
+        username: r.reporter?.username || "",
+        email: r.reporter?.displayName || "",
+      },
+      target: { id: r.reportedId, type: r.reportedType, title: r.reportedId },
+    }))
+  } catch (error) {
+    console.error("Moderation reports error:", error)
+  }
 
   const stats = {
     pending: reports.filter(r => r.status === 'pending').length,
@@ -141,7 +147,7 @@ export default function ModerationPage() {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="pending" className="space-y-6">
           <TabsList>
             <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
             <TabsTrigger value="reviewed">Reviewed ({stats.reviewed})</TabsTrigger>
@@ -150,81 +156,69 @@ export default function ModerationPage() {
             <TabsTrigger value="all">All ({reports.length})</TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="mt-6">
-            {filteredReports.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">No reports found.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {filteredReports.map((report) => (
-                  <Card key={report.id}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant={
-                              report.type === 'asset' ? 'default' :
-                              report.type === 'user' ? 'secondary' :
-                              report.type === 'review' ? 'outline' : 'destructive'
-                            }>
-                              {report.type}
-                            </Badge>
-                            <Badge variant={
-                              report.status === 'pending' ? 'secondary' :
-                              report.status === 'resolved' ? 'default' : 'destructive'
-                            }>
-                              {report.status}
-                            </Badge>
+          {(['pending', 'reviewed', 'resolved', 'dismissed', 'all'] as const).map((tabValue) => (
+            <TabsContent key={tabValue} value={tabValue}>
+              {reports.filter(r => tabValue === 'all' || r.status === tabValue).length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground">No reports found.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {reports
+                    .filter(r => tabValue === 'all' || r.status === tabValue)
+                    .map((report) => (
+                      <Card key={report.id}>
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant={
+                                  report.type === 'asset' ? 'default' :
+                                  report.type === 'user' ? 'secondary' :
+                                  report.type === 'review' ? 'outline' : 'destructive'
+                                }>
+                                  {report.type}
+                                </Badge>
+                                <Badge variant={
+                                  report.status === 'pending' ? 'secondary' :
+                                  report.status === 'resolved' ? 'default' : 'destructive'
+                                }>
+                                  {report.status}
+                                </Badge>
+                              </div>
+                              <h3 className="font-semibold mb-1">{report.reason}</h3>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Reported by {report.reporter.username || report.reporter.email}
+                              </p>
+                              <p className="text-sm">
+                                Target: {report.target.title || report.target.username || report.target.id}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {new Date(report.createdAt).toLocaleString()}
+                              </p>
+                            </div>
                           </div>
-                          <h3 className="font-semibold mb-1">{report.reason}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Reported by {report.reporter.username || report.reporter.email}
-                          </p>
-                          <p className="text-sm">
-                            Target: {report.target.title || report.target.username}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {new Date(report.createdAt).toLocaleString()}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          {report.status === 'pending' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleAction(report.id, 'remove')}
-                              >
-                                Remove
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleAction(report.id, 'warn')}
-                              >
-                                Warn
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleAction(report.id, 'approve')}
-                              >
-                                Approve
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              )}
+            </TabsContent>
+          ))}
         </Tabs>
+
+        <div className="py-2"></div>
+
+        <div className="flex gap-2">
+          <Link href="/moderation">
+            <Button variant="ghost">← Back to Moderation</Button>
+          </Link>
+          <Link href="/moderation/reports">
+            <Button variant="outline">Go to Reports →</Button>
+          </Link>
+        </div>
       </div>
     </div>
   )

@@ -42,3 +42,7 @@ export function hasRoleAtLeast(actualRole: string | null | undefined, required: 
 export function canAccessModeration(role: string | null | undefined): boolean {
   return isStaff(role)
 }
+
+export function canSeeInternalAccounts(viewerRole: string | null | undefined): boolean {
+  return isFounder(viewerRole)
+}
