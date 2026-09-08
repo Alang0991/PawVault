@@ -54,77 +54,90 @@ function enrich(products: any[]) {
 
 export default async function Home() {
   const user = await getServerUser()
-  const [
-    featuredProducts,
-    trendingProducts,
-    newDrops,
-    freeProducts,
-    spotlightCreator,
-    categories,
-    announcement,
-  ] = await Promise.all([
-    prisma.product.findMany({
-      where: { isPublished: true, isFeatured: true, creator: { isInternal: false } },
-      take: 4,
-      include: PRODUCT_CARD_FIELDS,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.product.findMany({
-      where: { isPublished: true, creator: { isInternal: false } },
-      take: 8,
-      include: PRODUCT_CARD_FIELDS,
-      orderBy: { favorites: { _count: "desc" } },
-    }),
-    prisma.product.findMany({
-      where: { isPublished: true, creator: { isInternal: false } },
-      take: 8,
-      include: PRODUCT_CARD_FIELDS,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.product.findMany({
-      where: { isPublished: true, isFree: true, creator: { isInternal: false } },
-      take: 8,
-      include: PRODUCT_CARD_FIELDS,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.user.findFirst({
-      where: {
-        role: { in: ["CREATOR", "VERIFIED_CREATOR"] },
-        isInternal: false,
-        store: { isNot: null },
-      },
-      orderBy: { salesCount: "desc" },
-      select: {
-        id: true,
-        username: true,
-        displayName: true,
-        avatar: true,
-        bio: true,
-        isVerified: true,
-        salesCount: true,
-        rating: true,
-        followersCount: true,
-        store: { select: { name: true, slug: true, banner: true } },
-        _count: {
-          select: { products: { where: { isPublished: true } } },
+  
+  let featuredProducts: any[] = []
+  let trendingProducts: any[] = []
+  let newDrops: any[] = []
+  let freeProducts: any[] = []
+  let spotlightCreator: any = null
+  let categories: any[] = []
+  let announcement: any = null
+
+  try {
+    [
+      featuredProducts,
+      trendingProducts,
+      newDrops,
+      freeProducts,
+      spotlightCreator,
+      categories,
+      announcement,
+    ] = await Promise.all([
+      prisma.product.findMany({
+        where: { isPublished: true, isFeatured: true, creator: { isInternal: false } },
+        take: 4,
+        include: PRODUCT_CARD_FIELDS,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.product.findMany({
+        where: { isPublished: true, creator: { isInternal: false } },
+        take: 8,
+        include: PRODUCT_CARD_FIELDS,
+        orderBy: { favorites: { _count: "desc" } },
+      }),
+      prisma.product.findMany({
+        where: { isPublished: true, creator: { isInternal: false } },
+        take: 8,
+        include: PRODUCT_CARD_FIELDS,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.product.findMany({
+        where: { isPublished: true, isFree: true, creator: { isInternal: false } },
+        take: 8,
+        include: PRODUCT_CARD_FIELDS,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.user.findFirst({
+        where: {
+          role: { in: ["CREATOR", "VERIFIED_CREATOR"] },
+          isInternal: false,
+          store: { isNot: null },
         },
-      },
-    }),
-    prisma.category.findMany({
-      where: { parentId: null },
-      orderBy: { name: "asc" },
-      take: 8,
-      include: {
-        _count: {
-          select: { products: { where: { isPublished: true } } },
+        orderBy: { salesCount: "desc" },
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatar: true,
+          bio: true,
+          isVerified: true,
+          salesCount: true,
+          rating: true,
+          followersCount: true,
+          store: { select: { name: true, slug: true, banner: true } },
+          _count: {
+            select: { products: { where: { isPublished: true } } },
+          },
         },
-      },
-    }),
-    prisma.announcement.findFirst({
-      where: { isPublished: true, publishedAt: { not: null } },
-      orderBy: { publishedAt: "desc" },
-    }),
-  ])
+      }),
+      prisma.category.findMany({
+        where: { parentId: null },
+        orderBy: { name: "asc" },
+        take: 8,
+        include: {
+          _count: {
+            select: { products: { where: { isPublished: true } } },
+          },
+        },
+      }),
+      prisma.announcement.findFirst({
+        where: { isPublished: true, publishedAt: { not: null } },
+        orderBy: { publishedAt: "desc" },
+      }),
+    ])
+  } catch (error) {
+    console.error("Homepage data load error:", error)
+  }
 
   let staffPicks: any[] = []
   try {
