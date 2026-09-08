@@ -73,7 +73,7 @@ async function getTotalCounts(role?: string | null) {
   }
 
   const [creatorCount, productCount, followerCount] = await Promise.all([
-    prisma.user.count(creatorWhere),
+    prisma.user.count({ where: creatorWhere }),
     prisma.product.count({
       where: {
         isPublished: true,
