@@ -62,7 +62,6 @@ export default async function Home() {
     spotlightCreator,
     categories,
     announcement,
-    staffPicks,
   ] = await Promise.all([
     prisma.product.findMany({
       where: { isPublished: true, isFeatured: true },
@@ -124,7 +123,11 @@ export default async function Home() {
       where: { isPublished: true, publishedAt: { not: null } },
       orderBy: { publishedAt: "desc" },
     }),
-    prisma.staffPick.findMany({
+  ])
+
+  let staffPicks: any[] = []
+  try {
+    staffPicks = await prisma.staffPick.findMany({
       where: { isActive: true },
       take: 6,
       include: {
@@ -146,8 +149,11 @@ export default async function Home() {
         },
         staff: { select: { username: true, displayName: true } },
       },
-    }),
-  ])
+    })
+  } catch (error) {
+    console.error("Staff picks load error:", error)
+    staffPicks = []
+  }
 
   const featured = enrich(featuredProducts)
   const trending = enrich(trendingProducts)
