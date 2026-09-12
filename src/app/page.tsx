@@ -416,9 +416,16 @@ export default async function Home() {
 
   const sectionMap = new Map(activeSections.map((s, i) => [s.id, sectionData[i]]))
 
+  const dedupedSectionMap = new Map<string, any>()
+  for (const [id, data] of sectionMap) {
+    if (!dedupedSectionMap.has(data.type)) {
+      dedupedSectionMap.set(id, data)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      {Array.from(sectionMap.values())
+      {Array.from(dedupedSectionMap.values())
         .filter((data: any) => data.type === "announcements" && data.announcement)
         .map((data: any) => {
           const a = data.announcement
@@ -431,7 +438,7 @@ export default async function Home() {
         })}
 
       <main className="container mx-auto px-4 py-10 md:py-12 space-y-12">
-        {Array.from(sectionMap.entries()).map(([sectionId, data]) => {
+        {Array.from(dedupedSectionMap.entries()).map(([sectionId, data]) => {
           const section = activeSections.find((s) => s.id === sectionId)
           if (!section) return null
 
