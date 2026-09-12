@@ -84,26 +84,32 @@ function isSectionActive(section: any): boolean {
   return true
 }
 
-async function getSectionData(section: any, user: any) {
+async function getSectionData(section: any, user: any, usedIds: Set<string>) {
   const config = section.config || {}
   const limit = config.limit ?? 8
 
   switch (section.type) {
     case "hero":
-      return { type: "hero", config }
+      return { type: "hero", config, usedIds: [] }
 
     case "featuredProducts": {
       try {
         const products = await prisma.product.findMany({
-          where: { isPublished: true, isFeatured: true, creator: { isInternal: false } },
+          where: {
+            isPublished: true,
+            isFeatured: true,
+            creator: { isInternal: false },
+            id: { notIn: [...usedIds] },
+          },
           take: limit,
           include: PRODUCT_CARD_FIELDS,
           orderBy: { createdAt: "desc" },
         })
-        return { type: "featuredProducts", products: enrich(products), config }
+        const enriched = enrich(products)
+        return { type: "featuredProducts", products: enriched, config, usedIds: products.map((p) => p.id) }
       } catch (error) {
         console.error("Failed to fetch featured products:", error)
-        return { type: "featuredProducts", products: [], config }
+        return { type: "featuredProducts", products: [], config, usedIds: [] }
       }
     }
 
@@ -112,7 +118,7 @@ async function getSectionData(section: any, user: any) {
         const picks = await prisma.staffPick.findMany({
           where: {
             isActive: true,
-            product: { isPublished: true, creator: { isInternal: false } },
+            product: { isPublished: true, creator: { isInternal: false }, id: { notIn: [...usedIds] } },
           },
           take: config.limit ?? 6,
           include: {
@@ -141,43 +147,53 @@ async function getSectionData(section: any, user: any) {
             staff: p.staff,
           }
         })
-        return { type: "staffPicks", picks: enrichedStaffPicks, config }
+        return { type: "staffPicks", picks: enrichedStaffPicks, config, usedIds: picks.map((p: any) => p.product.id) }
       } catch (error) {
         console.error("Failed to fetch staff picks:", error)
-        return { type: "staffPicks", picks: [], config }
+        return { type: "staffPicks", picks: [], config, usedIds: [] }
       }
     }
 
     case "followingFeed":
-      return { type: "followingFeed", config, userId: user?.id }
+      return { type: "followingFeed", config, userId: user?.id, usedIds: [] }
 
     case "trendingProducts": {
       try {
         const products = await prisma.product.findMany({
-          where: { isPublished: true, creator: { isInternal: false } },
+          where: {
+            isPublished: true,
+            creator: { isInternal: false },
+            id: { notIn: [...usedIds] },
+          },
           take: limit,
           include: PRODUCT_CARD_FIELDS,
           orderBy: { favorites: { _count: "desc" } },
         })
-        return { type: "trendingProducts", products: enrich(products), config }
+        const enriched = enrich(products)
+        return { type: "trendingProducts", products: enriched, config, usedIds: products.map((p) => p.id) }
       } catch (error) {
         console.error("Failed to fetch trending products:", error)
-        return { type: "trendingProducts", products: [], config }
+        return { type: "trendingProducts", products: [], config, usedIds: [] }
       }
     }
 
     case "newDrops": {
       try {
         const products = await prisma.product.findMany({
-          where: { isPublished: true, creator: { isInternal: false } },
+          where: {
+            isPublished: true,
+            creator: { isInternal: false },
+            id: { notIn: [...usedIds] },
+          },
           take: limit,
           include: PRODUCT_CARD_FIELDS,
           orderBy: { createdAt: "desc" },
         })
-        return { type: "newDrops", products: enrich(products), config }
+        const enriched = enrich(products)
+        return { type: "newDrops", products: enriched, config, usedIds: products.map((p) => p.id) }
       } catch (error) {
         console.error("Failed to fetch new drops:", error)
-        return { type: "newDrops", products: [], config }
+        return { type: "newDrops", products: [], config, usedIds: [] }
       }
     }
 
@@ -191,10 +207,10 @@ async function getSectionData(section: any, user: any) {
             _count: { select: { products: { where: { isPublished: true } } } },
           },
         })
-        return { type: "categories", categories: cats, config }
+        return { type: "categories", categories: cats, config, usedIds: [] }
       } catch (error) {
         console.error("Failed to fetch categories:", error)
-        return { type: "categories", categories: [], config }
+        return { type: "categories", categories: [], config, usedIds: [] }
       }
     }
 
@@ -223,25 +239,31 @@ async function getSectionData(section: any, user: any) {
             _count: { select: { products: { where: { isPublished: true } } } },
           },
         })
-        return { type: "creatorSpotlight", creator, config }
+        return { type: "creatorSpotlight", creator, config, usedIds: [] }
       } catch (error) {
         console.error("Failed to fetch creator spotlight:", error)
-        return { type: "creatorSpotlight", creator: null, config }
+        return { type: "creatorSpotlight", creator: null, config, usedIds: [] }
       }
     }
 
     case "freeProducts": {
       try {
         const products = await prisma.product.findMany({
-          where: { isPublished: true, isFree: true, creator: { isInternal: false } },
+          where: {
+            isPublished: true,
+            isFree: true,
+            creator: { isInternal: false },
+            id: { notIn: [...usedIds] },
+          },
           take: limit,
           include: PRODUCT_CARD_FIELDS,
           orderBy: { createdAt: "desc" },
         })
-        return { type: "freeProducts", products: enrich(products), config }
+        const enriched = enrich(products)
+        return { type: "freeProducts", products: enriched, config, usedIds: products.map((p) => p.id) }
       } catch (error) {
         console.error("Failed to fetch free products:", error)
-        return { type: "freeProducts", products: [], config }
+        return { type: "freeProducts", products: [], config, usedIds: [] }
       }
     }
 
@@ -307,14 +329,21 @@ async function getSectionData(section: any, user: any) {
           },
           orderBy: { createdAt: "desc" },
         })
+        const bundleProductIds: string[] = []
+        bundles.forEach((b) => {
+          b.items.forEach((item) => {
+            if (item.product?.id) bundleProductIds.push(item.product.id)
+          })
+        })
         return {
           type: "bundles",
           bundles: bundles.map(enrichBundle),
           config,
+          usedIds: bundleProductIds,
         }
       } catch (error) {
         console.error("Failed to fetch bundles:", error)
-        return { type: "bundles", bundles: [], config }
+        return { type: "bundles", bundles: [], config, usedIds: [] }
       }
     }
 
@@ -324,15 +353,15 @@ async function getSectionData(section: any, user: any) {
           where: { isPublished: true, publishedAt: { not: null } },
           orderBy: { publishedAt: "desc" },
         })
-        return { type: "announcements", announcement, config }
+        return { type: "announcements", announcement, config, usedIds: [] }
       } catch (error) {
         console.error("Failed to fetch announcement:", error)
-        return { type: "announcements", announcement: null, config }
+        return { type: "announcements", announcement: null, config, usedIds: [] }
       }
     }
 
     default:
-      return { type: section.type, config }
+      return { type: section.type, config, usedIds: [] }
   }
 }
 
@@ -370,12 +399,20 @@ export default async function Home() {
 
   const activeSections = sections.filter(isSectionActive)
 
-  const sectionData = await Promise.all(
-    activeSections.map((section) => getSectionData(section, user).catch((err) => {
+  const sectionData: any[] = []
+  const usedIds = new Set<string>()
+  for (const section of activeSections) {
+    try {
+      const data = await getSectionData(section, user, usedIds)
+      sectionData.push(data)
+      if (data.usedIds && data.usedIds.length > 0) {
+        data.usedIds.forEach((id: string) => usedIds.add(id))
+      }
+    } catch (err) {
       console.error(`Failed to fetch section ${section.id}:`, err)
-      return { type: section.type, config: section.config }
-    }))
-  )
+      sectionData.push({ type: section.type, config: section.config, usedIds: [] })
+    }
+  }
 
   const sectionMap = new Map(activeSections.map((s, i) => [s.id, sectionData[i]]))
 
