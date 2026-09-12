@@ -51,6 +51,12 @@ export const PERMISSIONS = {
 
   MARKETPLACE_SETTINGS: "marketplace.settings",
   SITE_SETTINGS: "site.settings",
+
+  SUPPORT_TICKETS: "support.tickets",
+  FINANCE_VIEW: "finance.view",
+  FINANCE_MANAGE: "finance.manage",
+  API_KEYS: "api.keys",
+  SYSTEM_SETTINGS: "system.settings",
 } as const
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
@@ -148,6 +154,23 @@ export const PERMISSION_GROUPS: Array<{
       { key: PERMISSIONS.MARKETPLACE_SETTINGS, label: "Marketplace settings", description: "Configure marketplace rules." },
       { key: PERMISSIONS.SITE_SETTINGS, label: "Site settings", description: "Configure site-wide options." },
       { key: PERMISSIONS.AUDIT_LOGS_VIEW, label: "View audit logs", description: "Inspect administrative actions." },
+      { key: PERMISSIONS.SYSTEM_SETTINGS, label: "System settings", description: "Access server and system configuration." },
+      { key: PERMISSIONS.API_KEYS, label: "API keys", description: "Manage API keys and integrations." },
+    ],
+  },
+  {
+    label: "Support",
+    description: "Customer support and help desk.",
+    permissions: [
+      { key: PERMISSIONS.SUPPORT_TICKETS, label: "Manage support tickets", description: "View, respond to, and resolve support tickets." },
+    ],
+  },
+  {
+    label: "Finance",
+    description: "Revenue, payouts, and financial operations.",
+    permissions: [
+      { key: PERMISSIONS.FINANCE_VIEW, label: "View financials", description: "See revenue, payouts, and tax reports." },
+      { key: PERMISSIONS.FINANCE_MANAGE, label: "Manage financials", description: "Configure fees, taxes, and payout settings." },
     ],
   },
 ]
@@ -201,6 +224,42 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.REVIEWS_REMOVE,
     PERMISSIONS.REPORTS_VIEW,
     PERMISSIONS.REPORTS_RESOLVE,
+  ],
+  SUPPORT: [
+    PERMISSIONS.USERS_VIEW,
+    PERMISSIONS.USERS_MANAGE,
+    PERMISSIONS.ORDERS_VIEW,
+    PERMISSIONS.SUPPORT_TICKETS,
+    PERMISSIONS.AUDIT_LOGS_VIEW,
+  ],
+  FINANCE: [
+    PERMISSIONS.ORDERS_VIEW,
+    PERMISSIONS.REFUNDS_MANAGE,
+    PERMISSIONS.FINANCE_VIEW,
+    PERMISSIONS.AUDIT_LOGS_VIEW,
+  ],
+  DEVELOPER: [
+    PERMISSIONS.AUDIT_LOGS_VIEW,
+    PERMISSIONS.SYSTEM_SETTINGS,
+    PERMISSIONS.API_KEYS,
+    PERMISSIONS.SITE_SETTINGS,
+  ],
+  CONTENT_MANAGER: [
+    PERMISSIONS.CATEGORIES_MANAGE,
+    PERMISSIONS.FEATURED_MANAGE,
+    PERMISSIONS.ANNOUNCEMENTS_MANAGE,
+    PERMISSIONS.PRODUCTS_VIEW,
+    PERMISSIONS.PRODUCTS_MANAGE,
+    PERMISSIONS.CREATORS_VIEW,
+  ],
+  MARKETPLACE_MANAGER: [
+    PERMISSIONS.PRODUCTS_VIEW,
+    PERMISSIONS.PRODUCTS_MANAGE,
+    PERMISSIONS.CATEGORIES_MANAGE,
+    PERMISSIONS.DISCOUNTS_MANAGE,
+    PERMISSIONS.FEATURED_MANAGE,
+    PERMISSIONS.ORDERS_VIEW,
+    PERMISSIONS.CREATORS_VIEW,
   ],
   CREATOR: [],
   VERIFIED_CREATOR: [],

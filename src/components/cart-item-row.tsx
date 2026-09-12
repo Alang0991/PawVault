@@ -14,6 +14,14 @@ interface CartItemRowProps {
   item: {
     id: string
     quantity: number
+    lineTotal?: number
+    adjustedLineTotal?: number
+    bundle?: {
+      id: string
+      name: string
+      slug: string
+      price: number
+    } | null
     product: {
       id: string
       slug: string
@@ -42,6 +50,11 @@ export function CartItemRow({ item }: CartItemRowProps) {
   const product = item.product
   const creatorName = product.creator.displayName || product.creator.username
   const thumbnail = product.media?.[0]
+  const isBundleItem = !!item.bundle
+  const discountedUnitPrice =
+    item.adjustedLineTotal != null && item.quantity > 0
+      ? item.adjustedLineTotal / item.quantity
+      : null
 
   const updateQuantity = async (next: number) => {
     if (next < 1) {
@@ -134,6 +147,11 @@ export function CartItemRow({ item }: CartItemRowProps) {
 
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-1.5">
+            {isBundleItem && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                Bundle
+              </span>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -157,12 +175,32 @@ export function CartItemRow({ item }: CartItemRowProps) {
             </Button>
           </div>
 
-          <Price
-            amount={product.price}
-            salePrice={product.salePrice}
-            isFree={product.isFree}
-            amountClassName="text-base"
-          />
+          <div className="text-right">
+            {discountedUnitPrice != null && discountedUnitPrice < product.price && (
+              <p className="text-xs text-text-muted line-through">
+                <Price
+                  amount={product.price}
+                  salePrice={product.salePrice}
+                  isFree={product.isFree}
+                  amountClassName="text-xs"
+                />
+              </p>
+            )}
+            {discountedUnitPrice != null ? (
+              <Price
+                amount={discountedUnitPrice}
+                isFree={false}
+                amountClassName="text-base"
+              />
+            ) : (
+              <Price
+                amount={product.price}
+                salePrice={product.salePrice}
+                isFree={product.isFree}
+                amountClassName="text-base"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -4,15 +4,19 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CreditCard, ExternalLink } from "lucide-react"
+import { useCurrency } from "@/components/providers/currency-provider"
+import { formatCurrency } from "@/lib/currency"
 
 interface CheckoutActionsProps {
   cartId: string
+  paymentCurrency?: string
 }
 
 interface CheckoutOrder {
   id: string
   checkoutUrl: string
   total: number
+  currency: string
 }
 
 interface CheckoutResult {
@@ -21,17 +25,15 @@ interface CheckoutResult {
   freeAcquisition?: boolean
 }
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
-
-export function CheckoutActions({ cartId }: CheckoutActionsProps) {
+export function CheckoutActions({ cartId, paymentCurrency }: CheckoutActionsProps) {
   const [coupon, setCoupon] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [multiOrders, setMultiOrders] = useState<CheckoutOrder[] | null>(null)
+  const { currency: displayCurrencyCtx } = useCurrency()
+
+  const formatOrderCurrency = (amount: number, currency: string) =>
+    formatCurrency(amount, currency)
 
   const startCheckout = async () => {
     setLoading(true)
@@ -83,8 +85,13 @@ export function CheckoutActions({ cartId }: CheckoutActionsProps) {
             onClick={() => (window.location.href = order.checkoutUrl)}
           >
             <span>
-              Pay <strong>{formatCurrency(order.total)}</strong>
+              Pay <strong>{formatOrderCurrency(order.total, order.currency || "USD")}</strong>
             </span>
+            {paymentCurrency && order.currency !== paymentCurrency && (
+              <span className="text-xs text-muted-foreground">
+                (actual payment in {order.currency || "USD"})
+              </span>
+            )}
             <ExternalLink className="h-4 w-4" />
           </Button>
         ))}

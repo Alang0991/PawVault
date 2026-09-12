@@ -42,10 +42,11 @@ export async function POST(request: Request) {
 
   const stripe = requireStripe()
 
-  const destination = transfer.order.stripeAccountId
-  if (!destination) {
+  if (!transfer.order?.stripeAccountId) {
     return NextResponse.json({ error: 'No Stripe account configured' }, { status: 400 })
   }
+
+  const destination = transfer.order.stripeAccountId
 
   try {
     const newTransfer = await stripe.transfers.create({

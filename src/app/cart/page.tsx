@@ -1,6 +1,7 @@
 import { getServerUser } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
+import { calculateTax, DEFAULT_TAX_RATE_PERCENT } from "@/lib/platform-fees"
 import Link from "next/link"
 import { CartItemRow } from "@/components/cart-item-row"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,14 @@ async function getCart(userId: string) {
       items: {
         orderBy: { createdAt: "desc" },
         include: {
+          bundle: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              price: true,
+            },
+          },
           product: {
             include: {
               creator: true,
@@ -47,23 +56,59 @@ export default async function CartPage() {
 
   const currency = "USD"
 
-  const lineItems = (cart?.items ?? []).map((item) => {
+  const items = cart?.items ?? []
+
+  // Compute bundle discounts proportionally across each bundle's items
+  const bundleTotals = new Map<string, number>()
+  for (const item of items) {
+    if (!item.bundleId) continue
     const price =
       item.product.isOnSale && item.product.salePrice
         ? item.product.salePrice
         : item.product.isFree
         ? 0
         : item.product.price
+    bundleTotals.set(
+      item.bundleId,
+      (bundleTotals.get(item.bundleId) ?? 0) + price * item.quantity
+    )
+  }
+
+  const lineItems = items.map((item) => {
+    const price =
+      item.product.isOnSale && item.product.salePrice
+        ? item.product.salePrice
+        : item.product.isFree
+        ? 0
+        : item.product.price
+    const lineTotal = price * item.quantity
+
+    let adjustedLineTotal = lineTotal
+    if (item.bundleId) {
+      const bundle = item.bundle
+      const bundleValue = bundleTotals.get(item.bundleId) ?? lineTotal
+      const bundleDiscount = Math.max(0, bundleValue - (bundle?.price ?? bundleValue))
+      if (bundleDiscount > 0 && bundleValue > 0) {
+        adjustedLineTotal = Math.max(0, lineTotal - bundleDiscount * (lineTotal / bundleValue))
+      }
+    }
+
     return {
       ...item,
       unitPrice: price,
-      lineTotal: price * item.quantity,
+      lineTotal,
+      adjustedLineTotal,
     }
   })
 
-  const subtotal = lineItems.reduce((sum, i) => sum + i.lineTotal, 0)
+  const subtotal = lineItems.reduce((sum, i) => sum + i.adjustedLineTotal, 0)
+  const bundleSavings = lineItems.reduce(
+    (sum, i) => sum + (i.lineTotal - i.adjustedLineTotal),
+    0
+  )
   const platformFee = subtotal * (feePercent / 100)
-  const total = subtotal + platformFee
+  const tax = calculateTax(subtotal, DEFAULT_TAX_RATE_PERCENT)
+  const total = subtotal + platformFee + tax
 
   const format = (amount: number) =>
     new Intl.NumberFormat("en-US", {
@@ -112,10 +157,17 @@ export default async function CartPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <SummaryRow label="Subtotal" value={format(subtotal)} />
+                  {bundleSavings > 0 && (
+                    <SummaryRow
+                      label="Bundle savings"
+                      value={`-${format(bundleSavings)}`}
+                    />
+                  )}
                   <SummaryRow
                     label={`Platform fee (${feePercent}%)`}
                     value={format(platformFee)}
                   />
+                  <SummaryRow label="Taxes" value={format(tax)} />
                   <div className="border-t pt-3">
                     <SummaryRow
                       label="Total"

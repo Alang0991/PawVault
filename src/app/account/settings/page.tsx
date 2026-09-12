@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { getServerUser } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
 import AccountSettingsForm from "./account-settings-form"
+import { DisplaySettingsSection } from "./display-settings-section"
 
 export const dynamic = "force-dynamic"
 
@@ -38,5 +39,10 @@ export default async function AccountSettingsPage() {
     location: user?.location || "",
   }
 
-  return <AccountSettingsForm initial={initial} />
+  return (
+    <div className="space-y-8">
+      <AccountSettingsForm initial={initial} />
+      <DisplaySettingsSection />
+    </div>
+  )
 }

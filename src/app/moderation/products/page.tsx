@@ -71,10 +71,15 @@ export default async function ModerationProductsPage() {
 
   // Fetch moderation history separately since ProductModeration has no relation to User
   const productIds = products.map((p) => p.id)
-  const moderationRecords = await prisma.productModeration.findMany({
-    where: { productId: { in: productIds } },
-    orderBy: { createdAt: "desc" },
-  })
+  let moderationRecords: any[] = []
+  try {
+    moderationRecords = await prisma.productModeration.findMany({
+      where: { productId: { in: productIds } },
+      orderBy: { createdAt: "desc" },
+    })
+  } catch (error) {
+    console.error("Failed to fetch product moderation history:", error)
+  }
 
   // Fetch actor details separately
   const actorIds = moderationRecords.map((m) => m.actorId).filter(Boolean)

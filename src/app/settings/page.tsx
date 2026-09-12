@@ -7,7 +7,11 @@ import { redirect } from "next/navigation"
 import AccountSettingsForm from "@/app/account/settings/account-settings-form"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Store, Shield } from "lucide-react"
+import { Store, Shield, Bell, Monitor, Trash2, Shield as ShieldIcon } from "lucide-react"
+import { NotificationPreferencesSection } from "@/components/notification-preferences-section"
+import { SessionsSection } from "@/components/sessions-section"
+import { DeleteAccountSection } from "@/components/delete-account-section"
+import { PrivacySettingsSection } from "@/components/privacy-settings-section"
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions)
@@ -76,6 +80,34 @@ export default async function SettingsPage() {
           </div>
         </div>
         <AccountSettingsForm initial={initial} />
+        <div className="mt-8 border-t pt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Bell className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-bold">Notification Preferences</h2>
+          </div>
+          <NotificationPreferencesSection />
+        </div>
+        <div className="mt-8 border-t pt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Monitor className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-bold">Active Sessions</h2>
+          </div>
+          <SessionsSection />
+        </div>
+        <div className="mt-8 border-t pt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Trash2 className="h-5 w-5 text-destructive" />
+            <h2 className="text-2xl font-bold">Delete Account</h2>
+          </div>
+          <DeleteAccountSection />
+        </div>
+        <div className="mt-8 border-t pt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldIcon className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-bold">Privacy Settings</h2>
+          </div>
+          <PrivacySettingsSection />
+        </div>
       </div>
     </div>
   )

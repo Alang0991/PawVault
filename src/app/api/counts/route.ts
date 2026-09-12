@@ -23,12 +23,15 @@ export async function GET(request: Request) {
 
   if (type === 'creators') {
     const [total, newToday] = await Promise.all([
-      prisma.user.count({ where: { role: { in: ['CREATOR', 'VERIFIED_CREATOR'] }, isInternal: false } }),
+      prisma.user.count({ where: { role: { in: ['CREATOR', 'VERIFIED_CREATOR'] }, creatorStatus: 'APPROVED', status: 'ACTIVE', isInternal: false, store: { visibility: 'PUBLISHED' } } }),
       prisma.user.count({
         where: {
           role: { in: ['CREATOR', 'VERIFIED_CREATOR'] },
-          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          creatorStatus: 'APPROVED',
+          status: 'ACTIVE',
           isInternal: false,
+          store: { visibility: 'PUBLISHED' },
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
         },
       }),
     ])

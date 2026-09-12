@@ -35,7 +35,7 @@ export default async function FounderCreatorsPage({
     prisma.user.findMany({
       where: { role: { in: ["CREATOR", "VERIFIED_CREATOR"] } },
       orderBy: { createdAt: "desc" },
-      select: { id: true, username: true, displayName: true, email: true, role: true, isVerified: true, isFeatured: true, createdAt: true },
+      select: { id: true, username: true, displayName: true, email: true, role: true, creatorStatus: true, isVerified: true, isFeatured: true, createdAt: true },
     }),
     prisma.creatorApplication.findMany({
       where: { status: activeStatus },
@@ -71,9 +71,10 @@ export default async function FounderCreatorsPage({
                     <p className="font-medium text-sm">{c.displayName || c.username}</p>
                     <p className="text-xs text-muted-foreground">{c.email}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={c.role === "VERIFIED_CREATOR" ? "default" : "secondary"} className="text-xs">{c.role}</Badge>
-                    {c.isFeatured && <Badge variant="outline" className="text-xs">Featured</Badge>}
+<div className="flex items-center gap-2">
+                      <Badge variant={c.role === "VERIFIED_CREATOR" ? "default" : "secondary"} className="text-xs">{c.role}</Badge>
+                      <Badge variant={c.creatorStatus === "APPROVED" ? "default" : c.creatorStatus === "SUSPENDED" ? "destructive" : c.creatorStatus === "BANNED" ? "destructive" : "outline"} className="text-xs">{c.creatorStatus}</Badge>
+                      {c.isFeatured && <Badge variant="outline" className="text-xs">Featured</Badge>}
                     <div className="flex gap-1">
                       {c.isVerified ? (
                         <AdminActionButton url={`/api/admin/creators/${c.id}/verify`} method="POST" body={{ verified: false }} variant="secondary" size="sm">Unverify</AdminActionButton>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { RefundRequestForm } from "@/components/refund-request-form"
 import {
   Download,
   ExternalLink,
@@ -170,6 +171,26 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               </div>
             </CardContent>
           </Card>
+          {order.status === 'PAID' || order.status === 'COMPLETED' ? (
+            <RefundRequestForm
+              order={{
+                id: order.id,
+                orderNumber: order.id.slice(0, 8).toUpperCase(),
+                status: order.status,
+                total: order.total,
+                currency: order.currency,
+                createdAt: order.createdAt.toISOString(),
+                items: order.items.map((item) => ({
+                  id: item.id,
+                  title: item.product.title,
+                  slug: item.product.slug,
+                  price: item.price,
+                  salePrice: item.product.salePrice,
+                  isFree: item.product.isFree,
+                })),
+              }}
+            />
+          ) : null}
         </div>
       </div>
     </div>

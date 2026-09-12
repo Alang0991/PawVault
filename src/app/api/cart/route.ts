@@ -13,6 +13,14 @@ export async function GET(request: Request) {
       include: {
         items: {
           include: {
+            bundle: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+              },
+            },
             product: {
               include: {
                 media: {
@@ -43,6 +51,14 @@ export async function GET(request: Request) {
         include: {
           items: {
             include: {
+              bundle: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  price: true,
+                },
+              },
               product: {
                 include: {
                   media: {
@@ -79,23 +95,12 @@ export async function POST(request: Request) {
   try {
     const user = await getServerUser()
     const body = await request.json()
-    const { productId, quantity = 1 } = body
+    const { productId, bundleId, quantity = 1 } = body
 
-    if (!productId) {
+    if (!productId && !bundleId) {
       return NextResponse.json(
-        { error: "Product ID is required" },
+        { error: "Product ID or bundle ID is required" },
         { status: 400 }
-      )
-    }
-
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    })
-
-    if (!product) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
       )
     }
 
@@ -114,6 +119,130 @@ export async function POST(request: Request) {
           sessionId,
         },
       })
+    }
+
+    if (bundleId) {
+      const bundle = await prisma.bundle.findUnique({
+        where: { id: bundleId },
+        include: {
+          items: {
+            orderBy: { order: "asc" },
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  isPublished: true,
+                  status: true,
+                  creatorId: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!bundle) {
+        return NextResponse.json({ error: "Bundle not found" }, { status: 404 })
+      }
+      if (!bundle.isPublished) {
+        return NextResponse.json({ error: "This bundle is not available" }, { status: 400 })
+      }
+      if (user && bundle.creatorId === user.id) {
+        return NextResponse.json(
+          { error: "You cannot purchase your own bundle" },
+          { status: 400 }
+        )
+      }
+
+      const unavailableItems = bundle.items.filter(
+        (item) => !item.product.isPublished || item.product.status !== "PUBLISHED"
+      )
+      if (unavailableItems.length > 0) {
+        return NextResponse.json(
+          { error: "One or more products in this bundle are no longer available" },
+          { status: 400 }
+        )
+      }
+
+      if (user) {
+        const ownedProductIds = new Set(
+          (
+            await prisma.license.findMany({
+              where: { userId: user.id, status: "ACTIVE" },
+              select: { productId: true },
+            })
+          ).map((l) => l.productId)
+        )
+        const duplicateItems = bundle.items.filter((item) =>
+          ownedProductIds.has(item.product.id)
+        )
+        if (duplicateItems.length > 0) {
+          return NextResponse.json(
+            { error: "You already own one or more products in this bundle" },
+            { status: 400 }
+          )
+        }
+      }
+
+      const createdItems = []
+      for (const bundleItem of bundle.items) {
+        const existingItem = await prisma.cartItem.findFirst({
+          where: {
+            cartId: cart.id,
+            productId: bundleItem.productId,
+          },
+        })
+
+        if (existingItem) {
+          createdItems.push(
+            await prisma.cartItem.update({
+              where: { id: existingItem.id },
+              data: {
+                quantity: existingItem.quantity + quantity,
+                bundleId: bundle.id,
+              },
+              include: {
+                product: {
+                  include: {
+                    media: { where: { isThumbnail: true }, take: 1 },
+                  },
+                },
+              },
+            })
+          )
+        } else {
+          createdItems.push(
+            await prisma.cartItem.create({
+              data: {
+                cartId: cart.id,
+                productId: bundleItem.productId,
+                bundleId: bundle.id,
+                quantity,
+              },
+              include: {
+                product: {
+                  include: {
+                    media: { where: { isThumbnail: true }, take: 1 },
+                  },
+                },
+              },
+            })
+          )
+        }
+      }
+
+      return NextResponse.json({ items: createdItems, bundleId: bundle.id }, { status: 201 })
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    })
+
+    if (!product) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      )
     }
 
     const existingItem = await prisma.cartItem.findFirst({

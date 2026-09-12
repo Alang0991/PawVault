@@ -29,12 +29,25 @@ export default async function BrowsePage({
     page?: string
     q?: string
     featured?: string
+    creator?: string
+    pc?: string
+    quest?: string
+    platform?: string
   }
 }) {
   const page = Math.max(1, parseInt(searchParams.page || "1"))
   const tagList = searchParams.tags
     ? searchParams.tags.split(",").map((t) => t.trim()).filter(Boolean)
     : []
+  const creatorQuery = searchParams.creator?.trim()
+  const platformQuery = searchParams.platform?.trim()
+  const ratingThreshold = searchParams.rating
+    ? parseFloat(searchParams.rating)
+    : null
+  const validRatingThreshold =
+    ratingThreshold !== null && !Number.isNaN(ratingThreshold)
+      ? ratingThreshold
+      : null
 
   const price: any = {}
   if (searchParams.priceMin) price.gte = parseFloat(searchParams.priceMin)
@@ -50,11 +63,22 @@ export default async function BrowsePage({
       store: {
         visibility: "PUBLISHED",
       },
+      ...(creatorQuery && {
+        OR: [
+          { username: { contains: creatorQuery, mode: "insensitive" } },
+          { displayName: { contains: creatorQuery, mode: "insensitive" } },
+        ],
+      }),
     },
     ...(searchParams.featured === "true" && { isFeatured: true }),
     ...(searchParams.category && { category: { slug: searchParams.category } }),
     ...(searchParams.free === "true" && { isFree: true }),
     ...(searchParams.onSale === "true" && { isOnSale: true }),
+    ...(searchParams.pc === "true" && { pcCompatible: true }),
+    ...(searchParams.quest === "true" && { questCompatible: true }),
+    ...(platformQuery && {
+      files: { some: { platform: { contains: platformQuery, mode: "insensitive" } } },
+    }),
     ...(searchParams.q && {
       OR: [
         { title: { contains: searchParams.q, mode: "insensitive" } },
@@ -72,7 +96,22 @@ export default async function BrowsePage({
   let categories: any[] = []
   let popularTags: any[] = []
 
+  let countWhere: any = where
+
   try {
+    if (validRatingThreshold !== null) {
+      const ratedProductIds = (
+        await prisma.review.groupBy({
+          by: ["productId"],
+          _avg: { rating: true },
+          having: {
+            rating: { _avg: { gte: validRatingThreshold } },
+          },
+        })
+      ).map((review) => review.productId)
+      countWhere = { ...where, id: { in: ratedProductIds } }
+    }
+
     const [fetchedProducts, fetchedTotal, fetchedCategories, fetchedTags] =
       await Promise.all([
         prisma.product.findMany({
@@ -87,6 +126,7 @@ export default async function BrowsePage({
                 username: true,
                 displayName: true,
                 avatar: true,
+                isVerified: true,
               },
             },
             category: true,
@@ -99,22 +139,7 @@ export default async function BrowsePage({
             _count: { select: { favorites: true, reviews: true } },
           },
         }),
-        searchParams.rating
-          ? prisma.product.count({
-              where: {
-                ...where,
-                id: {
-                  in: await prisma.review
-                    .groupBy({
-                      by: ["productId"],
-                      _avg: { rating: true },
-                      having: { rating: { _avg: { gte: parseFloat(searchParams.rating) } } },
-                    })
-                    .then((r) => r.map((x) => x.productId)),
-                },
-              },
-            })
-          : prisma.product.count({ where }),
+        prisma.product.count({ where: countWhere }),
         prisma.category.findMany({
           include: { _count: { select: { products: true } } },
           orderBy: { name: "asc" },
@@ -229,7 +254,11 @@ function hasActiveFilters(searchParams: Record<string, string | undefined>) {
       searchParams.rating ||
       searchParams.tags ||
       searchParams.free ||
-      searchParams.onSale
+      searchParams.onSale ||
+      searchParams.creator ||
+      searchParams.pc ||
+      searchParams.quest ||
+      searchParams.platform
   )
 }
 
@@ -288,6 +317,16 @@ function FiltersCard({
           </div>
 
           <div className="space-y-1.5">
+            <Label className="text-xs text-text-muted">Creator</Label>
+            <Input
+              name="creator"
+              defaultValue={searchParams.creator || ""}
+              placeholder="Creator name or username"
+              className="text-xs"
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label className="text-xs text-text-muted">Category</Label>
             <select
               name="category"
@@ -336,6 +375,39 @@ function FiltersCard({
               <option value="4">4+</option>
               <option value="4.5">4.5+</option>
             </select>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
+              <input
+                type="checkbox"
+                name="pc"
+                value="true"
+                defaultChecked={searchParams.pc === "true"}
+                className="accent-accent"
+              />
+              PC
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
+              <input
+                type="checkbox"
+                name="quest"
+                value="true"
+                defaultChecked={searchParams.quest === "true"}
+                className="accent-accent"
+              />
+              Quest
+            </label>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-text-muted">Platform</Label>
+            <Input
+              name="platform"
+              defaultValue={searchParams.platform || ""}
+              placeholder="Windows, macOS, Blender..."
+              className="text-xs"
+            />
           </div>
 
           <div className="flex flex-wrap gap-3">

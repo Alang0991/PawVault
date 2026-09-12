@@ -36,7 +36,10 @@ async function SearchContent({ q, type }: { q: string; type: string }) {
     prisma.user.findMany({
       where: {
         role: { in: ["CREATOR", "VERIFIED_CREATOR"] },
+        creatorStatus: "APPROVED",
+        status: "ACTIVE",
         isInternal: false,
+        store: { visibility: "PUBLISHED" },
         OR: [
           { username: { contains: q, mode: "insensitive" } },
           { displayName: { contains: q, mode: "insensitive" } },

@@ -6,10 +6,13 @@ import { requireFounder } from "@/lib/server-auth"
 import { z } from "zod"
 import { logFounderAction, AuditActions } from "@/lib/audit-logger"
 import { notifyAccountUpdate } from "@/lib/account-sync"
+import { STAFF_ROLES, ROLE_RANK } from "@/lib/roles"
+
+const ALLOWED_ROLES = STAFF_ROLES.filter((r) => r !== "FOUNDER").concat(["USER", "CREATOR", "VERIFIED_CREATOR"])
 
 const schema = z.object({
   userId: z.string(),
-  role: z.enum(["USER", "CREATOR", "VERIFIED_CREATOR", "MODERATOR", "ADMIN"]),
+  role: z.enum(ALLOWED_ROLES as [string, ...string[]]),
 })
 
 export async function POST(request: Request) {
@@ -44,11 +47,12 @@ export async function POST(request: Request) {
     data: { role: parsed.data.role },
   })
 
-  const auditAction = previousRole === parsed.data.role
-    ? AuditActions.STAFF_PERMISSIONS_CHANGED
-    : STAFF_RANK(previousRole) > STAFF_RANK(parsed.data.role)
-      ? AuditActions.STAFF_DEMOTED
-      : AuditActions.STAFF_PROMOTED
+  const auditAction =
+    previousRole === parsed.data.role
+      ? AuditActions.STAFF_PERMISSIONS_CHANGED
+      : (ROLE_RANK[previousRole as keyof typeof ROLE_RANK] ?? 0) > (ROLE_RANK[parsed.data.role as keyof typeof ROLE_RANK] ?? 0)
+        ? AuditActions.STAFF_DEMOTED
+        : AuditActions.STAFF_PROMOTED
 
   await logFounderAction(
     ctx.id,
@@ -62,15 +66,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ success: true })
-}
-
-function STAFF_RANK(role: string): number {
-  switch (role) {
-    case "FOUNDER": return 100
-    case "ADMIN": return 80
-    case "MODERATOR": return 60
-    case "VERIFIED_CREATOR": return 45
-    case "CREATOR": return 40
-    default: return 10
-  }
 }

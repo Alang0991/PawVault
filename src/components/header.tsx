@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ThemeToggle } from "@/components/theme-provider"
+import { LanguageSelector } from "@/components/language-selector"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,13 +34,163 @@ import {
   AlertTriangle,
   Store,
   X,
+  ChevronDown,
+  Palette,
+  Box,
+  Code,
+  Video,
+  Grid,
 } from "lucide-react"
 
 const NavLinks = [
-  { href: "/browse", label: "Browse" },
-  { href: "/categories", label: "Categories" },
+  { href: "/browse", label: "Marketplace" },
   { href: "/creators", label: "Creators" },
+  { href: "/services", label: "Services", hasDropdown: true },
+  { href: "/tutorials", label: "Tutorials" },
+  { href: "/community", label: "Community" },
+  { href: "/help", label: "Help & Support" },
+  { href: "/feedback", label: "Feedback" },
+  { href: "/credits", label: "Credits" },
 ]
+
+function ServicesDropdown() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="px-3 py-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-accent/10 transition-colors flex items-center gap-1">
+          Services
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel>Commission Services</DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link href="/services/avatar-commissions" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Avatar Commissions
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/services/art-commissions" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Art Commissions
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Other Services</DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link href="/services/3d-services" className="flex items-center gap-2">
+            <Box className="h-4 w-4" />
+            3D Services
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/services/development" className="flex items-center gap-2">
+            <Code className="h-4 w-4" />
+            Development
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/services/video-editing" className="flex items-center gap-2">
+            <Video className="h-4 w-4" />
+            Video Editing
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/services" className="flex items-center gap-2 font-medium">
+            <Grid className="h-4 w-4" />
+            All Services
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function ServicesDropdownMobile({ onSelect }: { onSelect: () => void }) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div className="group">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md flex items-center justify-between"
+      >
+        Services
+        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+      {isOpen && (
+        <div className="ml-4 mt-1 space-y-1 border-l-2 border-accent/20 pl-3 animate-slide-down">
+          <p className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">Commission Services</p>
+          <Link
+            href="/services/avatar-commissions"
+            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
+            onClick={onSelect}
+          >
+            <span className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Avatar Commissions
+            </span>
+          </Link>
+          <Link
+            href="/services/art-commissions"
+            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
+            onClick={onSelect}
+          >
+            <span className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Art Commissions
+            </span>
+          </Link>
+          <div className="my-1 border-t border-border" />
+          <p className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">Other Services</p>
+          <Link
+            href="/services/3d-services"
+            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
+            onClick={onSelect}
+          >
+            <span className="flex items-center gap-2">
+              <Box className="h-4 w-4" />
+              3D Services
+            </span>
+          </Link>
+          <Link
+            href="/services/development"
+            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
+            onClick={onSelect}
+          >
+            <span className="flex items-center gap-2">
+              <Code className="h-4 w-4" />
+              Development
+            </span>
+          </Link>
+          <Link
+            href="/services/video-editing"
+            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
+            onClick={onSelect}
+          >
+            <span className="flex items-center gap-2">
+              <Video className="h-4 w-4" />
+              Video Editing
+            </span>
+          </Link>
+          <div className="my-1 border-t border-border" />
+          <Link
+            href="/services"
+            className="block px-2 py-1.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
+            onClick={onSelect}
+          >
+            <span className="flex items-center gap-2">
+              <Grid className="h-4 w-4" />
+              All Services
+            </span>
+          </Link>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Header() {
   const { data: session, status: sessionStatus } = useSession()
@@ -82,13 +232,17 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1.5 text-sm font-medium">
             {NavLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-3 py-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-accent/10 transition-colors"
-              >
-                {link.label}
-              </Link>
+              link.hasDropdown ? (
+                <ServicesDropdown key={link.href} />
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-3 py-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-accent/10 transition-colors"
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
           </nav>
 
@@ -98,8 +252,8 @@ export default function Header() {
           </div>
 
           {/* Desktop Actions */}
-          <div className="flex items-center gap-1.5">
-            <ThemeToggle />
+           <div className="flex items-center gap-1.5">
+            <LanguageSelector />
             <IconButton
               variant="ghost"
               size="sm"
@@ -199,14 +353,18 @@ export default function Header() {
           <div className="container mx-auto px-4 py-4 space-y-4">
             <div className="flex flex-col gap-1">
               {NavLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="block px-3 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
+                link.hasDropdown ? (
+                  <ServicesDropdownMobile key={link.href} onSelect={() => setIsMobileMenuOpen(false)} />
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="block px-3 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                )
               ))}
             </div>
 

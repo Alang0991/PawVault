@@ -5,6 +5,37 @@ import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { z } from "zod"
 
+async function recalculateCreatorRatingForReview(reviewId: string) {
+  const review = await prisma.review.findUnique({
+    where: { id: reviewId },
+    select: { productId: true },
+  })
+
+  if (!review) return
+
+  const product = await prisma.product.findUnique({
+    where: { id: review.productId },
+    select: { creatorId: true },
+  })
+
+  if (!product?.creatorId) return
+
+  const avgResult = await prisma.review.aggregate({
+    where: {
+      product: { creatorId: product.creatorId },
+      isVerified: true,
+    },
+    _avg: { rating: true },
+  })
+
+  const avgRating = avgResult._avg.rating ?? 0
+
+  await prisma.user.update({
+    where: { id: product.creatorId },
+    data: { rating: Number(avgRating.toFixed(2)) },
+  })
+}
+
 const updateReviewSchema = z.object({
   rating: z.number().int().min(1).max(5).optional(),
   title: z.string().max(100).optional(),
@@ -60,6 +91,8 @@ export async function PUT(
       },
     })
 
+    await recalculateCreatorRatingForReview(params.id)
+
     return NextResponse.json(updated)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -111,6 +144,8 @@ export async function DELETE(
     await prisma.review.delete({
       where: { id: params.id },
     })
+
+    await recalculateCreatorRatingForReview(params.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -27,9 +27,12 @@ export function rateLimit(request: Request, limit = 30, windowMs = 60_000): { al
   return { allowed: true, remaining: limit - record.count, reset: record.reset }
 }
 
-export function getRateLimitHeaders(result: { allowed: boolean; remaining: number; reset: number }) {
+export function getRateLimitHeaders(
+  result: { allowed: boolean; remaining: number; reset: number },
+  limit = 30
+) {
   return {
-    "X-RateLimit-Limit": String(30),
+    "X-RateLimit-Limit": String(limit),
     "X-RateLimit-Remaining": String(result.remaining),
     "X-RateLimit-Reset": String(Math.ceil(result.reset / 1000)),
   }

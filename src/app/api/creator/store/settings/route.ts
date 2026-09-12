@@ -13,6 +13,9 @@ const storeSettingsSchema = z.object({
   socialLinks: z.record(z.string()).optional(),
   logo: z.string().url().optional(),
   banner: z.string().url().optional(),
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a valid hex color").optional(),
+  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a valid hex color").optional(),
+  customCss: z.string().max(10000).optional(),
 })
 
 export async function GET() {
@@ -123,6 +126,9 @@ export async function PUT(request: Request) {
         socialLinks: validated.socialLinks ? JSON.stringify(validated.socialLinks) : undefined,
         ...(validated.logo ? { logo: validated.logo } : {}),
         ...(validated.banner ? { banner: validated.banner } : {}),
+        ...(validated.primaryColor ? { primaryColor: validated.primaryColor } : {}),
+        ...(validated.secondaryColor ? { secondaryColor: validated.secondaryColor } : {}),
+        ...(validated.customCss !== undefined ? { customCss: validated.customCss } : {}),
       },
     })
 

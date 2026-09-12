@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Price } from "@/components/price"
 import { Rating } from "@/components/rating"
 import { AdultContentPreview } from "@/components/adult-content-preview"
-import { Heart, Package } from "lucide-react"
+import { Heart, Package, ShoppingCart } from "lucide-react"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { StatusBadge } from "@/components/status-badge"
@@ -41,9 +41,10 @@ interface Product {
 interface ProductCardProps {
   product: Product
   isOwned?: boolean
+  onAddToCart?: (productId: string) => void
 }
 
-export function ProductCard({ product, isOwned }: ProductCardProps) {
+export function ProductCard({ product, isOwned, onAddToCart }: ProductCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(product._count?.favorites || 0)
   const { data: session } = useSession()
@@ -130,8 +131,13 @@ export function ProductCard({ product, isOwned }: ProductCardProps) {
                 {creatorName[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="text-xs text-text-muted truncate">
-              {creatorName}
+            <span className="flex items-center gap-1.5 min-w-0">
+              <span className="text-xs text-text-muted truncate">
+                {creatorName}
+              </span>
+              {product.creator.isVerified && (
+                <StatusBadge type="verified" size="sm" className="shrink-0" />
+              )}
             </span>
           </div>
 
@@ -157,6 +163,19 @@ export function ProductCard({ product, isOwned }: ProductCardProps) {
                 />
               )}
           </div>
+          {onAddToCart && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onAddToCart(product.id)
+              }}
+              className="mt-2 w-full text-xs text-primary hover:text-accent transition-colors font-medium"
+            >
+              <ShoppingCart className="inline h-3 w-3 mr-1" />
+              Add to Cart
+            </button>
+          )}
         </div>
       </div>
     </Link>

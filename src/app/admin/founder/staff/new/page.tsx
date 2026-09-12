@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import { STAFF_ROLES, roleLabel, roleDescription } from "@/lib/roles"
 
 export const dynamic = "force-dynamic"
+
+const ALLOWED_STAFF_ROLES = STAFF_ROLES.filter((r) => r !== "FOUNDER")
 
 export default async function NewStaffPage() {
   const user = await getServerUser()
@@ -23,8 +26,10 @@ export default async function NewStaffPage() {
             Back to staff
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Add moderator</h1>
-        <p className="text-sm text-muted-foreground">Promote an existing user to a staff role.</p>
+        <h1 className="text-2xl font-bold">Add staff member</h1>
+        <p className="text-sm text-muted-foreground">
+          Promote an existing user to a staff role with custom permissions.
+        </p>
       </div>
 
       <Card>
@@ -40,10 +45,15 @@ export default async function NewStaffPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Role</label>
               <select name="role" defaultValue="MODERATOR" className="w-full border rounded-md px-3 py-2 bg-background">
-                <option value="MODERATOR">Moderator</option>
-                <option value="ADMIN">Admin</option>
+                {ALLOWED_STAFF_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {roleLabel(r)}
+                  </option>
+                ))}
               </select>
-              <p className="text-xs text-muted-foreground">Founder role cannot be granted via this UI.</p>
+              <p className="text-xs text-muted-foreground">
+                {roleDescription("MODERATOR")}
+              </p>
             </div>
             <div className="flex gap-2">
               <Button type="submit">Create staff</Button>

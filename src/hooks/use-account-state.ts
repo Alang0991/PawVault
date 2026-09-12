@@ -17,10 +17,15 @@ export interface AccountState {
     bio: string | null
     creatorStatus: string
     creatorTermsAcceptedAt: string | null
-    customPermissions: string | null
-    suspendedUntil: string | null
-    isFeatured: boolean
-    store: { id: string; slug: string; name: string; visibility: string } | null
+     customPermissions: string | null
+     suspendedUntil: string | null
+     isFeatured: boolean
+     language: string | null
+     currency: string | null
+     theme: string | null
+     accentColor: string | null
+     reduceMotion: boolean | null
+     store: { id: string; slug: string; name: string; visibility: string } | null
   }
   permissions: string[]
   features: {

@@ -87,11 +87,19 @@ model User {
   suspendedUntil DateTime?
   suspendedReason String?
   bannedReason   String?
-  customPermissions String?
-  creatorStatus CreatorStatus @default(NONE)
-  creatorTermsAcceptedAt DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+   customPermissions String?
+   creatorStatus CreatorStatus @default(NONE)
+   creatorTermsAcceptedAt DateTime?
+   mfaSecret      String?
+   mfaEnabled     Boolean  @default(false)
+   mfaBackupCodes String?
+   language       String   @default("en")
+   currency       String   @default("USD")
+   theme          String   @default("system")
+   accentColor    String?     @default("#8B5CF6")
+   reduceMotion   Boolean  @default(false)
+   createdAt      DateTime @default(now())
+   updatedAt      DateTime @updatedAt
 
   profile                 Profile?
   store                   Store?
@@ -138,6 +146,7 @@ model User {
   changelogEntries        ChangelogEntry[]
   supportTicketMessages   SupportTicketMessage[]
   emailPreferences        EmailPreference?
+  privacySettings         PrivacySettings?
   emailMessages           EmailMessage[]
   uploadSessions          UploadSession[]
   mediaProcessingJobs     MediaProcessingJob[]
@@ -145,6 +154,28 @@ model User {
   promotionsCreated       PromotedProduct[]
   stripeTransfersMade     StripeTransfer[]    @relation("StripeTransferCreator")
   creatorAllocations       CreatorAllocation[] @relation("CreatorAllocationCreator")
+  recentlyViewed           RecentlyViewed[]
+  backupsCreated           Backup[]
+  errorsCaught             ErrorLog[]
+  publishingDrafts         PublishingDraft[]
+  tutorialsWritten         Tutorial[]
+  apiDocumentsWritten      APIDocument[]
+  recommendations          Recommendation[]
+  searchAnalytics          SearchAnalytics[]
+  badges                    CreatorBadge[]
+  achievements             CreatorAchievement[]
+  productNotifications     ProductNotification[]
+  newsWritten              PlatformNews[]
+  eventsCreated            Event[]
+  giftCardsCreated         GiftCard[]
+  storeCredits             StoreCredit[]
+  contributor              Contributor?
+  serviceProvider          ServiceProvider?
+  avatarCommissioner       AvatarCommissioner?
+  artCommissioner          ArtCommissioner?
+  threeDServiceProvider    ThreeDServiceProvider?
+  developmentServiceProvider DevelopmentServiceProvider?
+  videoEditingServiceProvider VideoEditingServiceProvider?
 
   @@index([email])
   @@index([username])
@@ -173,6 +204,10 @@ model Store {
   socialLinks      String?
   featuredProducts String?
   visibility       StoreVisibility @default(PUBLISHED)
+  primaryColor     String?
+  secondaryColor   String?
+  customCss        String?
+  announcements    String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -255,6 +290,9 @@ model Product {
   versions    ProductVersion[]
   staffPicks  StaffPick[]
   promotions  PromotedProduct[]
+  recentlyViewed RecentlyViewed[]
+  recommendations Recommendation[]
+  productNotifications ProductNotification[]
 
   @@index([slug])
   @@index([creatorId])
@@ -305,6 +343,7 @@ model ProductFile {
   updatedAt DateTime @updatedAt
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  downloads Download[]
   processingJobs MediaProcessingJob[]
 
   @@index([productId])
@@ -394,17 +433,20 @@ model Cart {
 }
 
 model CartItem {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   cartId    String
   productId String
-  quantity  Int      @default(1)
+  bundleId  String?
+  quantity  Int     @default(1)
   createdAt DateTime @default(now())
 
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  bundle  Bundle? @relation(fields: [bundleId], references: [id], onDelete: SetNull)
 
   @@index([cartId])
   @@index([productId])
+  @@index([bundleId])
 }
 
 model OrderGroup {
@@ -584,13 +626,15 @@ model Download {
   fileId       String?
   downloadedAt DateTime @default(now())
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order   Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  file    ProductFile? @relation(fields: [fileId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([productId])
   @@index([orderId])
+  @@index([fileId])
 }
 
 model Review {
@@ -602,6 +646,10 @@ model Review {
   content      String?
   isVerified   Boolean  @default(false)
   helpfulCount Int      @default(0)
+  creatorResponse String?
+  creatorResponseAt DateTime?
+  isReported   Boolean  @default(false)
+  reportCount  Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -610,6 +658,7 @@ model Review {
 
   @@index([productId])
   @@index([userId])
+  @@index([isReported])
 }
 
 model Favorite {
@@ -745,24 +794,28 @@ model Bundle {
   creatorId   String
   storeId     String?
   name        String
-  slug        String
+  slug        String   @unique
   price       Float
   description String?
   coverImage  String?
+  isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   creator User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   store   Store?       @relation(fields: [storeId], references: [id], onDelete: SetNull)
   items   BundleItem[]
+  cartItems CartItem[]
 
   @@index([slug])
   @@index([creatorId])
+  @@index([isPublished])
 }
 
 model BundleItem {
   id        String @id @default(cuid())
   bundleId  String
   productId String
+  order     Int    @default(0)
 
   bundle  Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -999,6 +1052,10 @@ model Session {
   userId    String
   token     String
   expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+  deviceName String?
+  lastActive DateTime @default(now())
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1171,6 +1228,9 @@ model Announcement {
   authorId    String
   isPublished Boolean   @default(false)
   publishedAt DateTime?
+  scheduledAt DateTime?
+  isPinned    Boolean   @default(false)
+  priority    Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -1178,6 +1238,8 @@ model Announcement {
 
   @@index([isPublished])
   @@index([publishedAt])
+  @@index([isPinned])
+  @@index([priority])
 }
 
 model SiteSetting {
@@ -1185,6 +1247,69 @@ model SiteSetting {
   value     String
   updatedAt DateTime @updatedAt
   updatedBy String?
+}
+
+model HomepageSection {
+  id            String   @id @default(cuid())
+  type          String
+  enabled       Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  config        Json?
+  isSeasonal    Boolean  @default(false)
+  seasonStart   DateTime?
+  seasonEnd     DateTime?
+  publishedAt   DateTime?
+  previousConfig Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([enabled, displayOrder])
+  @@index([isSeasonal, seasonStart, seasonEnd])
+}
+
+model SeasonalTheme {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  isEnabled    Boolean  @default(false)
+  startDate     DateTime?
+  endDate       DateTime?
+  config       Json?
+  displayOrder  Int     @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isEnabled, startDate, endDate])
+  @@index([displayOrder])
+}
+
+model CurrencyRate {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  symbol      String
+  decimalDigits Int    @default(2)
+  rateToBase   Float   @default(1)
+  isEnabled    Boolean @default(true)
+  updatedAt    DateTime @updatedAt
+
+  @@index([code])
+  @@index([isEnabled])
+}
+
+model TranslationKey {
+  id        String   @id @default(cuid())
+  locale    String
+  namespace String
+  key       String
+  value     String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([locale, namespace, key])
+  @@index([locale])
+  @@index([namespace])
 }
 
 model ModerationNote {
@@ -1421,19 +1546,52 @@ model EmailMessage {
 }
 
 model EmailPreference {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  security         Boolean  @default(true)
-  account          Boolean  @default(true)
-  orders           Boolean  @default(true)
-  refunds          Boolean  @default(true)
-  support          Boolean  @default(true)
-  moderation       Boolean  @default(true)
-  productUpdates   Boolean  @default(true)
-  followedCreators Boolean  @default(false)
-  marketing        Boolean  @default(false)
-  updatedAt        DateTime @updatedAt
-  createdAt        DateTime @default(now())
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  security              Boolean  @default(true)
+  account               Boolean  @default(true)
+  orders                Boolean  @default(true)
+  refunds               Boolean  @default(true)
+  support               Boolean  @default(true)
+  moderation            Boolean  @default(true)
+  productUpdates        Boolean  @default(true)
+  followedCreators      Boolean  @default(false)
+  marketing             Boolean  @default(false)
+  wishlistSale          Boolean  @default(true)
+  wishlistPriceChange   Boolean  @default(true)
+  wishlistAvailable     Boolean  @default(true)
+  creatorAnnouncements  Boolean  @default(true)
+  newProductFollowed    Boolean  @default(true)
+  reviewNotifications   Boolean  @default(true)
+  paymentNotifications  Boolean  @default(true)
+  payoutNotifications   Boolean  @default(true)
+  securityNotifications Boolean  @default(true)
+  systemAnnouncements   Boolean  @default(true)
+  creatorApproval       Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+  createdAt             DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PrivacySettings {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  profileVisibility   String   @default("public")
+  showEmail           Boolean  @default(false)
+  showLocation        Boolean  @default(true)
+  showWebsite         Boolean  @default(true)
+  showBio             Boolean  @default(true)
+  showPurchases       Boolean  @default(false)
+  showReviews         Boolean  @default(true)
+  showWishlist        Boolean  @default(false)
+  allowDataCollection Boolean  @default(true)
+  allowPersonalization Boolean  @default(true)
+  allowMarketing      Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+  createdAt           DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1504,4 +1662,813 @@ model MediaProcessingJob {
   @@index([userId])
   @@index([mediaId])
   @@index([fileId])
+}
+
+model RecentlyViewed {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  viewedAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, viewedAt])
+}
+
+model AnalyticsEvent {
+  id           String    @id @default(cuid())
+  userId       String?
+  sessionId    String?
+  eventType    String
+  path         String?
+  title        String?
+  referrer     String?
+  ipAddress    String?
+  userAgent    String?
+  country      String?
+  deviceType   String?
+  browser      String?
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([path])
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model PageViewDaily {
+  id             String   @id @default(cuid())
+  path           String
+  date           DateTime @db.Date
+  views          Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([path, date])
+  @@index([date])
+}
+
+model FeatureFlag {
+  id             String   @id @default(cuid())
+  key            String   @unique
+  name           String
+  description    String?
+  enabled        Boolean  @default(false)
+  rolloutPercent Int      @default(0)
+  targetUsers    Json?
+  targetRoles    Json?
+  environment    String   @default("production")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([enabled])
+  @@index([environment])
+}
+
+model MarketplaceRule {
+  id        String    @id @default(cuid())
+  ruleType  String
+  scope     String
+  scopeId   String?
+  name      String
+  description String?
+  config    Json?
+  priority  Int       @default(0)
+  isActive  Boolean   @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([ruleType])
+  @@index([scope])
+  @@index([isActive])
+  @@index([priority])
+}
+
+model AppearanceConfig {
+  id                String   @id @default("singleton")
+  brandName         String   @default("PawMart")
+  logoUrl           String?
+  faviconUrl        String?
+  primaryColor      String   @default("#8B5CF6")
+  secondaryColor    String   @default("#EC4899")
+  accentColor       String   @default("#F59E0B")
+  fontFamily        String   @default("Inter")
+  headingFontFamily String?
+  borderRadius      String   @default("0.5rem")
+  shadowIntensity   String   @default("md")
+  motionEnabled     Boolean  @default(true)
+  density           String   @default("comfortable")
+  customCss         String?
+  customJs          String?
+  metaTitle         String?
+  metaDescription   String?
+  ogImageUrl        String?
+  analyticsEnabled  Boolean  @default(true)
+  analyticsProvider String?
+  analyticsId       String?
+  maintenanceMode   Boolean  @default(false)
+  maintenanceMessage String?
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+}
+
+model FinanceConfig {
+  id                       String   @id @default("singleton")
+  platformFeePercent       Float    @default(10)
+  moderatorFeePercent      Float    @default(0)
+  serverFeePercent         Float    @default(0)
+  taxRatePercent           Float    @default(0)
+  taxLabel                 String?
+  minimumPayout            Float    @default(50)
+  payoutSchedule           String   @default("WEEKLY")
+  payoutHoldDays           Int      @default(7)
+  defaultCurrency          String   @default("USD")
+  supportedCurrencies      Json?
+  stripeConnectEnabled     Boolean  @default(true)
+  stripeWebhookSigningSecret String?
+  invoiceEnabled           Boolean  @default(false)
+  invoicePrefix            String   @default("INV")
+  refundWindowDays         Int      @default(30)
+  disputeWindowDays        Int      @default(14)
+  chargebackReservePercent Float    @default(0)
+  updatedAt                DateTime @updatedAt
+  createdAt                DateTime @default(now())
+}
+
+model SystemMetric {
+  id           String   @id @default(cuid())
+  metricType   String
+  value        Float
+  unit         String?
+  details      Json?
+  recordedAt   DateTime @default(now())
+
+  @@index([metricType, recordedAt])
+}
+
+model SystemAlert {
+  id             String    @id @default(cuid())
+  severity       String
+  title          String
+  message        String
+  source         String?
+  metadata       Json?
+  acknowledged   Boolean   @default(false)
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([severity])
+  @@index([acknowledged])
+  @@index([createdAt])
+}
+
+model Backup {
+  id            String    @id @default(cuid())
+  label         String
+  type          String    @default("manual")   // manual | scheduled | pre_restore
+  storage       String    @default("database") // database | files | full
+  sizeBytes     Int?
+  checksum      String?
+  status        String    @default("COMPLETED") // PENDING | COMPLETED | FAILED | RESTORING
+  filePath      String?
+  errorMessage  String?
+  metadata      Json?
+  createdById   String?
+  restoredAt    DateTime?
+  restoredById  String?
+  createdAt     DateTime  @default(now())
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ErrorLog {
+  id            String    @id @default(cuid())
+  severity      String    @default("ERROR") // ERROR | WARNING | FATAL
+  message       String
+  stack         String?
+  endpoint      String?
+  method        String?
+  statusCode    Int?
+  userAgent     String?
+  ipAddress     String?
+  userId       String?
+  context       Json?
+  resolved      Boolean   @default(false)
+  resolvedAt    DateTime?
+  resolvedById  String?
+  occurredAt    DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([severity])
+  @@index([resolved])
+  @@index([endpoint])
+  @@index([occurredAt])
+  @@index([userId])
+}
+
+model PublishingDraft {
+  id            String    @id @default(cuid())
+  resourceType  String    // homepage_section | announcement | appearance
+  resourceId    String?
+  title         String
+  summary       String?
+  changes       Json
+  previousVersion Json?
+  status        String    @default("DRAFT") // DRAFT | PENDING_REVIEW | SCHEDULED | PUBLISHED | ROLLED_BACK
+  scheduledAt   DateTime?
+  publishedAt   DateTime?
+  publishedById String?
+  rollbackOf    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  publishedBy User? @relation(fields: [publishedById], references: [id], onDelete: SetNull)
+
+  @@index([resourceType])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+}
+
+model Tutorial {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  summary       String?
+  body          String
+  category      String    @default("general")
+  tags          String[]
+  readTime      Int?        // minutes
+  isPublished   Boolean    @default(false)
+  publishedAt   DateTime?
+  displayOrder  Int        @default(0)
+  authorId      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([publishedAt])
+  @@index([displayOrder])
+}
+
+model APIDocument {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  summary       String?
+  body          String
+  endpoint      String?
+  method        String?
+  category      String    @default("general")
+  tags          String[]
+  isPublished   Boolean    @default(false)
+  publishedAt   DateTime?
+  displayOrder  Int        @default(0)
+  authorId      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([endpoint])
+  @@index([displayOrder])
+}
+
+model Recommendation {
+  id            String   @id @default(cuid())
+  userId        String?
+  productId     String
+  score         Float    @default(0)
+  reason        String?
+  type          String   @default("similar") // similar | category | purchase | wishlist | follow | trending
+  isClicked     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  user     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@unique([userId, productId, type])
+}
+model SearchAnalytics {
+  id            String   @id @default(cuid())
+  query         String
+  resultCount   Int      @default(0)
+  type          String   @default("all")
+  userId        String?
+  createdAt     DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([query])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model CreatorBadge {
+  id            String   @id @default(cuid())
+  userId        String
+  badgeType     String
+  name          String
+  description   String?
+  iconUrl       String?
+  earnedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([badgeType])
+}
+
+model CreatorAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementType String
+  title         String
+  description   String?
+  progress      Int      @default(0)
+  target        Int      @default(100)
+  isCompleted   Boolean  @default(false)
+  earnedAt      DateTime?
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([achievementType])
+  @@index([isCompleted])
+}
+
+model ProductNotification {
+  id            String   @id @default(cuid())
+  userId        String
+  productId     String
+  type          String   @default("update") // update | price_drop | restock
+  message       String
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([productId])
+  @@index([isRead])
+}
+
+model PlatformNews {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  summary     String?
+  body        String
+  category    String    @default("general")
+  imageUrl    String?
+  isPublished Boolean    @default(false)
+  publishedAt DateTime?
+  authorId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([publishedAt])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?
+  imageUrl    String?
+  creatorId   String?
+  isPublished Boolean    @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  creator User? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+
+  @@index([startDate])
+  @@index([isPublished])
+}
+
+model GiftCard {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  type          String   @default("fixed") // fixed | percentage
+  value         Float
+  currency      String  @default("USD")
+  maxUses      Int?
+  usedCount     Int      @default(0)
+  minPurchase   Float?
+  startsAt      DateTime?
+  endsAt        DateTime?
+  isActive      Boolean  @default(true)
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([code])
+  @@index([isActive])
+  @@index([endsAt])
+}
+
+model StoreCredit {
+  id            String   @id @default(cuid())
+  userId        String
+  amount        Float   @default(0)
+  currency      String  @default("USD")
+  reason        String?
+  expiresAt     DateTime?
+  isUsed        Boolean @default(false)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@unique([userId, isUsed])
+}
+
+model Contributor {
+  id                    String   @id @default(cuid())
+  userId                String?  @unique
+  displayName           String
+  username              String
+  avatar                String?
+  role                  String
+  roleLabel             String
+  roleColor             String   @default("gray")
+  contributionDescription String?
+  socialLinks           Json?
+  startDate             DateTime @default(now())
+  endDate               DateTime?
+  isCurrent             Boolean  @default(true)
+  isFounder             Boolean  @default(false)
+  isFormer              Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([role])
+  @@index([isCurrent])
+  @@index([isFounder])
+  @@index([isFormer])
+  @@index([startDate])
+}
+
+model ServiceProvider {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  serviceType       String
+  serviceCategory   String
+  title             String
+  description       String
+  startingPrice     Float
+  currency          String   @default("USD")
+  availability      String   @default("open")
+  turnaroundDays    Int      @default(7)
+  tags              String[]
+  isVerified        Boolean  @default(false)
+  isFeatured        Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  rating            Float    @default(0)
+  reviewCount       Int      @default(0)
+  completedOrders   Int      @default(0)
+  portfolioImages   String[]
+  socialLinks       Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([serviceType])
+  @@index([serviceCategory])
+  @@index([availability])
+  @@index([isVerified])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model AvatarCommissioner {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  serviceType        String   @default("avatar-commissions")
+  bio                String?
+  profileImage       String?
+  bannerImage        String?
+  commissionTypes    String[]
+  pricing            AvatarCommissionPricing[]
+  availability       String   @default("open")
+  openSlots          Int      @default(1)
+  maxSlots           Int      @default(5)
+  turnaroundDays     Int      @default(14)
+  portfolioImages    String[]
+  tags               String[]
+  categories         String[]
+  isVerified         Boolean  @default(false)
+  isFeatured         Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  rating             Float    @default(0)
+  reviewCount        Int      @default(0)
+  completedCommissions Int    @default(0)
+  socialLinks        Json?
+  contactLinks       Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([availability])
+  @@index([isVerified])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([rating])
+  @@index([turnaroundDays])
+  @@index([createdAt])
+  @@index([categories])
+  @@index([commissionTypes])
+}
+
+model AvatarCommissionPricing {
+  id             String   @id @default(cuid())
+  commissionerId String
+  type           String
+  minPrice       Float
+  maxPrice       Float
+  currency       String   @default("USD")
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  commissioner AvatarCommissioner @relation(fields: [commissionerId], references: [id], onDelete: Cascade)
+
+  @@index([commissionerId])
+}
+
+model ArtCommissioner {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  serviceType        String   @default("art-commissions")
+  bio                String?
+  profileImage       String?
+  bannerImage        String?
+  artStyles          String[]
+  commissionTypes    String[]
+  pricing            ArtCommissionPricing[]
+  availability       String   @default("open")
+  openSlots          Int      @default(1)
+  maxSlots           Int      @default(5)
+  turnaroundDays     Int      @default(7)
+  portfolioImages    String[]
+  tags               String[]
+  categories         String[]
+  isVerified         Boolean  @default(false)
+  isFeatured         Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  rating             Float    @default(0)
+  reviewCount        Int      @default(0)
+  completedCommissions Int    @default(0)
+  socialLinks        Json?
+  contactLinks       Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([availability])
+  @@index([isVerified])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([rating])
+  @@index([turnaroundDays])
+  @@index([createdAt])
+  @@index([categories])
+  @@index([commissionTypes])
+  @@index([artStyles])
+}
+
+model ArtCommissionPricing {
+  id             String   @id @default(cuid())
+  commissionerId String
+  type           String
+  minPrice       Float
+  maxPrice       Float
+  currency       String   @default("USD")
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  commissioner ArtCommissioner @relation(fields: [commissionerId], references: [id], onDelete: Cascade)
+
+  @@index([commissionerId])
+}
+
+model ThreeDServiceProvider {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  serviceType       String   @default("3d-services")
+  bio               String?
+  profileImage      String?
+  bannerImage       String?
+  serviceTypes      String[]
+  specializations   String[]
+  pricing           ThreeDServicePricing[]
+  availability      String   @default("open")
+  openSlots         Int      @default(1)
+  maxSlots          Int      @default(5)
+  turnaroundDays    Int      @default(14)
+  portfolioImages   String[]
+  tags              String[]
+  categories        String[]
+  software          String[]
+  isVerified        Boolean  @default(false)
+  isFeatured        Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  rating            Float    @default(0)
+  reviewCount       Int      @default(0)
+  completedOrders   Int      @default(0)
+  socialLinks       Json?
+  contactLinks      Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([availability])
+  @@index([isVerified])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([rating])
+  @@index([turnaroundDays])
+  @@index([createdAt])
+  @@index([categories])
+  @@index([serviceTypes])
+  @@index([software])
+  @@index([specializations])
+}
+
+model ThreeDServicePricing {
+  id        String   @id @default(cuid())
+  providerId String
+  type      String
+  minPrice  Float
+  maxPrice  Float
+  currency  String   @default("USD")
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  provider ThreeDServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+}
+
+model DevelopmentServiceProvider {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  serviceType       String   @default("development")
+  bio               String?
+  profileImage      String?
+  bannerImage       String?
+  serviceTypes      String[]
+  technologies      String[]
+  pricing           DevelopmentServicePricing[]
+  availability      String   @default("open")
+  openSlots         Int      @default(1)
+  maxSlots          Int      @default(5)
+  turnaroundDays    Int      @default(14)
+  portfolioImages   String[]
+  tags              String[]
+  categories        String[]
+  isVerified        Boolean  @default(false)
+  isFeatured        Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  rating            Float    @default(0)
+  reviewCount       Int      @default(0)
+  completedOrders   Int      @default(0)
+  socialLinks       Json?
+  contactLinks      Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([availability])
+  @@index([isVerified])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([rating])
+  @@index([turnaroundDays])
+  @@index([createdAt])
+  @@index([categories])
+  @@index([serviceTypes])
+  @@index([technologies])
+}
+
+model DevelopmentServicePricing {
+  id        String   @id @default(cuid())
+  providerId String
+  type      String
+  minPrice  Float
+  maxPrice  Float
+  currency  String   @default("USD")
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  provider DevelopmentServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+}
+
+model VideoEditingServiceProvider {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  serviceType       String   @default("video-editing")
+  bio               String?
+  profileImage      String?
+  bannerImage       String?
+  serviceTypes      String[]
+  software          String[]
+  pricing           VideoEditingServicePricing[]
+  availability      String   @default("open")
+  openSlots         Int      @default(1)
+  maxSlots          Int      @default(5)
+  turnaroundDays    Int      @default(7)
+  portfolioImages   String[]
+  tags              String[]
+  categories        String[]
+  isVerified        Boolean  @default(false)
+  isFeatured        Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  rating            Float    @default(0)
+  reviewCount       Int      @default(0)
+  completedOrders   Int      @default(0)
+  socialLinks       Json?
+  contactLinks      Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([availability])
+  @@index([isVerified])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([rating])
+  @@index([turnaroundDays])
+  @@index([createdAt])
+  @@index([categories])
+  @@index([serviceTypes])
+  @@index([software])
+}
+
+model VideoEditingServicePricing {
+  id        String   @id @default(cuid())
+  providerId String
+  type      String
+  minPrice  Float
+  maxPrice  Float
+  currency  String   @default("USD")
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  provider VideoEditingServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
 }

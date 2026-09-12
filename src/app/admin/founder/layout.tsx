@@ -6,7 +6,12 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
+  BookOpen,
+  Calendar,
+  Code,
   Crown,
+  Database,
+  FileText,
   Flag,
   Megaphone,
   Package,
@@ -21,6 +26,13 @@ import {
   Store,
   Box,
   UserCheck,
+  Palette,
+  Sparkles,
+  Globe,
+  Languages,
+  Scale,
+  Gavel,
+  DollarSign,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -47,6 +59,9 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin/founder/users", label: "Users", icon: Users },
       { href: "/admin/founder/creators", label: "Creators", icon: Crown },
+      { href: "/admin/founder/news", label: "News", icon: FileText },
+      { href: "/admin/founder/events", label: "Events", icon: Calendar },
+      { href: "/admin/founder/badges", label: "Badges", icon: Star },
       { href: "/admin/founder/reviews", label: "Reviews", icon: Star },
       { href: "/admin/founder/reports", label: "Reports", icon: AlertTriangle },
     ],
@@ -68,11 +83,56 @@ const NAV_GROUPS = [
     ],
   },
   {
+    title: "Appearance",
+    items: [
+      { href: "/admin/founder/appearance", label: "Branding", icon: Palette },
+      { href: "/admin/founder/seasonal-themes", label: "Seasonal Themes", icon: Sparkles },
+    ],
+  },
+{
+    title: "Community",
+    items: [
+      { href: "/admin/founder/users", label: "Users", icon: Users },
+      { href: "/admin/founder/creators", label: "Creators", icon: Crown },
+      { href: "/admin/founder/news", label: "News", icon: FileText },
+      { href: "/admin/founder/events", label: "Events", icon: Calendar },
+      { href: "/admin/founder/badges", label: "Badges", icon: Star },
+      { href: "/admin/founder/reviews", label: "Reviews", icon: Star },
+      { href: "/admin/founder/reports", label: "Reports", icon: AlertTriangle },
+    ],
+  },
+  {
     title: "System",
     items: [
       { href: "/admin/founder/announcements", label: "Announcements", icon: Megaphone },
+      { href: "/admin/founder/monitoring", label: "Monitoring", icon: Activity },
+      { href: "/admin/founder/publishing", label: "Publishing", icon: ScrollText },
+      { href: "/admin/founder/error-logs", label: "Error logs", icon: AlertTriangle },
+      { href: "/admin/founder/backups", label: "Backups", icon: Database },
       { href: "/admin/founder/settings", label: "Settings", icon: Settings },
       { href: "/admin/founder/audit", label: "Audit Logs", icon: ScrollText },
+      { href: "/admin/founder/feature-flags", label: "Feature Flags", icon: Flag },
+      { href: "/admin/founder/financials", label: "Financials", icon: DollarSign },
+      { href: "/admin/founder/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/admin/founder/security", label: "Security", icon: Shield },
+    ],
+  },
+  {
+    title: "Marketplace Controls",
+    items: [
+      { href: "/admin/founder/currencies", label: "Currencies", icon: Globe },
+      { href: "/admin/founder/languages", label: "Languages", icon: Languages },
+      { href: "/admin/founder/tags", label: "Tags", icon: Tag },
+      { href: "/admin/founder/rules", label: "Marketplace Rules", icon: Scale },
+      { href: "/admin/founder/appeals", label: "Appeals", icon: Gavel },
+      { href: "/admin/founder/staff-picks", label: "Staff Picks", icon: Star },
+    ],
+  },
+  {
+    title: "Documentation",
+    items: [
+      { href: "/admin/founder/tutorials", label: "Tutorials", icon: BookOpen },
+      { href: "/admin/founder/api-docs", label: "API Docs", icon: Code },
     ],
   },
 ]

@@ -10,6 +10,26 @@ import {
   LifeBuoy,
   User,
   Search,
+  BookOpen,
+  FileText,
+  RotateCcw,
+  AlertTriangle,
+  Gavel,
+  Copyright,
+  Shield,
+  DollarSign,
+  Lock,
+  Download,
+  Box,
+  Wrench,
+  Monitor,
+  MessageSquare,
+  Flag,
+  HelpCircle,
+  ExternalLink,
+  Code,
+  Server,
+  BarChart2,
 } from "lucide-react"
 
 export const metadata = {
@@ -18,42 +38,174 @@ export const metadata = {
     "Answers to common questions about buying, selling, licenses, payments, and your PawVault account.",
 }
 
-const categories = [
+const helpSections = [
   {
+    id: "getting-started",
     icon: User,
     title: "Getting Started",
-    href: "#getting-started",
     desc: "Accounts, verification, and navigating the marketplace.",
+    color: "blue",
+    articles: [
+      { title: "How to create a PawVault account", href: "/help/getting-started/create-account" },
+      { title: "Email verification & login issues", href: "/help/getting-started/email-verification" },
+      { title: "Navigating the marketplace", href: "/help/getting-started/navigation" },
+      { title: "Setting up your profile", href: "/help/getting-started/profile-setup" },
+      { title: "Understanding user roles", href: "/help/getting-started/user-roles" },
+    ],
   },
   {
+    id: "buying",
     icon: ShoppingCart,
     title: "Buying & Downloads",
-    href: "#buying",
     desc: "Purchasing, accessing files, and managing orders.",
+    color: "green",
+    articles: [
+      { title: "How to purchase products", href: "/help/buying/purchase-products" },
+      { title: "Accessing your downloads", href: "/help/buying/access-downloads" },
+      { title: "Product updates & version history", href: "/help/buying/updates" },
+      { title: "Managing your orders", href: "/help/buying/manage-orders" },
+      { title: "Purchase history & receipts", href: "/help/buying/history-receipts" },
+      { title: "Download troubleshooting", href: "/help/buying/download-issues" },
+    ],
   },
   {
+    id: "selling",
     icon: Store,
-    title: "Selling & Creators",
-    href: "#selling",
-    desc: "Storefronts, product uploads, and payouts.",
+    title: "Selling on PawVault",
+    desc: "Storefronts, product uploads, and creator tools.",
+    color: "purple",
+    articles: [
+      { title: "Creating your creator storefront", href: "/help/selling/create-storefront" },
+      { title: "Becoming a verified creator", href: "/help/selling/verified-creator" },
+      { title: "Uploading & managing products", href: "/help/selling/upload-products" },
+      { title: "Product categories & tags", href: "/help/selling/categories-tags" },
+      { title: "Pricing & sales management", href: "/help/selling/pricing-sales" },
+      { title: "Bundles & collections", href: "/help/selling/bundles-collections" },
+      { title: "Creator dashboard overview", href: "/help/selling/dashboard" },
+      { title: "Payouts & earnings", href: "/help/selling/payouts" },
+    ],
   },
   {
-    icon: KeyRound,
-    title: "Licenses",
-    href: "#licenses",
-    desc: "What a license key is and how it works.",
+    id: "commissions",
+    icon: MessageSquare,
+    title: "Commission Guidelines",
+    desc: "Rules for avatar & art commission services.",
+    color: "pink",
+    articles: [
+      { title: "Avatar commission guidelines", href: "/help/commissions/avatar-guidelines" },
+      { title: "Art commission guidelines", href: "/help/commissions/art-guidelines" },
+      { title: "Service listing requirements", href: "/help/commissions/listing-requirements" },
+      { title: "Pricing & turnaround standards", href: "/help/commissions/pricing-turnaround" },
+      { title: "Communication & delivery", href: "/help/commissions/communication-delivery" },
+      { title: "Dispute resolution", href: "/help/commissions/disputes" },
+    ],
   },
   {
+    id: "refunds",
+    icon: RotateCcw,
+    title: "Returns & Refunds",
+    desc: "Refund policy, process, and eligibility.",
+    color: "orange",
+    articles: [
+      { title: "Refund policy overview", href: "/help/refunds/policy" },
+      { title: "How to request a refund", href: "/help/refunds/request-refund" },
+      { title: "Refund eligibility criteria", href: "/help/refunds/eligibility" },
+      { title: "Refund process timeline", href: "/help/refunds/timeline" },
+      { title: "Partial vs full refunds", href: "/help/refunds/partial-full" },
+      { title: "Refund disputes", href: "/help/refunds/disputes" },
+    ],
+  },
+  {
+    id: "legal",
+    icon: Gavel,
+    title: "Legal & Policies",
+    desc: "Terms of Service, Privacy, DMCA, and guidelines.",
+    color: "red",
+    articles: [
+      { title: "Terms of Service", href: "/terms" },
+      { title: "Privacy Policy", href: "/privacy" },
+      { title: "Cookie Policy", href: "/help/legal/cookie-policy" },
+      { title: "Community Guidelines", href: "/help/legal/community-guidelines" },
+      { title: "Creator Guidelines", href: "/help/legal/creator-guidelines" },
+      { title: "Marketplace Guidelines", href: "/help/legal/marketplace-guidelines" },
+      { title: "Commission Guidelines", href: "/help/legal/commission-guidelines" },
+      { title: "Copyright & DMCA", href: "/copyright" },
+      { title: "Licensing Information", href: "/help/legal/licensing" },
+    ],
+  },
+  {
+    id: "payments",
     icon: CreditCard,
-    title: "Payments & Payouts",
-    href: "#payments",
-    desc: "Pricing, commissions, taxes, and creator earnings.",
+    title: "Payments & Security",
+    desc: "Payment methods, security, and account safety.",
+    color: "amber",
+    articles: [
+      { title: "Accepted payment methods", href: "/help/payments/methods" },
+      { title: "Platform fees & commissions", href: "/help/payments/fees" },
+      { title: "Tax information", href: "/help/payments/tax" },
+      { title: "Account security & MFA", href: "/help/payments/account-security" },
+      { title: "Payment information help", href: "/help/payments/payment-info" },
+      { title: "Fraud prevention", href: "/help/payments/fraud-prevention" },
+    ],
   },
   {
-    icon: ShieldCheck,
-    title: "Security & Account",
-    href: "#security",
-    desc: "Passwords, sessions, and keeping your account safe.",
+    id: "creator-help",
+    icon: Wrench,
+    title: "Creator Help",
+    desc: "Selling, store management, and creator tools.",
+    color: "indigo",
+    articles: [
+      { title: "Selling on PawVault guide", href: "/help/creator/selling-guide" },
+      { title: "Store customization", href: "/help/creator/store-customization" },
+      { title: "Product file management", href: "/help/creator/file-management" },
+      { title: "Analytics & insights", href: "/help/creator/analytics" },
+      { title: "Promoting your products", href: "/help/creator/promotion" },
+      { title: "Coupon & discount codes", href: "/help/creator/coupons" },
+      { title: "Staff picks & featuring", href: "/help/creator/staff-picks" },
+    ],
+  },
+  {
+    id: "technical",
+    icon: Monitor,
+    title: "Technical Help",
+    desc: "Download help, API docs, and troubleshooting.",
+    color: "cyan",
+    articles: [
+      { title: "Download help & troubleshooting", href: "/help/technical/download-help" },
+      { title: "API documentation", href: "/api-docs" },
+      { title: "Website status", href: "/help/technical/status" },
+      { title: "Browser compatibility", href: "/help/technical/browser-support" },
+      { title: "Mobile app guide", href: "/help/technical/mobile" },
+      { title: "Webhook integration", href: "/help/technical/webhooks" },
+    ],
+  },
+  {
+    id: "reporting",
+    icon: Flag,
+    title: "Reporting & Safety",
+    desc: "Report issues, products, creators, and copyright.",
+    color: "rose",
+    articles: [
+      { title: "Report an issue", href: "/help/reporting/report-issue" },
+      { title: "Report a product", href: "/help/reporting/report-product" },
+      { title: "Report a creator", href: "/help/reporting/report-creator" },
+      { title: "Report copyright infringement", href: "/help/reporting/copyright" },
+      { title: "Safety & moderation", href: "/help/reporting/safety" },
+    ],
+  },
+  {
+    id: "tutorials",
+    icon: BookOpen,
+    title: "Tutorials & Guides",
+    desc: "Step-by-step tutorials for common tasks.",
+    color: "violet",
+    articles: [
+      { title: "Getting started tutorial", href: "/tutorials/getting-started" },
+      { title: "Creating your first product", href: "/tutorials/create-product" },
+      { title: "Setting up commissions", href: "/tutorials/setup-commissions" },
+      { title: "Using the API", href: "/tutorials/api-guide" },
+      { title: "Advanced store features", href: "/tutorials/advanced-store" },
+    ],
   },
 ]
 
@@ -168,45 +320,120 @@ const faqs = [
   },
 ]
 
+function SectionCard({ section }: { section: typeof helpSections[0] }) {
+  const colorClasses = {
+    blue: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400",
+    green: "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900 text-green-600 dark:text-green-400",
+    purple: "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900 text-purple-600 dark:text-purple-400",
+    pink: "bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-900 text-pink-600 dark:text-pink-400",
+    orange: "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400",
+    red: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 text-red-600 dark:text-red-400",
+    amber: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-600 dark:text-amber-400",
+    indigo: "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400",
+    cyan: "bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-900 text-cyan-600 dark:text-cyan-400",
+    rose: "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400",
+    violet: "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-900 text-violet-600 dark:text-violet-400",
+  }
+
+  const ColorIcon = section.icon
+  const classes = colorClasses[section.color as keyof typeof colorClasses] || colorClasses.blue
+
+  return (
+    <Link href={`#${section.id}`} className="group">
+      <Card className={`h-full hover:shadow-md transition-shadow border ${classes}`}>
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-lg ${classes.replace("border-", "bg-").replace("text-", "bg-opacity-10")} shrink-0`}>
+              <ColorIcon className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold mb-1 group-hover:underline">{section.title}</h3>
+              <p className="text-sm text-text-secondary line-clamp-2">{section.desc}</p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {section.articles.slice(0, 3).map((article) => (
+                  <Link
+                    key={article.title}
+                    href={article.href}
+                    className="text-xs px-2 py-1 rounded bg-background/50 hover:bg-accent/10 transition-colors text-text-secondary hover:text-text-primary"
+                  >
+                    {article.title}
+                  </Link>
+                ))}
+                {section.articles.length > 3 && (
+                  <span className="text-xs px-2 py-1 rounded bg-background/50 text-text-muted">
+                    +{section.articles.length - 3} more
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  )
+}
+
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12">
-      <div className="container mx-auto px-4 max-w-5xl">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold mb-3 gradient-text">Help Center</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Find answers to common questions, learn how the marketplace works, and
-            get support when you need it.
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4 max-w-6xl">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 via-violet-600 to-indigo-600 mb-6">
+            <HelpCircle className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-text-primary mb-4">Help Center</h1>
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+            Find answers to common questions, learn how the marketplace works, and get support when you need it.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {categories.map((c) => (
-            <Link key={c.title} href={c.href}>
-              <Card className="h-full hover:shadow-md transition-shadow">
-                <CardContent className="p-5">
-                  <c.icon className="h-6 w-6 text-purple-600 mb-3" />
-                  <h3 className="font-semibold mb-1">{c.title}</h3>
-                  <p className="text-sm text-muted-foreground">{c.desc}</p>
-                </CardContent>
-              </Card>
-            </Link>
+          {helpSections.map((section) => (
+            <SectionCard key={section.id} section={section} />
           ))}
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-12">
+          {helpSections.map((section) => (
+            <section key={section.id} id={section.id} className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${colorClasses[section.color as keyof typeof colorClasses].replace("border-", "bg-").replace("text-", "bg-opacity-10")}`}>
+                  <section.icon className="h-5 w-5" />
+                </div>
+                <h2 className="text-2xl font-bold text-text-primary">{section.title}</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {section.articles.map((article) => (
+                  <Link
+                    key={article.title}
+                    href={article.href}
+                    className="p-4 rounded-lg border border-border hover:border-accent/50 hover:bg-accent/5 transition-colors group"
+                  >
+                    <h3 className="font-medium text-text-primary group-hover:text-accent-foreground mb-1">
+                      {article.title}
+                    </h3>
+                    <p className="text-sm text-text-muted">
+                      View article →
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        <div className="space-y-10 mt-16 border-t pt-12">
           {faqs.map((section) => (
-            <section key={section.group} id={section.group}>
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                {section.heading}
-              </h2>
+            <section key={section.group}>
+              <h2 className="text-2xl font-bold text-text-primary mb-6">{section.heading}</h2>
               <div className="space-y-3">
                 {section.items.map((item) => (
-                  <Card key={item.q}>
+                  <Card key={item.q} className="border-border hover:border-accent/50 transition-colors">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">{item.q}</CardTitle>
+                      <CardTitle className="text-base font-medium text-text-primary">{item.q}</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground pt-0">
+                    <CardContent className="text-sm text-text-secondary pt-0">
                       {item.a}
                     </CardContent>
                   </Card>
@@ -216,18 +443,18 @@ export default function HelpPage() {
           ))}
         </div>
 
-        <Card className="mt-12 bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900">
+        <Card className="mt-12 bg-accent/10 border-accent/20">
           <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-4 justify-between">
             <div className="flex items-center gap-3">
-              <LifeBuoy className="h-8 w-8 text-purple-600" />
+              <LifeBuoy className="h-8 w-8 text-accent-foreground" />
               <div>
-                <h3 className="font-semibold">Still need help?</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-semibold text-text-primary">Still need help?</h3>
+                <p className="text-sm text-text-secondary">
                   Our support team is happy to assist with anything not covered here.
                 </p>
               </div>
             </div>
-            <Button asChild className="gradient-bg text-white">
+            <Button asChild className="bg-accent-foreground text-accent">
               <Link href="/support">
                 <Search className="h-4 w-4 mr-2" />
                 Contact Support
@@ -237,11 +464,25 @@ export default function HelpPage() {
         </Card>
 
         <div className="mt-8 text-center">
-          <Link href="/" className="text-sm text-purple-600 hover:underline">
+          <Link href="/" className="text-sm text-text-secondary hover:text-text-primary hover:underline">
             ← Back to home
           </Link>
         </div>
       </div>
     </div>
   )
+}
+
+const colorClasses = {
+  blue: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400",
+  green: "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900 text-green-600 dark:text-green-400",
+  purple: "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900 text-purple-600 dark:text-purple-400",
+  pink: "bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-900 text-pink-600 dark:text-pink-400",
+  orange: "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400",
+  red: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 text-red-600 dark:text-red-400",
+  amber: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-600 dark:text-amber-400",
+  indigo: "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400",
+  cyan: "bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-900 text-cyan-600 dark:text-cyan-400",
+  rose: "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400",
+  violet: "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-900 text-violet-600 dark:text-violet-400",
 }

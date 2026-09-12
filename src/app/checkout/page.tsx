@@ -1,21 +1,17 @@
 import { getServerUser } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { getPlatformFeeConfig, calculatePlatformFee } from "@/lib/platform-fees"
+import { getPlatformFeeConfig, calculatePlatformFee, calculateTax, DEFAULT_TAX_RATE_PERCENT } from "@/lib/platform-fees"
 import { CheckoutActions } from "@/components/checkout-actions"
 import { AdultContentPreview } from "@/components/adult-content-preview"
 import { Price } from "@/components/price"
+import { formatCurrency, BASE_CURRENCY } from "@/lib/currency"
+import { getUserLocale } from "@/lib/i18n/server"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { ShoppingCart, ArrowLeft } from "lucide-react"
-
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
 
 async function getCartForCheckout(userId: string) {
   return prisma.cart.findFirst({
@@ -53,6 +49,13 @@ export default async function CheckoutPage() {
     redirect("/auth/signin")
   }
 
+  const { locale, currency: userCurrency } = await getUserLocale()
+  const paymentCurrency = userCurrency || BASE_CURRENCY
+
+  function formatPriceDisplay(amount: number) {
+    return formatCurrency(amount, paymentCurrency, locale)
+  }
+
   const cart = await getCartForCheckout(user.id)
   if (!cart || cart.items.length === 0) {
     redirect("/cart")
@@ -76,7 +79,8 @@ export default async function CheckoutPage() {
 
   const subtotal = lineItems.reduce((sum, i) => sum + i.lineTotal, 0)
   const platformFee = calculatePlatformFee(subtotal, feeConfig.feePercent)
-  const total = subtotal + platformFee
+  const tax = calculateTax(subtotal, DEFAULT_TAX_RATE_PERCENT)
+  const total = subtotal + platformFee + tax
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,6 +101,27 @@ export default async function CheckoutPage() {
           <p className="text-sm text-text-secondary mb-8">
             {lineItems.length} item{lineItems.length === 1 ? "" : "s"} · Secure Stripe checkout
           </p>
+
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={user.avatar || ""} alt={user.displayName || user.username} />
+                  <AvatarFallback>{user.displayName?.[0] || user.username[0]?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-semibold text-text-primary">Customer Details</h2>
+                  <p className="text-sm text-text-muted">{user.displayName || user.username}</p>
+                  <p className="text-sm text-text-secondary">{user.email}</p>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-xs text-text-muted">
+                  Billing details will be collected securely during Stripe checkout. By completing your purchase you agree to the Terms of Service and Privacy Policy.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
             {/* Order summary */}
@@ -176,17 +201,18 @@ export default async function CheckoutPage() {
                   <CardTitle>Payment Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <SummaryRow label="Subtotal" value={formatCurrency(subtotal)} />
+                  <SummaryRow label="Subtotal" value={formatPriceDisplay(subtotal)} />
                   <SummaryRow
                     label={`Platform fee (${feeConfig.feePercent}%)`}
-                    value={formatCurrency(platformFee)}
+                    value={formatPriceDisplay(platformFee)}
                   />
+                  <SummaryRow label="Taxes" value={formatPriceDisplay(tax)} />
                   <div className="border-t pt-3">
-                    <SummaryRow label="Total" value={formatCurrency(total)} bold />
+                    <SummaryRow label="Total" value={formatPriceDisplay(total)} bold />
                   </div>
                 </CardContent>
                 <CardFooter className="flex-col gap-4 pt-0">
-                  <CheckoutActions cartId={cart.id} />
+                  <CheckoutActions cartId={cart.id} paymentCurrency={paymentCurrency} />
                   <p className="text-xs text-text-muted text-center">
                     You will be redirected to Stripe to complete your purchase
                     securely.

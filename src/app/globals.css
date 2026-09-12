@@ -50,9 +50,12 @@
   --pv-price: 150 60% 40%;       /* emerald — signals value */
   --pv-sale: 0 75% 52%;          /* rose — for discounts */
 
+  /* ---- Themeable accent (overridden by user preference) ---- */
+  --pv-accent-override: 262 83% 55%;
+
   /* ---- Gradients (subtle, brand-aligned) ---- */
-  --pv-gradient: linear-gradient(135deg, hsl(262 83% 55%), hsl(312 83% 55%));
-  --pv-gradient-soft: linear-gradient(135deg, hsl(262 93% 96%), hsl(312 93% 94%));
+  --pv-gradient: linear-gradient(135deg, hsl(var(--pv-accent)), hsl(312 83% 55%));
+  --pv-gradient-soft: linear-gradient(135deg, hsl(var(--pv-accent-soft)), hsl(312 93% 94%));
   --pv-gradient-muted: linear-gradient(135deg, hsl(215 38% 93%), hsl(220 38% 89%));
 }
 
@@ -64,19 +67,19 @@
   --card-foreground: 210 40% 98%;
   --popover: 222 84% 7.5%;
   --popover-foreground: 210 40% 98%;
-  --primary: 262 83% 55%;
+  --primary: var(--pv-accent-override, 262 83% 55%);
   --primary-foreground: 0 0% 100%;
   --secondary: 217 33% 17%;
   --secondary-foreground: 210 40% 98%;
   --muted: 217 33% 17%;
   --muted-foreground: 215 20.2% 65%;
-  --accent: 262 83% 55%;
+  --accent: var(--pv-accent-override, 262 83% 55%);
   --accent-foreground: 210 40% 98%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 100%;
   --border: 217 33% 19%;
   --input: 217 33% 19%;
-  --ring: 262 83% 55%;
+  --ring: var(--pv-accent-override, 262 83% 55%);
   --radius: 0.5rem;
 
   --pv-surface: 222 84% 6.5%;
@@ -86,8 +89,8 @@
   --pv-text-secondary: 215 20% 80%;
   --pv-text-muted: 215 20.2% 65%;
   --pv-border: 217 33% 19%;
-  --pv-accent: 262 83% 55%;
-  --pv-accent-hover: 271 83% 58%;
+  --pv-accent: var(--pv-accent-override, 262 83% 55%);
+  --pv-accent-hover: var(--pv-accent-override, 271 83% 58%);
   --pv-accent-soft: 262 93% 22%;
   --pv-success: 150 55% 60%;
   --pv-warning: 40 95% 60%;
@@ -96,8 +99,8 @@
   --pv-price: 150 55% 58%;
   --pv-sale: 0 75% 60%;
 
-  --pv-gradient: linear-gradient(135deg, hsl(262 83% 55%), hsl(312 83% 55%));
-  --pv-gradient-soft: linear-gradient(135deg, hsl(262 93% 18%), hsl(312 93% 12%));
+  --pv-gradient: linear-gradient(135deg, hsl(var(--pv-accent)), hsl(312 83% 55%));
+  --pv-gradient-soft: linear-gradient(135deg, hsl(var(--pv-accent-soft)), hsl(312 93% 12%));
   --pv-gradient-muted: linear-gradient(135deg, hsl(223 84% 10%), hsl(225 84% 8%));
 }
 
@@ -116,6 +119,15 @@
   }
   a:hover {
     @apply text-accent-hover;
+  }
+}
+
+@layer base {
+  html.reduce-motion,
+  html.reduce-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

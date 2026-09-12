@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Shield, ArrowLeft } from "lucide-react"
+import { Shield, ArrowLeft, Users } from "lucide-react"
 import { redirect } from "next/navigation"
+import { STAFF_ROLES, roleLabel } from "@/lib/roles"
 
 export const dynamic = "force-dynamic"
 
@@ -16,7 +17,7 @@ export default async function StaffPage() {
   }
 
   const staff = await prisma.user.findMany({
-    where: { role: { in: ["MODERATOR", "ADMIN", "FOUNDER"] } },
+    where: { role: { in: [...STAFF_ROLES] } },
     orderBy: [{ role: "asc" }, { createdAt: "asc" }],
     select: {
       id: true,
@@ -35,10 +36,12 @@ export default async function StaffPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Staff / Team</h1>
-          <p className="text-sm text-muted-foreground">Moderators, admins, and the Founder</p>
+          <p className="text-sm text-muted-foreground">
+            {staff.length} staff members across {STAFF_ROLES.length} roles
+          </p>
         </div>
         <Button asChild>
-          <Link href="/admin/founder/staff/new">Add moderator</Link>
+          <Link href="/admin/founder/staff/new">Add staff</Link>
         </Button>
       </div>
 
@@ -50,7 +53,9 @@ export default async function StaffPage() {
             </div>
             <div>
               <CardTitle className="text-base">Active staff ({staff.length})</CardTitle>
-              <CardDescription>Only the Founder can add or remove staff</CardDescription>
+              <CardDescription>
+                Only the Founder can add or remove staff. Custom roles available.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -69,20 +74,57 @@ export default async function StaffPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={s.role === "FOUNDER" ? "default" : s.role === "ADMIN" ? "secondary" : "outline"} className="text-xs">
-                      {s.role}
+                    <Badge
+                      variant={
+                        s.role === "FOUNDER"
+                          ? "default"
+                          : s.role === "ADMIN"
+                            ? "secondary"
+                            : "outline"
+                      }
+                      className="text-xs"
+                    >
+                      {roleLabel(s.role)}
                     </Badge>
                     {s.status !== "ACTIVE" && (
-                      <Badge variant="destructive" className="text-xs">{s.status}</Badge>
+                      <Badge variant="destructive" className="text-xs">
+                        {s.status}
+                      </Badge>
                     )}
                     <Link href={`/admin/founder/staff/${s.id}`}>
-                      <Button size="sm" variant="outline" className="text-xs">Manage</Button>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        Manage
+                      </Button>
                     </Link>
                   </div>
                 </div>
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Role overview</CardTitle>
+              <CardDescription>What each staff role can access by default.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="text-sm space-y-2">
+          <p><b>Founder</b> — Full platform access. Owner of the marketplace.</p>
+          <p><b>Admin</b> — Full access except staff management.</p>
+          <p><b>Moderator</b> — Moderation tools: users, products, reviews, reports.</p>
+          <p><b>Support</b> — Customer support: users, orders, support tickets.</p>
+          <p><b>Finance</b> — Financial access: orders, revenue, payouts, refunds.</p>
+          <p><b>Developer</b> — Technical access: audit logs, system settings, API keys.</p>
+          <p><b>Content Manager</b> — Content access: categories, announcements, featured listings.</p>
+          <p><b>Marketplace Manager</b> — Marketplace access: products, categories, discounts, featured listings.</p>
         </CardContent>
       </Card>
 

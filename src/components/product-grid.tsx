@@ -6,12 +6,14 @@ interface ProductGridProps {
   products: any[]
   emptyMessage?: ReactNode
   className?: string
+  onAddToCart?: (productId: string) => void
 }
 
 export function ProductGrid({
   products,
   emptyMessage = "No products yet.",
   className,
+  onAddToCart,
 }: ProductGridProps) {
   if (!products.length) {
     return (
@@ -34,7 +36,7 @@ export function ProductGrid({
       )}
     >
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
       ))}
     </div>
   )

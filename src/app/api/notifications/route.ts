@@ -27,7 +27,39 @@ export async function GET(request: Request) {
       where: { userId: user.id, isRead: false },
     })
 
-    return NextResponse.json({ notifications, unreadCount })
+    const productNotifications = await prisma.productNotification.findMany({
+      where: {
+        userId: user.id,
+        ...(unreadOnly ? { isRead: false } : {}),
+      },
+      include: {
+        product: {
+          include: {
+            creator: { select: { username: true, displayName: true } },
+            media: { take: 1, where: { type: "image" } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    })
+
+    return NextResponse.json({
+      notifications,
+      unreadCount,
+      productNotifications: productNotifications.map((n) => ({
+        id: n.id,
+        productId: n.product.id,
+        title: n.product.title,
+        slug: n.product.slug,
+        creator: n.product.creator,
+        imageUrl: n.product.media[0]?.url ?? null,
+        type: n.type,
+        message: n.message,
+        isRead: n.isRead,
+        createdAt: n.createdAt,
+      })),
+    })
   } catch (error) {
     console.error("Get notifications error:", error)
     return NextResponse.json(

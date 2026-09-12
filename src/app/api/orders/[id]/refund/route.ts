@@ -24,7 +24,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   })
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
 
-  if (!['CREATOR', 'VERIFIED_CREATOR', 'ADMIN', 'OWNER'].includes(user.role) && order.buyerId !== user.id) {
+  if (!['CREATOR', 'VERIFIED_CREATOR', 'ADMIN', 'FOUNDER'].includes(user.role) && order.buyerId !== user.id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

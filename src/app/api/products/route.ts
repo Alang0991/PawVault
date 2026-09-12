@@ -197,9 +197,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const isStaff = ["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)
+    const isAdminOrFounder = ["ADMIN", "FOUNDER"].includes(user.role)
     const creatorStatus = (user as any).creatorStatus ?? "NONE"
-    if (!isStaff && creatorStatus !== "APPROVED") {
+    if (!isAdminOrFounder && creatorStatus !== "APPROVED") {
       return NextResponse.json({ error: "Creator account required" }, { status: 403 })
     }
 

@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { useCurrency } from "@/components/providers/currency-provider"
+import { formatCurrency } from "@/lib/currency"
 
 interface PriceProps {
   amount: number
@@ -12,17 +14,13 @@ interface PriceProps {
   compareClassName?: string
 }
 
-export function formatPrice(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(amount)
+export function formatPrice(amount: number, currency?: string, locale?: string): string {
+  return formatCurrency(amount, currency, locale)
 }
 
 export function Price({
   amount,
-  currency = "USD",
+  currency,
   salePrice,
   isFree,
   className,
@@ -30,6 +28,21 @@ export function Price({
   saleClassName,
   compareClassName,
 }: PriceProps) {
+  const currencyCtx = useCurrency()
+
+  const effectiveCurrency = currency || currencyCtx?.displayCurrency || "USD"
+  const displayAmount = currency
+    ? amount
+    : currencyCtx ? currencyCtx.convertAmount(amount) : amount
+
+  const displaySalePrice = salePrice && salePrice < amount
+    ? (currency ? salePrice : currencyCtx ? currencyCtx.convertAmount(salePrice) : salePrice)
+    : null
+
+  const displayComparePrice = salePrice && salePrice < amount
+    ? (currency ? amount : currencyCtx ? currencyCtx.convertAmount(amount) : amount)
+    : null
+
   if (isFree) {
     return (
       <Badge
@@ -42,7 +55,7 @@ export function Price({
     )
   }
 
-  if (salePrice && salePrice < amount) {
+  if (displaySalePrice !== null && displaySalePrice < (displayComparePrice || amount)) {
     return (
       <div className={cn("flex items-baseline gap-2", className)}>
         <span
@@ -51,7 +64,7 @@ export function Price({
             amountClassName
           )}
         >
-          {formatPrice(salePrice, currency)}
+          {formatPrice(displaySalePrice, effectiveCurrency)}
         </span>
         <span
           className={cn(
@@ -59,14 +72,14 @@ export function Price({
             compareClassName
           )}
         >
-          {formatPrice(amount, currency)}
+          {formatPrice(displayComparePrice || amount, effectiveCurrency)}
         </span>
         <Badge
           variant="sale"
           size="sm"
           className={cn("font-semibold", saleClassName)}
         >
-          -{Math.round(((amount - salePrice) / amount) * 100)}%
+          -{Math.round(((amount - salePrice!) / amount) * 100)}%
         </Badge>
       </div>
     )
@@ -76,7 +89,7 @@ export function Price({
     <span
       className={cn("text-price font-bold text-lg", amountClassName, className)}
     >
-      {formatPrice(amount, currency)}
+      {formatPrice(displayAmount, effectiveCurrency)}
     </span>
   )
 }

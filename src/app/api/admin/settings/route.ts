@@ -22,7 +22,12 @@ export async function GET() {
       where: { id: "singleton" },
     })
 
-    const siteSettings = await prisma.siteSetting.findMany()
+    let siteSettings: any[] = []
+    try {
+      siteSettings = await prisma.siteSetting.findMany()
+    } catch (error) {
+      console.error("Failed to fetch site settings (table may not exist):", error)
+    }
 
     return NextResponse.json({
       config,

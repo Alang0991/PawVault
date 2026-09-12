@@ -185,26 +185,36 @@ async function createAllocationsForOrder(orderId: string) {
   const existing = await prisma.creatorAllocation.count({ where: { orderId } })
   if (existing > 0) return
 
-  for (const item of order.items) {
-    const gross = item.price * item.quantity
-    const fee = item.platformFeeShare
-    const net = item.creatorEarnings
+  const creatorId = order.creatorId
+  const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
-    await prisma.creatorAllocation.create({
-      data: {
-        orderId: order.id,
-        orderItemId: item.id,
-        creatorId: order.creatorId,
-        productId: item.productId,
-        grossAmount: gross,
-        discountAmount: 0,
-        taxAmount: 0,
-        platformFee: fee,
-        netAmount: net,
-        currency: order.currency,
-      },
+  await prisma.$transaction(async (tx) => {
+    for (const item of order.items) {
+      const gross = item.price * item.quantity
+      const fee = item.platformFeeShare
+      const net = item.creatorEarnings
+
+      await tx.creatorAllocation.create({
+        data: {
+          orderId: order.id,
+          orderItemId: item.id,
+          creatorId,
+          productId: item.productId,
+          grossAmount: gross,
+          discountAmount: 0,
+          taxAmount: 0,
+          platformFee: fee,
+          netAmount: net,
+          currency: order.currency,
+        },
+      })
+    }
+
+    await tx.user.update({
+      where: { id: creatorId },
+      data: { salesCount: { increment: totalQuantity } },
     })
-  }
+  })
 }
 
 async function createLicensesForOrder(orderId: string) {

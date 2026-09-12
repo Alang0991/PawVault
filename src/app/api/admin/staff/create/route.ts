@@ -6,10 +6,13 @@ import { requireFounder } from "@/lib/server-auth"
 import { z } from "zod"
 import { logFounderAction, AuditActions } from "@/lib/audit-logger"
 import { notifyAccountUpdate } from "@/lib/account-sync"
+import { STAFF_ROLES } from "@/lib/roles"
+
+const ALLOWED_ROLES = STAFF_ROLES.filter((r) => r !== "FOUNDER").concat(["USER", "CREATOR", "VERIFIED_CREATOR"])
 
 const schema = z.object({
   identifier: z.string().min(1),
-  role: z.enum(["MODERATOR", "ADMIN"]),
+  role: z.enum(ALLOWED_ROLES as [string, ...string[]]),
 })
 
 export async function POST(request: Request) {
@@ -61,17 +64,6 @@ export async function POST(request: Request) {
 
   if (target.id !== ctx.id) {
     notifyAccountUpdate()
-  }
-
-  if (parsed.data.role === "MODERATOR" || previousRole === "MODERATOR" || parsed.data.role === "ADMIN" || previousRole === "ADMIN") {
-    await logFounderAction(
-      ctx.id,
-      parsed.data.role === "MODERATOR" && previousRole === "USER"
-        ? AuditActions.STAFF_PROMOTED
-        : AuditActions.STAFF_PROMOTED,
-      { from: previousRole, to: parsed.data.role },
-      { entityType: "User", entityId: target.id },
-    )
   }
 
   return NextResponse.json({ success: true, userId: target.id })

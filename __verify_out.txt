@@ -1,0 +1,70 @@
+=== TABLE EXISTENCE ===: "see below"
+  StripeTransfer: exists=false
+  Refund: exists=false
+  Payout: exists=false
+  CreatorAllocation: exists=false
+  Order: exists=false
+  Payment: exists=false
+  Announcement: exists=false
+  SiteSetting: exists=false
+  ModerationNote: exists=false
+  ProductVersion: exists=false
+  User: exists=false
+  Product: exists=false
+  ProductFile: exists=false
+  ProductMedia: exists=false
+  Category: exists=false
+  Tag: exists=false
+
+=== COLUMNS ===
+  StripeTransfer (0): 
+  Refund (12): id, orderId, amount, reason, status, provider, createdAt, currency, paymentId, providerRefundId, stripeAccountId, updatedAt
+  Payout (7): id, creatorId, amount, status, method, processedAt, createdAt
+  CreatorAllocation (17): id, orderId, orderItemId, creatorId, productId, grossAmount, discountAmount, taxAmount, platformFee, netAmount, currency, transferId, payoutId, isReversed, reversedAt, createdAt, updatedAt
+  Order (18): id, buyerId, total, status, paymentIntentId, createdAt, updatedAt, orderGroupId, creatorId, subtotal, discount, currency, checkoutSessionId, stripeAccountId, applicationFeeAmount, paidAt, refundedAt, cancelledAt
+  Payment (15): id, orderId, amount, currency, status, provider, providerPaymentId, createdAt, amountRefunded, providerChargeId, stripeAccountId, applicationFeeAmount, failureCode, failureMessage, updatedAt
+  Announcement (8): id, title, body, authorId, isPublished, publishedAt, createdAt, updatedAt
+  SiteSetting (4): key, value, updatedAt, updatedBy
+  ModerationNote (7): id, reportId, productId, userId, authorId, body, createdAt
+  ProductVersion (7): id, productId, version, changelog, releaseNotes, files, createdAt
+  User (26): id, email, username, passwordHash, displayName, role, avatar, bio, website, location, followersCount, followingCount, salesCount, rating, isVerified, createdAt, updatedAt, status, isFeatured, suspendedUntil, suspendedReason, bannedReason, customPermissions, creatorStatus, creatorTermsAcceptedAt, isInternal
+  Product (33): id, creatorId, storeId, categoryId, title, slug, subtitle, description, price, salePrice, isOnSale, saleStartsAt, saleEndsAt, isFree, isPublished, isFeatured, version, unityVersion, vrcSdkVersion, polygonCount, fileSize, questCompatible, pcCompatible, wholesaleEnabled, wholesaleMinQty, wholesalePrice, licenseType, seoTitle, seoDescription, createdAt, updatedAt, contentRating, status
+  ProductFile (15): id, productId, filename, url, size, platform, version, createdAt, folder, mimeType, checksum, downloadCount, lastDownloadedAt, processingStatus, updatedAt
+  ProductMedia (16): id, productId, type, url, order, isThumbnail, createdAt, processingStatus, width, height, duration, mimeType, checksum, thumbnailUrl, blurDataUrl, updatedAt
+  Category (12): id, name, slug, description, icon, parentId, createdAt, displayOrder, isActive, seoTitle, seoDescription, updatedAt
+  Tag (8): id, name, slug, createdAt, description, tagType, isActive, updatedAt
+
+=== ProductVersion indexes ===
+  ProductVersion_pkey: CREATE UNIQUE INDEX "ProductVersion_pkey" ON public."ProductVersion" USING btree (id)
+  ProductVersion_productId_idx: CREATE INDEX "ProductVersion_productId_idx" ON public."ProductVersion" USING btree ("productId")
+  ProductVersion_productId_version_idx: CREATE INDEX "ProductVersion_productId_version_idx" ON public."ProductVersion" USING btree ("productId", version)
+
+=== Refund indexes ===
+  Refund_orderId_idx: CREATE INDEX "Refund_orderId_idx" ON public."Refund" USING btree ("orderId")
+  Refund_pkey: CREATE UNIQUE INDEX "Refund_pkey" ON public."Refund" USING btree (id)
+  Refund_providerRefundId_idx: CREATE INDEX "Refund_providerRefundId_idx" ON public."Refund" USING btree ("providerRefundId")
+  Refund_providerRefundId_key: CREATE UNIQUE INDEX "Refund_providerRefundId_key" ON public."Refund" USING btree ("providerRefundId")
+
+=== Payout indexes ===
+  Payout_creatorId_idx: CREATE INDEX "Payout_creatorId_idx" ON public."Payout" USING btree ("creatorId")
+  Payout_pkey: CREATE UNIQUE INDEX "Payout_pkey" ON public."Payout" USING btree (id)
+  Payout_status_idx: CREATE INDEX "Payout_status_idx" ON public."Payout" USING btree (status)
+
+=== User indexes ===
+  User_creatorStatus_idx: CREATE INDEX "User_creatorStatus_idx" ON public."User" USING btree ("creatorStatus")
+  User_email_idx: CREATE INDEX "User_email_idx" ON public."User" USING btree (email)
+  User_email_key: CREATE UNIQUE INDEX "User_email_key" ON public."User" USING btree (email)
+  User_isInternal_idx: CREATE INDEX "User_isInternal_idx" ON public."User" USING btree ("isInternal")
+  User_pkey: CREATE UNIQUE INDEX "User_pkey" ON public."User" USING btree (id)
+  User_status_idx: CREATE INDEX "User_status_idx" ON public."User" USING btree (status)
+  User_username_idx: CREATE INDEX "User_username_idx" ON public."User" USING btree (username)
+  User_username_key: CREATE UNIQUE INDEX "User_username_key" ON public."User" USING btree (username)
+
+=== Order indexes ===
+  Order_buyerId_idx: CREATE INDEX "Order_buyerId_idx" ON public."Order" USING btree ("buyerId")
+  Order_checkoutSessionId_idx: CREATE INDEX "Order_checkoutSessionId_idx" ON public."Order" USING btree ("checkoutSessionId")
+  Order_checkoutSessionId_key: CREATE UNIQUE INDEX "Order_checkoutSessionId_key" ON public."Order" USING btree ("checkoutSessionId")
+  Order_creatorId_idx: CREATE INDEX "Order_creatorId_idx" ON public."Order" USING btree ("creatorId")
+  Order_orderGroupId_idx: CREATE INDEX "Order_orderGroupId_idx" ON public."Order" USING btree ("orderGroupId")
+  Order_pkey: CREATE UNIQUE INDEX "Order_pkey" ON public."Order" USING btree (id)
+  Order_status_idx: CREATE INDEX "Order_status_idx" ON public."Order" USING btree (status)

@@ -1,0 +1,84 @@
+
+=== USERS (6) ===
+{"id":"cmtps30dd0001294qiwv61f77","username":"bluey-barks","role":"FOUNDER","cs":"APPROVED","us":"ACTIVE","ii":false,"iv":true,"email":"alansewells9@gmail.com","created":"2026-09-06T11:18:41.953Z"}
+{"id":"cmtq4yn6q00011qjgct7425n9","username":"poshgothic","role":"USER","cs":"NONE","us":"ACTIVE","ii":false,"iv":false,"email":"mikemakarewich31@gmail.com","created":"2026-09-06T17:19:13.251Z"}
+{"id":"cmtqxopzj0001vxhpmvpbrquz","username":"pups_barks","role":"ADMIN","cs":"NONE","us":"ACTIVE","ii":false,"iv":false,"email":"pups1235645@gmail.com","created":"2026-09-07T06:43:19.183Z"}
+{"id":"cmtqyl5ub0001qutd4n6rnsam","username":"raverotter","role":"ADMIN","cs":"NONE","us":"ACTIVE","ii":false,"iv":false,"email":"thetoxic.0tter@gmail.com","created":"2026-09-07T07:08:32.723Z"}
+{"id":"cmtrlgmyo0000nzjjflziwpmn","username":"admin","role":"ADMIN","cs":"NONE","us":"ACTIVE","ii":false,"iv":true,"email":"admin@pawvault.com","created":"2026-09-07T17:48:52.797Z"}
+{"id":"cmtrlgnsp0001nzjjaxdd5inp","username":"creator","role":"VERIFIED_CREATOR","cs":"APPROVED","us":"ACTIVE","ii":false,"iv":true,"email":"creator@pawvault.com","created":"2026-09-07T17:48:53.882Z"}
+
+=== PRODUCTS (2) ===
+{"id":"cmtrj7gfp0001usiqc2z28fst","slug":"rings-for-mayu-beans","title":"Rings for mayu beans","pub":true,"status":"PENDING_REVIEW","cid":"cmtps30dd0001294qiwv61f77","sid":"cmtrcs6h60001jld77n52nqpg","cat":null,"cr":"SFW","price":0,"sp":null,"seo_t":null,"seo_d":null,"created":"2026-09-07T16:45:45.204Z"}
+{"id":"cmtrq0wyj0023m6lqgzx67zl9","slug":"amazing-3d-model","title":"Amazing 3D Model","pub":true,"status":"DRAFT","cid":"cmtrlgnsp0001nzjjaxdd5inp","sid":"cmtrlgoj40003nzjjdyzc1qd3","cat":"cmtrlgseb0006nzjj53t2rjlt","cr":"SFW","price":29.99,"sp":null,"seo_t":null,"seo_d":null,"created":"2026-09-07T19:56:37.339Z"}
+
+=== PRODUCTVERSION (existing cols) (0) ===
+
+=== STORES (2) ===
+{"id":"cmtrcs6h60001jld77n52nqpg","slug":"blueybarks","name":"Bluey Barks","visibility":"PUBLISHED","uid":"cmtps30dd0001294qiwv61f77"}
+{"id":"cmtrlgoj40003nzjjdyzc1qd3","slug":"test-store","name":"Test Store","visibility":"PUBLISHED","uid":"cmtrlgnsp0001nzjjaxdd5inp"}
+
+=== STAFFPICK (0) ===
+
+=== ANNOUNCEMENT (0) ===
+
+=== USERPREFERENCE (4) ===
+{"id":"cmtq4ynfa00051qjguygwm02g","uid":"cmtq4yn6q00011qjgct7425n9","sac":true,"bnsp":true,"upd":"2026-09-06T17:22:52.409Z"}
+{"id":"cmtqxoq7s0005vxhpmlt499i5","uid":"cmtqxopzj0001vxhpmvpbrquz","sac":false,"bnsp":true,"upd":"2026-09-07T06:43:19.481Z"}
+{"id":"cmtqyl62h0005qutdykp58uia","uid":"cmtqyl5ub0001qutd4n6rnsam","sac":false,"bnsp":true,"upd":"2026-09-07T07:08:33.017Z"}
+{"id":"cmtps30gr0005294q1gr4d70m","uid":"cmtps30dd0001294qiwv61f77","sac":true,"bnsp":true,"upd":"2026-09-07T07:11:14.103Z"}
+
+=== PRODUCTMEDIA (1) ===
+{"id":"cmtt1ufh7000614czgipozzll","pid":"cmtrj7gfp0001usiqc2z28fst","type":"image","url":"https://hcpwlqrxixlupndfxayp.supabase.co/storage/v1/object/public/pawvault-uploads/products/cmtrj7gfp0001usiqc2z28fst/images/1788894914908-ipg80z-VRChat_2026-08-26_21-35-10-749_2560x1440.png","thumb":true,"created":"2026-09-08T18:15:16.316Z"}
+
+=== PRODUCTFILE (1) ===
+{"id":"cmtt1vjla000a14czd9q9yj0k","pid":"cmtrj7gfp0001usiqc2z28fst","filename":"the paws rings~.unitypackage","url":"https://hcpwlqrxixlupndfxayp.supabase.co/storage/v1/object/public/pawvault-uploads/products/cmtrj7gfp0001usiqc2z28fst/files/1788894967289-2bqv1s-the-paws-rings.unitypackage","size":554000,"platform":null,"version":null,"folder":""}
+
+=== CATEGORIES (28) ===
+{"id":"cmtrlgy2q000gnzjjn1shhgsh","slug":"vrchat-avatars","name":"VRChat Avatars","ord":1,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlherf0018nzjjn4u0whv2","slug":"vrchat-worlds","name":"VRChat Worlds","ord":1,"active":true,"parent":"cmtrlgt2m0007nzjjjvy72rbk"}
+{"id":"cmtrlgr0v0004nzjjcvu2w8x7","slug":"avatars","name":"Avatars","ord":1,"active":true,"parent":null}
+{"id":"cmtrlha5d0010nzjjnxufn8db","slug":"3d-models","name":"3D Models","ord":1,"active":true,"parent":"cmtrlgseb0006nzjj53t2rjlt"}
+{"id":"cmtrlhgkv001anzjj6lejve2j","slug":"world-prefabs","name":"World Prefabs","ord":2,"active":true,"parent":"cmtrlgt2m0007nzjjjvy72rbk"}
+{"id":"cmtrlgrtq0005nzjj634abwzy","slug":"clothing-accessories","name":"Clothing & Accessories","ord":2,"active":true,"parent":null}
+{"id":"cmtrlgzhe000inzjjnixetg2d","slug":"furry-avatars","name":"Furry Avatars","ord":2,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlhb8m0012nzjjdr6gq6wc","slug":"weapons","name":"Weapons","ord":2,"active":true,"parent":"cmtrlgseb0006nzjj53t2rjlt"}
+{"id":"cmtrlhhpd001cnzjji30l9055","slug":"udon-udonsharp","name":"Udon / UdonSharp","ord":3,"active":true,"parent":"cmtrlgt2m0007nzjjjvy72rbk"}
+{"id":"cmtrlgseb0006nzjj53t2rjlt","slug":"3d-assets","name":"3D Assets","ord":3,"active":true,"parent":null}
+{"id":"cmtrlh0l1000knzjjxyxxtt58","slug":"kemonomimi","name":"Kemonomimi","ord":3,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlhcrp0014nzjj5d6bkyky","slug":"props","name":"Props","ord":3,"active":true,"parent":"cmtrlgseb0006nzjj53t2rjlt"}
+{"id":"cmtrlgt2m0007nzjjjvy72rbk","slug":"worlds","name":"Worlds","ord":4,"active":true,"parent":null}
+{"id":"cmtrlh1sg000mnzjj768p4oor","slug":"human-humanoid","name":"Human / Humanoid","ord":4,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlhe2v0016nzjjzy222jmt","slug":"furniture","name":"Furniture","ord":4,"active":true,"parent":"cmtrlgseb0006nzjj53t2rjlt"}
+{"id":"cmtrlgtqa0008nzjje47ga8vv","slug":"materials-textures","name":"Materials & Textures","ord":5,"active":true,"parent":null}
+{"id":"cmtrlh2jq000onzjjadz7g08n","slug":"robot-android","name":"Robot / Android","ord":5,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlgu120009nzjjhm6ci2z7","slug":"particles-vfx","name":"Particles & VFX","ord":6,"active":true,"parent":null}
+{"id":"cmtrlh4u2000qnzjj1rswzjfx","slug":"creature","name":"Creature","ord":6,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlgu9d000anzjjv8rhggsu","slug":"scripts-tools","name":"Scripts & Tools","ord":7,"active":true,"parent":null}
+{"id":"cmtrlh6ji000snzjjlfqckf5c","slug":"cute-chibi","name":"Cute / Chibi","ord":7,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlh7fo000unzjj3bbmbn26","slug":"mature-adult","name":"Mature / Adult","ord":8,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlgulb000bnzjjgyj16616","slug":"animation-expressions","name":"Animation & Expressions","ord":8,"active":true,"parent":null}
+{"id":"cmtrlh848000wnzjjculkhhwr","slug":"performance-optimized","name":"Performance Optimized","ord":9,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlgvh5000cnzjjv2dmu0w3","slug":"creator-resources","name":"Creator Resources","ord":9,"active":true,"parent":null}
+{"id":"cmtrlgw8l000dnzjjvk5x12na","slug":"services","name":"Services","ord":10,"active":true,"parent":null}
+{"id":"cmtrlh905000ynzjj1khv9s7i","slug":"quest-compatible","name":"Quest Compatible","ord":10,"active":true,"parent":"cmtrlgr0v0004nzjjcvu2w8x7"}
+{"id":"cmtrlgwoo000enzjjohoiw2ef","slug":"free","name":"Free","ord":11,"active":true,"parent":null}
+
+=== PRODUCTVERSION FK check (0) ===
+
+=== applied migrations (final) (16) ===
+{"name":"20260702072437_init","fin":"2026-09-05T11:00:12.837Z","rb":null,"steps":1}
+{"name":"20260904140000_phase4_stripe_connect","fin":"2026-09-05T11:00:13.122Z","rb":null,"steps":1}
+{"name":"20260904150000_phase6_orders_licenses_library","fin":"2026-09-05T11:00:13.308Z","rb":null,"steps":1}
+{"name":"20260904160000_phase7b_collections_storefront","fin":"2026-09-05T11:00:13.441Z","rb":null,"steps":1}
+{"name":"20260905160000_phase7c_posts_storefront_customisation","fin":"2026-09-05T11:00:13.586Z","rb":null,"steps":1}
+{"name":"20260905230000_add_userpreference_table","fin":null,"rb":"2026-09-07T18:43:44.252Z","steps":0}
+{"name":"20260905230000_add_userpreference_table","fin":"2026-09-07T18:43:44.426Z","rb":null,"steps":0}
+{"name":"20260907174600_add_updatedat_to_productmedia","fin":"2026-09-07T18:44:06.950Z","rb":null,"steps":1}
+{"name":"20260907180000_extend_category_tag_fields","fin":"2026-09-07T18:46:34.500Z","rb":null,"steps":1}
+{"name":"20260907200000_add_changes_requested_and_removed_statuses","fin":"2026-09-07T21:12:25.414Z","rb":null,"steps":1}
+{"name":"20260907210000_add_missing_schema_columns","fin":"2026-09-07T21:18:54.946Z","rb":null,"steps":1}
+{"name":"20260907210000_add_productfile_columns","fin":null,"rb":"2026-09-07T21:23:03.576Z","steps":0}
+{"name":"20260907210000_add_productfile_columns","fin":"2026-09-07T21:23:04.182Z","rb":null,"steps":0}
+{"name":"20260908000000_add_missing_schema_objects","fin":null,"rb":"2026-09-08T08:17:32.532Z","steps":0}
+{"name":"20260908000000_add_missing_schema_objects","fin":"2026-09-08T08:17:55.125Z","rb":null,"steps":1}
+{"name":"20260908100000_add_internal_account_flag","fin":"2026-09-08T10:52:36.656Z","rb":null,"steps":1}

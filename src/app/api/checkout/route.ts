@@ -21,26 +21,36 @@ async function createAllocationsForOrder(orderId: string) {
   const existing = await prisma.creatorAllocation.count({ where: { orderId } })
   if (existing > 0) return
 
-  for (const item of order.items) {
-    const gross = item.price * item.quantity
-    const fee = item.platformFeeShare
-    const net = item.creatorEarnings
+  const creatorId = order.creatorId
+  const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
-    await prisma.creatorAllocation.create({
-      data: {
-        orderId: order.id,
-        orderItemId: item.id,
-        creatorId: order.creatorId,
-        productId: item.productId,
-        grossAmount: gross,
-        discountAmount: 0,
-        taxAmount: 0,
-        platformFee: fee,
-        netAmount: net,
-        currency: order.currency,
-      },
+  await prisma.$transaction(async (tx) => {
+    for (const item of order.items) {
+      const gross = item.price * item.quantity
+      const fee = item.platformFeeShare
+      const net = item.creatorEarnings
+
+      await tx.creatorAllocation.create({
+        data: {
+          orderId: order.id,
+          orderItemId: item.id,
+          creatorId,
+          productId: item.productId,
+          grossAmount: gross,
+          discountAmount: 0,
+          taxAmount: 0,
+          platformFee: fee,
+          netAmount: net,
+          currency: order.currency,
+        },
+      })
+    }
+
+    await tx.user.update({
+      where: { id: creatorId },
+      data: { salesCount: { increment: totalQuantity } },
     })
-  }
+  })
 }
 
 async function createLicensesForOrder(orderId: string) {
@@ -157,13 +167,74 @@ export async function POST(request: Request) {
   const feeConfig = await getPlatformFeeConfig()
   const lineSubtotals = new Map<string, number>()
 
-  const groups = new Map<string, CreatorGroup>()
-  let subtotal = 0
+  // Resolve bundles and compute per-item prices including bundle discounts
+  const bundleMap = new Map<string, any>()
+  for (const item of cart.items) {
+    if (item.bundleId && !bundleMap.has(item.bundleId)) {
+      const bundle = await prisma.bundle.findUnique({
+        where: { id: item.bundleId },
+        select: { id: true, price: true, isPublished: true },
+      })
+      bundleMap.set(item.bundleId, bundle)
+    }
+  }
+
+  // First pass: compute raw effective prices
+  const itemPrices = new Map<string, {
+    effectivePrice: number
+    lineSubtotal: number
+    adjustedPrice: number
+    adjustedLineSubtotal: number
+  }>()
+
+  let rawSubtotal = 0
   for (const item of cart.items) {
     const effectivePrice = item.product.isOnSale && item.product.salePrice != null
       ? item.product.salePrice
       : item.product.price
     const lineSubtotal = effectivePrice * item.quantity
+    rawSubtotal += lineSubtotal
+    itemPrices.set(item.id, {
+      effectivePrice,
+      lineSubtotal,
+      adjustedPrice: effectivePrice,
+      adjustedLineSubtotal: lineSubtotal,
+    })
+  }
+
+  // Second pass: apply bundle discounts proportionally across bundle items
+  for (const [bundleId, bundle] of bundleMap) {
+    if (!bundle || !bundle.isPublished) continue
+
+    const bundleItems = cart.items.filter((item) => item.bundleId === bundleId)
+    if (bundleItems.length === 0) continue
+
+    const bundleValue = bundleItems.reduce(
+      (sum, item) => sum + itemPrices.get(item.id)!.lineSubtotal,
+      0
+    )
+    const bundleDiscount = Math.max(0, bundleValue - bundle.price)
+    if (bundleDiscount <= 0) continue
+
+    for (const item of bundleItems) {
+      const pricing = itemPrices.get(item.id)!
+      const share = bundleValue > 0 ? pricing.lineSubtotal / bundleValue : 0
+      const discountedLine = Math.max(0, pricing.lineSubtotal - bundleDiscount * share)
+      const adjustedPrice = item.quantity > 0 ? discountedLine / item.quantity : 0
+
+      itemPrices.set(item.id, {
+        ...pricing,
+        adjustedPrice,
+        adjustedLineSubtotal: discountedLine,
+      })
+    }
+  }
+
+  const groups = new Map<string, CreatorGroup>()
+  let subtotal = 0
+  for (const item of cart.items) {
+    const pricing = itemPrices.get(item.id)!
+    const lineSubtotal = pricing.adjustedLineSubtotal
     subtotal += lineSubtotal
     lineSubtotals.set(item.id, lineSubtotal)
 
@@ -182,7 +253,7 @@ export async function POST(request: Request) {
       title: item.product.title,
       slug: item.product.slug,
       version: item.product.version,
-      price: effectivePrice,
+      price: pricing.adjustedPrice,
       quantity: item.quantity,
       mediaUrls: item.product.media.map((m) => m.url),
       contentRating: item.product.contentRating,

@@ -12,6 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { ShareButton } from "@/components/share-button"
+import { ReportProductDialog } from "@/components/report-product-dialog"
+import { ReportReviewButton } from "@/components/report-review-button"
+import { CreatorResponseForm } from "@/components/creator-response-form"
 import { getServerUser } from "@/lib/session"
 import { hasProductAccess } from "@/lib/ownership"
 import { AdultContentPreview } from "@/components/adult-content-preview"
@@ -78,10 +81,6 @@ async function getProduct(slug: string) {
         orderBy: { createdAt: "desc" },
         take: 10,
       },
-      versions: {
-        take: 1,
-        orderBy: { createdAt: "desc" },
-      },
       staffPicks: {
         where: { isActive: true },
         take: 1,
@@ -90,6 +89,19 @@ async function getProduct(slug: string) {
   })
 
   if (!product) notFound()
+
+  // Fetch versions separately with error handling for missing columns
+  let versions: any[] = []
+  try {
+    versions = await prisma.productVersion.findMany({
+      where: { productId: product.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    })
+  } catch (error) {
+    console.error("Failed to fetch product versions:", error)
+    versions = []
+  }
 
   if (product.status !== "PUBLISHED" || !product.isPublished || product.store?.visibility !== "PUBLISHED" || product.creator.isInternal) {
     const user = await getServerUser()
@@ -113,7 +125,7 @@ async function getProduct(slug: string) {
     }
   })
 
-  return { ...product, rating: avgRating, reviewCount: product.reviews.length, distribution }
+  return { ...product, rating: avgRating, reviewCount: product.reviews.length, distribution, versions }
 }
 
 async function getMoreFromCreator(creatorId: string, excludeId: string) {
@@ -198,6 +210,21 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product = await getProduct(params.slug)
   const currentUser = await getServerUser()
+
+  // Track recently viewed for authenticated users
+  if (currentUser) {
+    await prisma.recentlyViewed.upsert({
+      where: {
+        userId_productId: {
+          userId: currentUser.id,
+          productId: product.id,
+        },
+      },
+      update: { viewedAt: new Date() },
+      create: { userId: currentUser.id, productId: product.id },
+    })
+  }
+
   const ownership = currentUser
     ? await hasProductAccess(currentUser.id, product.id)
     : { hasAccess: false, isCreator: false, licenseStatus: null, orderStatus: null }
@@ -305,6 +332,11 @@ export default async function ProductPage({ params }: { params: { slug: string }
             <ShareButton
               url={`https://pawvault.com/product/${product.slug}`}
               title={product.title}
+            />
+            <ReportProductDialog
+              productId={product.id}
+              productTitle={product.title}
+              isAuthenticated={!!currentUser}
             />
 
             {/* Key metadata badges */}
@@ -511,36 +543,46 @@ export default async function ProductPage({ params }: { params: { slug: string }
                       {product.reviews.map((review) => (
                         <Card key={review.id}>
                           <CardHeader className="pb-2">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage
-                                  src={review.user.avatar || ""}
-                                  alt={review.user.displayName || review.user.username}
-                                />
-                                <AvatarFallback className="text-xs">
-                                  {(review.user.displayName || review.user.username)[0]?.toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium text-sm">
-                                  {review.user.displayName || review.user.username}
-                                </p>
-                                <div className="flex items-center">
-                                  {Array.from({ length: 5 }).map((_, i) => (
-                                    <Rating
-                                      key={i}
-                                      rating={i < review.rating ? 1 : 0}
-                                      size="sm"
-                                      showCount={false}
-                                    />
-                                  ))}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage
+                                    src={review.user.avatar || ""}
+                                    alt={review.user.displayName || review.user.username}
+                                  />
+                                  <AvatarFallback className="text-xs">
+                                    {(review.user.displayName || review.user.username)[0]?.toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm truncate">
+                                    {review.user.displayName || review.user.username}
+                                  </p>
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <Rating
+                                        key={i}
+                                        rating={i < review.rating ? 1 : 0}
+                                        size="sm"
+                                        showCount={false}
+                                      />
+                                    ))}
+                                    {review.isVerified && (
+                                      <Badge variant="outline" className="text-xs ml-2">
+                                        Verified Purchase
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
+                              {currentUser && currentUser.id !== review.userId && (
+                                <ReportReviewButton reviewId={review.id} />
+                              )}
                             </div>
                           </CardHeader>
-                          <CardContent>
+                          <CardContent className="space-y-3">
                             {review.title && (
-                              <p className="font-medium text-sm text-text-primary mb-1">
+                              <p className="font-medium text-sm text-text-primary">
                                 {review.title}
                               </p>
                             )}
@@ -548,6 +590,18 @@ export default async function ProductPage({ params }: { params: { slug: string }
                               <p className="text-sm text-text-secondary">
                                 {review.content}
                               </p>
+                            )}
+                            {review.creatorResponse && (
+                              <div className="border-l-2 border-primary pl-3 py-2 bg-primary/5 rounded-r">
+                                <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
+                                  <span className="font-medium text-primary">Creator Response</span>
+                                  <span>{new Date(review.creatorResponseAt!).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-sm text-text-secondary">{review.creatorResponse}</p>
+                              </div>
+                            )}
+                            {currentUser && currentUser.id === product.creatorId && !review.creatorResponse && (
+                              <CreatorResponseForm reviewId={review.id} productId={product.id} />
                             )}
                           </CardContent>
                         </Card>

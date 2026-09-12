@@ -1,16 +1,18 @@
 import { getServerUser } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Shield } from "lucide-react"
+import { ArrowLeft, Shield, Key, UserX } from "lucide-react"
+import { STAFF_ROLES, roleLabel, roleDescription, isStaff } from "@/lib/roles"
+import { PERMISSION_GROUPS, PERMISSIONS, permissionsForRole } from "@/lib/permissions"
 
 export const dynamic = "force-dynamic"
 
-const STAFF_ROLES = ["MODERATOR", "ADMIN"] as const
+const ALLOWED_STAFF_ROLES = STAFF_ROLES.filter((r) => r !== "FOUNDER")
 
 export default async function StaffMemberPage({ params }: { params: { id: string } }) {
   const user = await getServerUser()
@@ -35,9 +37,14 @@ export default async function StaffMemberPage({ params }: { params: { id: string
   if (!target) notFound()
 
   const isProtected = target.role === "FOUNDER" || target.id === user.id
+  const basePermissions = permissionsForRole(target.role)
+  const customList = (target.customPermissions ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean)
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-3xl space-y-6">
       <div>
         <Button variant="ghost" asChild className="mb-4">
           <Link href="/admin/founder/staff">
@@ -61,7 +68,9 @@ export default async function StaffMemberPage({ params }: { params: { id: string
               <CardTitle className="text-base">Role</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Current role:{" "}
-                <Badge variant={target.role === "FOUNDER" ? "default" : "secondary"} className="text-xs">{target.role}</Badge>
+                <Badge variant={target.role === "FOUNDER" ? "default" : "secondary"} className="text-xs">
+                  {roleLabel(target.role)}
+                </Badge>
               </p>
             </div>
           </div>
@@ -80,12 +89,79 @@ export default async function StaffMemberPage({ params }: { params: { id: string
                 <label className="text-sm font-medium">New role</label>
                 <select name="role" defaultValue={target.role} className="w-full border rounded-md px-3 py-2 bg-background">
                   <option value="USER">USER (demote)</option>
-                  {STAFF_ROLES.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                  {ALLOWED_STAFF_ROLES.map((r) => (
+                    <option key={r} value={r}>{roleLabel(r)}</option>
                   ))}
                 </select>
+                <p className="text-xs text-muted-foreground">
+                  {roleDescription(target.role)}
+                </p>
               </div>
               <Button type="submit">Update role</Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Key className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Custom permissions</CardTitle>
+              <CardDescription>
+                Grant or revoke individual permissions for this staff member.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isProtected ? (
+            <p className="text-sm text-muted-foreground">
+              Founder has all permissions by default.
+            </p>
+          ) : (
+            <form action="/api/admin/staff/permissions" method="POST" className="space-y-4">
+              <input type="hidden" name="userId" value={target.id} />
+              <p className="text-xs text-muted-foreground">
+                Base permissions for <b>{roleLabel(target.role)}</b>:{" "}
+                {basePermissions.length} permission{basePermissions.length === 1 ? "" : "s"}.
+                Comma-separated keys below override the base set.
+              </p>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Custom permissions (comma-separated)</label>
+                <Input
+                  name="permissions"
+                  defaultValue={customList.join(", ")}
+                  placeholder="e.g. users.view, products.feature"
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave empty to use role defaults. Add keys to grant extra permissions.
+                  Remove keys from the list to revoke them.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {PERMISSION_GROUPS.map((group) =>
+                  group.permissions.map((p) => {
+                    const isBase = basePermissions.includes(p.key)
+                    const isCustom = customList.includes(p.key)
+                    return (
+                      <Badge
+                        key={p.key}
+                        variant={isCustom ? "default" : isBase ? "secondary" : "outline"}
+                        className="text-xs cursor-help"
+                        title={p.description}
+                      >
+                        {p.key}
+                      </Badge>
+                    )
+                  }),
+                )}
+              </div>
+              <Button type="submit">Save permissions</Button>
             </form>
           )}
         </CardContent>
@@ -102,16 +178,27 @@ export default async function StaffMemberPage({ params }: { params: { id: string
           {!isProtected && (
             <form action="/api/admin/staff/status" method="POST" className="space-y-3">
               <input type="hidden" name="userId" value={target.id} />
-              <Input name="reason" placeholder="Reason (required for suspensions/bans)" required />
+              <Input name="reason" placeholder="Reason (required for suspensions/bans)" />
               <div className="flex gap-2 flex-wrap">
                 <Button name="action" value="ACTIVE" type="submit" variant="outline">Restore</Button>
                 <Button name="action" value="SUSPENDED" type="submit" variant="outline">Suspend</Button>
-                <Button name="action" value="BANNED" type="submit" variant="destructive">Ban</Button>
+                <Button name="action" value="BANNED" type="submit" variant="destructive">
+                  <UserX className="h-3 w-3 mr-1" />Ban
+                </Button>
               </div>
             </form>
           )}
         </CardContent>
       </Card>
+
+      <div className="flex">
+        <Button variant="ghost" asChild>
+          <Link href="/admin/founder/staff">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to staff
+          </Link>
+        </Button>
+      </div>
     </div>
   )
 }

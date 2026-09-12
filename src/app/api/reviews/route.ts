@@ -12,6 +12,23 @@ const createReviewSchema = z.object({
   content: z.string().max(1000).optional(),
 })
 
+async function recalculateCreatorRating(creatorId: string) {
+  const avgResult = await prisma.review.aggregate({
+    where: {
+      product: { creatorId },
+      isVerified: true,
+    },
+    _avg: { rating: true },
+  })
+
+  const avgRating = avgResult._avg.rating ?? 0
+
+  await prisma.user.update({
+    where: { id: creatorId },
+    data: { rating: Number(avgRating.toFixed(2)) },
+  })
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -86,6 +103,11 @@ export async function POST(request: Request) {
       },
     })
 
+    const product = await prisma.product.findUnique({
+      where: { id: validated.productId },
+      select: { creatorId: true },
+    })
+
     const review = await prisma.review.create({
       data: {
         productId: validated.productId,
@@ -106,6 +128,10 @@ export async function POST(request: Request) {
         },
       },
     })
+
+    if (product?.creatorId) {
+      await recalculateCreatorRating(product.creatorId)
+    }
 
     return NextResponse.json(review, { status: 201 })
   } catch (error) {

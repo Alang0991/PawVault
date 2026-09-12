@@ -15,6 +15,7 @@ import {
   DollarSign,
   Activity,
   Shield,
+  LayoutDashboard,
 } from "lucide-react"
 
 function StatCard({ icon: Icon, label, value, href }: any) {
@@ -102,6 +103,7 @@ export default async function FounderOverviewPage() {
         <StatCard icon={Download} label="Downloads" value={totalDownloads} />
         <StatCard icon={AlertTriangle} label="Reports" value={pendingReports} href="/admin/founder/reports" />
         <StatCard icon={ScrollText} label="Staff" value={staffCount} href="/admin/founder/staff" />
+        <StatCard icon={LayoutDashboard} label="Homepage" value="Configure" href="/admin/founder/homepage" />
       </div>
 
       {attentionItems.length > 0 ? (
