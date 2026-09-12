@@ -516,6 +516,16 @@ ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'US
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "theme" TEXT NOT NULL DEFAULT 'system';
 
 -- ============================================================
+-- User: missing columns (accentColor, reduceMotion, MFA)
+-- Added 2026-09-12 to fix Prisma schema drift
+-- ============================================================
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "accentColor" TEXT DEFAULT '#8B5CF6';
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mfaSecret" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mfaEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mfaBackupCodes" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "reduceMotion" BOOLEAN NOT NULL DEFAULT false;
+
+-- ============================================================
 -- Download -> ProductFile relation
 -- ============================================================
 DO $$
