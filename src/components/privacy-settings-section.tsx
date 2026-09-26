@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,16 +22,26 @@ interface PrivacySettings {
   allowMarketing: boolean
 }
 
+const getDefaultSettings = (): PrivacySettings => ({
+  profileVisibility: "public",
+  showEmail: false,
+  showLocation: true,
+  showWebsite: true,
+  showBio: true,
+  showPurchases: false,
+  showReviews: true,
+  showWishlist: false,
+  allowDataCollection: true,
+  allowPersonalization: true,
+  allowMarketing: false,
+})
+
 export function PrivacySettingsSection() {
   const [settings, setSettings] = useState<PrivacySettings | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const res = await fetch("/api/account/privacy")
       if (res.ok) {
@@ -43,21 +53,11 @@ export function PrivacySettingsSection() {
     } catch {
       setSettings(getDefaultSettings())
     }
-  }
+  }, [])
 
-  const getDefaultSettings = (): PrivacySettings => ({
-    profileVisibility: "public",
-    showEmail: false,
-    showLocation: true,
-    showWebsite: true,
-    showBio: true,
-    showPurchases: false,
-    showReviews: true,
-    showWishlist: false,
-    allowDataCollection: true,
-    allowPersonalization: true,
-    allowMarketing: false,
-  })
+  useEffect(() => {
+    void loadSettings()
+  }, [loadSettings])
 
   const handleToggle = (key: keyof PrivacySettings, value: boolean | string) => {
     setSettings((prev) => (prev ? { ...prev, [key]: value } : null))

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import Image from "next/image"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,27 +24,30 @@ export default function MFAPage() {
   const [showSecret, setShowSecret] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
 
-  useEffect(() => {
-    loadStatus()
-  }, [])
-
-  const loadStatus = async () => {
+  const loadStatus = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch("/api/account/mfa")
       if (res.ok) {
         const data = await res.json()
         setStatus(data)
-        if (data.secret && !data.enabled && setupStep === "idle") {
-          setSetupStep("verify")
-        }
+        // Functional update so `setupStep` is not a dependency of this
+        // callback. Reading it directly would make the mount effect re-run
+        // every time the step advances, causing a refetch loop.
+        setSetupStep((prev) =>
+          data.secret && !data.enabled && prev === "idle" ? "verify" : prev
+        )
       }
     } catch {
       setMessage({ type: "error", text: "Failed to load MFA status" })
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void loadStatus()
+  }, [loadStatus])
 
   const handleSetup = async () => {
     setLoading(true)
@@ -174,7 +178,18 @@ export default function MFAPage() {
             <CardContent className="space-y-6">
               <div className="text-center">
                 {status.qrCode && (
-                  <img src={status.qrCode} alt="MFA QR Code" className="mx-auto h-64 w-64 rounded border" />
+                  <Image
+                    src={status.qrCode}
+                    alt="MFA QR Code"
+                    width={256}
+                    height={256}
+                    // The QR code is a data: URL from QRCode.toDataURL. Next's
+                    // optimiser cannot process data: URLs, and re-encoding a QR
+                    // pattern would blur the modules and break scanning, so it
+                    // is served as-is.
+                    unoptimized
+                    className="mx-auto h-64 w-64 rounded border"
+                  />
                 )}
               </div>
 

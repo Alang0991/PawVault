@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { ProductGrid } from "@/components/product-grid"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -44,21 +44,15 @@ export default function WishlistPage() {
   const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [selectedCategory, setSelectedCategory] = useState("")
 
-  useEffect(() => {
-    loadWishlist()
-    loadRecentlyViewed()
-    loadCategories()
-  }, [sort, filter, selectedCategory])
-
-  const buildParams = () => {
+  const buildParams = useCallback(() => {
     const params = new URLSearchParams()
     if (sort !== "newest") params.set("sort", sort)
     if (filter !== "all") params.set("filter", filter)
     if (selectedCategory) params.set("category", selectedCategory)
     return params.toString()
-  }
+  }, [sort, filter, selectedCategory])
 
-  const loadWishlist = async () => {
+  const loadWishlist = useCallback(async () => {
     try {
       const params = buildParams()
       const res = await fetch(`/api/user/wishlist?${params}`)
@@ -69,9 +63,9 @@ export default function WishlistPage() {
     } catch {
       setItems([])
     }
-  }
+  }, [buildParams])
 
-  const loadRecentlyViewed = async () => {
+  const loadRecentlyViewed = useCallback(async () => {
     try {
       const res = await fetch("/api/user/recently-viewed")
       if (res.ok) {
@@ -83,9 +77,9 @@ export default function WishlistPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const res = await fetch("/api/user/wishlist")
       if (res.ok) {
@@ -101,7 +95,16 @@ export default function WishlistPage() {
     } catch {
       setCategories([])
     }
-  }
+  }, [])
+
+  // loadWishlist changes whenever the sort, filter or category selection
+  // changes, so this still refetches all three on every filter change exactly
+  // as before.
+  useEffect(() => {
+    void loadWishlist()
+    void loadRecentlyViewed()
+    void loadCategories()
+  }, [loadWishlist, loadRecentlyViewed, loadCategories])
 
   const removeFromWishlist = async (productId: string) => {
     try {

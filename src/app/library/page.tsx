@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic"
 
+import Image from "next/image"
 import { getServerUser } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
@@ -196,9 +197,11 @@ export default async function LibraryPage() {
                       >
                         <div className="h-10 w-10 rounded-md overflow-hidden bg-surface-subtle shrink-0">
                           {download.product.media?.[0] ? (
-                            <img
+                            <Image
                               src={download.product.media[0].url}
                               alt={download.product.title}
+                              width={40}
+                              height={40}
                               className="h-full w-full object-cover"
                             />
                           ) : (

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { ProductGrid } from "./product-grid"
 import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
@@ -24,10 +25,12 @@ export function BundleCard({ bundle }: BundleCardProps) {
       <Link href={`/bundles/${bundle.slug}`} className="block">
         <div className="aspect-video w-full overflow-hidden bg-surface-subtle relative">
           {thumbnail ? (
-            <img
+            <Image
               src={thumbnail.url}
               alt={bundle.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-text-muted">

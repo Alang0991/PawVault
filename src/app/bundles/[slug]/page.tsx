@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic"
 
+import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { getServerUser } from "@/lib/session"
 import { Badge } from "@/components/ui/badge"
@@ -128,10 +129,12 @@ export default async function BundlePage({ params }: { params: { slug: string } 
           <div>
             <div className="aspect-square w-full overflow-hidden rounded-lg bg-surface-subtle relative">
               {coverImage ? (
-                <img
+                <Image
                   src={coverImage}
                   alt={bundle.name}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 420px"
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-text-muted">
@@ -233,9 +236,11 @@ export default async function BundlePage({ params }: { params: { slug: string } 
                         </span>
                         <div className="h-14 w-14 rounded-md overflow-hidden bg-surface-subtle flex-shrink-0">
                           {product.media?.[0] ? (
-                            <img
+                            <Image
                               src={product.media[0].url}
                               alt={product.title}
+                              width={56}
+                              height={56}
                               className="h-full w-full object-cover"
                             />
                           ) : (

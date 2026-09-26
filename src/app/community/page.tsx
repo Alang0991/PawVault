@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -421,9 +422,11 @@ function EventCard({ event, t }: { event: CommunityEvent; t: (key: string) => st
   return (
     <Card className="overflow-hidden h-full">
       {event.imageUrl && (
-        <img
+        <Image
           src={event.imageUrl}
           alt={event.title}
+          width={800}
+          height={320}
           className="w-full h-40 object-cover"
         />
       )}
