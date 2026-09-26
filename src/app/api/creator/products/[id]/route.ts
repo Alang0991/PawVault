@@ -1,0 +1,238 @@
+export const dynamic = 'force-dynamic'
+
+import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { requireAuth } from "@/lib/session"
+import { z } from "zod"
+import { createAuditLog, AuditActions } from "@/lib/audit-logger"
+import { validateTaxonomy, getCanonicalTagIds } from "@/lib/taxonomy-validation"
+
+function validatePublishReadiness(product: { title?: string | null; description?: string | null; categoryId?: string | null; price?: number | null; isFree?: boolean | null; media?: unknown[] | null }): string | null {
+  if (!product.title || product.title.trim().length === 0) {
+    return "Product title is required before publishing."
+  }
+  if (!product.description || product.description.trim().length === 0) {
+    return "Product description is required before publishing."
+  }
+  if (!product.categoryId) {
+    return "Product category is required before publishing."
+  }
+  if (!product.isFree && (!product.price || product.price <= 0)) {
+    return "Product price is required before publishing (or mark as free)."
+  }
+  if (!product.media || (Array.isArray(product.media) && product.media.length === 0)) {
+    return "At least one media item is required before publishing."
+  }
+  return null
+}
+
+const updateProductSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  subtitle: z.string().max(200).optional(),
+  description: z.string().optional(),
+  price: z.number().positive().optional(),
+  salePrice: z.number().positive().optional(),
+  categoryId: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  isFree: z.boolean().optional(),
+  isOnSale: z.boolean().optional(),
+  isPublished: z.boolean().optional(),
+  status: z.enum(["DRAFT", "PENDING_REVIEW", "PUBLISHED", "HIDDEN", "ARCHIVED", "REJECTED", "SUSPENDED"]).optional(),
+  version: z.string().optional(),
+  unityVersion: z.string().optional(),
+  vrcSdkVersion: z.string().optional(),
+  polygonCount: z.number().int().optional(),
+  fileSize: z.number().int().optional(),
+  questCompatible: z.boolean().optional(),
+  pcCompatible: z.boolean().optional(),
+  wholesaleEnabled: z.boolean().optional(),
+  wholesaleMinQty: z.number().int().optional(),
+  wholesalePrice: z.number().positive().optional(),
+  licenseType: z.string().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+})
+
+async function getOwnedProduct(id: string, userId: string, role: string) {
+  const product = await prisma.product.findUnique({ where: { id } })
+  if (!product) return null
+  if (product.creatorId !== userId && !["ADMIN", "FOUNDER"].includes(role)) return "forbidden" as const
+  return product
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  try {
+    const user = await requireAuth()
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const product = await prisma.product.findUnique({
+      where: { id: params.id },
+      include: {
+        category: true,
+        media: { orderBy: { order: "asc" } },
+        files: { orderBy: { createdAt: "asc" } },
+        tags: { include: { tag: true } },
+        creator: {
+          select: { id: true, username: true, displayName: true, avatar: true },
+        },
+      },
+    })
+
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    if (product.creatorId !== user.id && !["ADMIN", "FOUNDER"].includes(user.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    return NextResponse.json({ product })
+  } catch (error) {
+    console.error("Get product error:", error)
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  try {
+    const user = await requireAuth()
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const owned = await getOwnedProduct(params.id, user.id, user.role)
+    if (!owned) return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    if (owned === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+    const body = await request.json()
+    const validated = updateProductSchema.parse(body)
+
+    const { tags, status, ...data } = validated
+
+    if (validated.categoryId || (tags && tags.length > 0)) {
+      const taxonomyCheck = await validateTaxonomy(validated.categoryId, tags)
+      if (!taxonomyCheck.valid) {
+        return NextResponse.json(
+          { error: taxonomyCheck.message, code: taxonomyCheck.error },
+          { status: 422 }
+        )
+      }
+    }
+
+    const updateData: any = { ...data }
+    if (status) {
+      if (status === "PUBLISHED") {
+        if (owned.creatorId !== user.id && !["ADMIN", "FOUNDER", "MODERATOR"].includes(user.role)) {
+          return NextResponse.json(
+            { error: "Only the creator can publish this product." },
+            { status: 403 }
+          )
+        }
+        if (owned.creatorId === user.id) {
+          const validationError = validatePublishReadiness(owned)
+          if (validationError) {
+            return NextResponse.json({ error: validationError }, { status: 409 })
+          }
+        }
+        updateData.status = "PUBLISHED"
+        updateData.isPublished = true
+      } else if (status === "DRAFT" || status === "ARCHIVED" || status === "REJECTED" || status === "SUSPENDED" || status === "HIDDEN") {
+        updateData.status = status
+        updateData.isPublished = false
+      }
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const product = await tx.product.update({
+        where: { id: params.id },
+        data: updateData,
+      })
+
+      if (tags) {
+        await tx.productTag.deleteMany({ where: { productId: params.id } })
+        const canonicalTagIds = await getCanonicalTagIds(tags)
+        await tx.productTag.createMany({
+          data: canonicalTagIds.map((tagId) => ({
+            productId: params.id,
+            tagId,
+          })),
+        })
+      }
+
+      return product
+    })
+
+    const auditAction = status === "PUBLISHED" ? AuditActions.PRODUCT_PUBLISHED : AuditActions.PRODUCT_UPDATED
+    await createAuditLog({
+      userId: user.id,
+      action: auditAction,
+      details: {
+        productId: params.id,
+        status,
+        actorRole: user.role,
+        isCreatorPublish: owned.creatorId === user.id,
+      },
+    })
+
+    return NextResponse.json({ product: updated })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation failed", details: error.errors },
+        { status: 400 },
+      )
+    }
+    console.error("Update product error:", error)
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  try {
+    const user = await requireAuth()
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const owned = await getOwnedProduct(params.id, user.id, user.role)
+    if (!owned) return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    if (owned === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+    // Check for historical references that would be destroyed by hard delete
+    const [orderItems, licenses, reviews, favorites] = await Promise.all([
+      prisma.orderItem.count({ where: { productId: params.id } }),
+      prisma.license.count({ where: { productId: params.id } }),
+      prisma.review.count({ where: { productId: params.id } }),
+      prisma.favorite.count({ where: { productId: params.id } }),
+    ])
+
+    const hasHistory = orderItems > 0 || licenses > 0 || reviews > 0 || favorites > 0
+
+    if (hasHistory) {
+      // Soft-delete: archive instead of hard delete to preserve historical records
+      await prisma.product.update({
+        where: { id: params.id },
+        data: { status: "ARCHIVED", isPublished: false },
+      })
+    } else {
+      // Safe to hard delete only when no historical references exist
+      await prisma.product.delete({ where: { id: params.id } })
+    }
+
+    await createAuditLog({
+      userId: user.id,
+      action: AuditActions.PRODUCT_DELETED,
+      details: { productId: params.id, softDelete: hasHistory },
+    })
+
+    return NextResponse.json({ success: true, archived: hasHistory })
+  } catch (error) {
+    console.error("Delete product error:", error)
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+  }
+}

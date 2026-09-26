@@ -1,0 +1,141 @@
+import { getServerUser } from "@/lib/session"
+import { prisma } from "@/lib/prisma"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Shield, ArrowLeft, Users } from "lucide-react"
+import { redirect } from "next/navigation"
+import { STAFF_ROLES, roleLabel } from "@/lib/roles"
+
+export const dynamic = "force-dynamic"
+
+export default async function StaffPage() {
+  const user = await getServerUser()
+  if (!user || user.role !== "FOUNDER") {
+    redirect("/admin")
+  }
+
+  const staff = await prisma.user.findMany({
+    where: { role: { in: [...STAFF_ROLES] } },
+    orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      email: true,
+      role: true,
+      status: true,
+      createdAt: true,
+      isVerified: true,
+    },
+  })
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Staff / Team</h1>
+          <p className="text-sm text-muted-foreground">
+            {staff.length} staff members across {STAFF_ROLES.length} roles
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/founder/staff/new">Add staff</Link>
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Shield className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Active staff ({staff.length})</CardTitle>
+              <CardDescription>
+                Only the Founder can add or remove staff. Custom roles available.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {staff.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No staff yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {staff.map((s) => (
+                <div key={s.id} className="flex items-center justify-between border-b pb-3 last:border-0">
+                  <div>
+                    <p className="font-medium text-sm">{s.displayName || s.username}</p>
+                    <p className="text-xs text-muted-foreground">{s.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Joined {new Date(s.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        s.role === "FOUNDER"
+                          ? "default"
+                          : s.role === "ADMIN"
+                            ? "secondary"
+                            : "outline"
+                      }
+                      className="text-xs"
+                    >
+                      {roleLabel(s.role)}
+                    </Badge>
+                    {s.status !== "ACTIVE" && (
+                      <Badge variant="destructive" className="text-xs">
+                        {s.status}
+                      </Badge>
+                    )}
+                    <Link href={`/admin/founder/staff/${s.id}`}>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        Manage
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Role overview</CardTitle>
+              <CardDescription>What each staff role can access by default.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="text-sm space-y-2">
+          <p><b>Founder</b> — Full platform access. Owner of the marketplace.</p>
+          <p><b>Admin</b> — Full access except staff management.</p>
+          <p><b>Moderator</b> — Moderation tools: users, products, reviews, reports.</p>
+          <p><b>Support</b> — Customer support: users, orders, support tickets.</p>
+          <p><b>Finance</b> — Financial access: orders, revenue, payouts, refunds.</p>
+          <p><b>Developer</b> — Technical access: audit logs, system settings, API keys.</p>
+          <p><b>Content Manager</b> — Content access: categories, announcements, featured listings.</p>
+          <p><b>Marketplace Manager</b> — Marketplace access: products, categories, discounts, featured listings.</p>
+        </CardContent>
+      </Card>
+
+      <div className="flex">
+        <Button variant="ghost" asChild>
+          <Link href="/admin/founder">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to overview
+          </Link>
+        </Button>
+      </div>
+    </div>
+  )
+}
