@@ -2,6 +2,15 @@ import type { TranslationKeys } from "./en"
 
 export const ja: TranslationKeys = {
   common: {
+    clear: "クリア",
+    creator: "クリエイター",
+    follower: "フォロワー",
+    member: "メンバー",
+    online: "オンライン",
+    posts: "投稿",
+    readGuide: "ガイドを読む",
+    verified: "認証済み",
+    locale: "ja-JP",
     ok: "OK",
     cancel: "キャンセル",
     save: "保存",
@@ -66,6 +75,9 @@ export const ja: TranslationKeys = {
     max: "最大",
   },
   navigation: {
+    community: "コミュニティ",
+    settings: "設定",
+    tutorials: "チュートリアル",
     browse: "ブラウズ",
     categories: "カテゴリ",
     creators: "クリエーター",
@@ -132,6 +144,10 @@ export const ja: TranslationKeys = {
     backToSignIn: "サインインに戻る",
   },
   marketplace: {
+    search: "検索",
+    noCategoriesFound: "まだカテゴリがありません。近日公開予定です",
+    noCreatorsFound: "まだクリエイターが登録していません。近日公開予定です",
+    publishedProducts: "公開中の商品",
     browseMarketplace: "マーケットを参照",
     coolCreators: "クールなクリエーター。",
     coolDigitalThings: "クールなデジタルモノ。",
@@ -834,6 +850,8 @@ export const ja: TranslationKeys = {
     },
 
     cookiePolicy: {
+      lastUpdated: "最終更新日: 2026年7月7日",
+      backToHome: "ホームに戻る",
       title: "Cookieポリシー",
       description: "Cookieおよびトラッキング技術の使用方法。",
       overview: {
@@ -1083,5 +1101,45 @@ export const ja: TranslationKeys = {
     posts: "投稿",
     member: "メンバー",
     view: "表示"
+  },
+
+  services: {
+    creatorServicesHub: "クリエイターサービスハブ",
+    findTalentedCreators: "次のプロジェクトに合う新手にも分かりやすいクリエイターを見つけましょう。アバターの依頼からカスタム開発まで対応します。",
+    allServices: "すべてのサービス",
+    avatarCommissions: "アバター依頼",
+    artCommissions: "イラスト依頼",
+    "3dServices": "3Dサービス",
+    development: "開発",
+    videoEditing: "動画編集",
+    categories: "カテゴリー",
+    filters: "フィルター",
+    availability: "対応状況",
+    sortBy: "並び替え",
+    featuredFirst: "おすすめ順",
+    highestRated: "評価が高い順",
+    mostReviews: "レビュー数が多い順",
+    priceLowToHigh: "価格: 安い順",
+    priceHighToLow: "価格: 高い順",
+    fastestTurnaround: "最短納期",
+    searchPlaceholder: "サービスを検索...",
+    open: "空きあり",
+    limitedSlots: "枠わずか",
+    closed: "受付終了",
+    completed: "完了",
+    noServicesInCategory: "このカテゴリーにはサービスがありません",
+    noServicesMatch: "条件に合うサービスがありません",
+    viewProfile: "プロフィールを見る",
+  },
+
+  tutorials: {
+    description: "クリエイター・購入者・開発者向けガイド。",
+    noTutorials: "公開されているチュートリアルはまだありません。",
+  },
+
+  site: {
+    title: "PawVault - デジタル製品向けクリエイターマーケットプレイス",
+    description: "3Dモデルやテクスチャ、プラグインなど、世界各地のクリエイターのデジタル製品。",
+    skipToContent: "メインコンテンツへスキップ",
   }
 }

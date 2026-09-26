@@ -2,6 +2,15 @@ import type { TranslationKeys } from "./en"
 
 export const de: TranslationKeys = {
   common: {
+    clear: "Löschen",
+    creator: "Kreator",
+    follower: "Follower",
+    member: "Mitglied",
+    online: "Online",
+    posts: "Beiträge",
+    readGuide: "Anleitung lesen",
+    verified: "Verifiziert",
+    locale: "de-DE",
     ok: "OK",
     cancel: "Abbrechen",
     save: "Speichern",
@@ -66,6 +75,9 @@ export const de: TranslationKeys = {
     max: "Max",
   },
   navigation: {
+    community: "Community",
+    settings: "Einstellungen",
+    tutorials: "Tutorials",
     browse: "Durchsuchen",
     categories: "Kategorien",
     creators: "Kreier",
@@ -132,6 +144,10 @@ export const de: TranslationKeys = {
     backToSignIn: "Zurück zur Anmeldung",
   },
   marketplace: {
+    search: "Suchen",
+    noCategoriesFound: "Noch keine Kategorien. Schau bald wieder vorbei.",
+    noCreatorsFound: "Es haben sich noch keine Kreatoren angemeldet. Schau bald wieder vorbei.",
+    publishedProducts: "veröffentlichtes Produkt",
     browseMarketplace: "Markt durchsuchen",
     coolCreators: "Tolle Kreier.",
     coolDigitalThings: "Tolle digitale Dinge.",
@@ -834,6 +850,8 @@ export const de: TranslationKeys = {
     },
 
     cookiePolicy: {
+      lastUpdated: "Zuletzt aktualisiert: 7. Juli 2026",
+      backToHome: "Zurück zur Startseite",
       title: "Cookie-Richtlinie",
       description: "Wie wir Cookies und Tracking-Technologien verwenden.",
       overview: {
@@ -1083,5 +1101,45 @@ export const de: TranslationKeys = {
     posts: "Beiträge",
     member: "Mitglied",
     view: "Ansehen"
+  },
+
+  services: {
+    creatorServicesHub: "Service-Hub für Kreatoren",
+    findTalentedCreators: "Finde talentierte Kreatoren für dein nächstes Projekt. Von Avatar-Aufträgen bis zur Individuentwicklung.",
+    allServices: "Alle Services",
+    avatarCommissions: "Avatar-Aufträge",
+    artCommissions: "Illustrationsaufträge",
+    "3dServices": "3D-Services",
+    development: "Entwicklung",
+    videoEditing: "Videobearbeitung",
+    categories: "Kategorien",
+    filters: "Filter",
+    availability: "Verfügbarkeit",
+    sortBy: "Sortieren nach",
+    featuredFirst: "Empfohlene zuerst",
+    highestRated: "Bestbewertet",
+    mostReviews: "Meiste Bewertungen",
+    priceLowToHigh: "Preis: aufsteigend",
+    priceHighToLow: "Preis: absteigend",
+    fastestTurnaround: "Schnellste Lieferung",
+    searchPlaceholder: "Services suchen...",
+    open: "Offen",
+    limitedSlots: "Begrenzte Plätze",
+    closed: "Geschlossen",
+    completed: "Abgeschlossen",
+    noServicesInCategory: "Keine Services in dieser Kategorie",
+    noServicesMatch: "Keine Services entsprechen deinen Filtern",
+    viewProfile: "Profil ansehen",
+  },
+
+  tutorials: {
+    description: "Anleitungen für Kreatoren, Käufer und Entwickler.",
+    noTutorials: "Noch keine Tutorials veröffentlicht.",
+  },
+
+  site: {
+    title: "PawVault - Creator-Marktplatz für digitale Produkte",
+    description: "Entdecken und kaufen Sie großartige digitale Produkte von talentierten Kreatoren weltweit. 3D-Modelle, Texturen, Plugins und mehr.",
+    skipToContent: "Zum Hauptinhalt springen",
   }
 }

@@ -2,6 +2,15 @@ import type { TranslationKeys } from "./en"
 
 export const fr: TranslationKeys = {
   common: {
+    clear: "Effacer",
+    creator: "créateur",
+    follower: "abonné",
+    member: "Membre",
+    online: "En ligne",
+    posts: "publications",
+    readGuide: "Lire le guide",
+    verified: "Vérifié",
+    locale: "fr-FR",
     ok: "OK",
     cancel: "Annuler",
     save: "Sauvegarder",
@@ -66,6 +75,9 @@ export const fr: TranslationKeys = {
     max: "Max",
   },
   navigation: {
+    community: "Communauté",
+    settings: "Paramètres",
+    tutorials: "Tutoriels",
     browse: "Parcourir",
     categories: "Catégories",
     creators: "Créateurs",
@@ -132,6 +144,10 @@ export const fr: TranslationKeys = {
     backToSignIn: "Retour à la connexion",
   },
   marketplace: {
+    search: "Rechercher",
+    noCategoriesFound: "Aucune catégorie pour le moment. Revenez bientôt.",
+    noCreatorsFound: "Aucun créateur n'a encore rejoint la plateforme. Revenez bientôt.",
+    publishedProducts: "produit publié",
     browseMarketplace: "Parcourir le marché",
     coolCreators: "Des créateurs cool.",
     coolDigitalThings: "Des choses numériques cool.",
@@ -834,6 +850,8 @@ export const fr: TranslationKeys = {
     },
 
     cookiePolicy: {
+      lastUpdated: "Dernière mise à jour : 7 juillet 2026",
+      backToHome: "Retour à l'accueil",
       title: "Politique des cookies",
       description: "Comment nous utilisons les cookies et les technologies de suivi.",
       overview: {
@@ -1083,5 +1101,45 @@ export const fr: TranslationKeys = {
     posts: "posts",
     member: "Membre",
     view: "Voir"
+  },
+
+  services: {
+    creatorServicesHub: "Espace services des créateurs",
+    findTalentedCreators: "Trouvez des créateurs talentueux pour votre prochain projet. Des commandes d'avatars au développement sur mesure.",
+    allServices: "Tous les services",
+    avatarCommissions: "Commandes d'avatars",
+    artCommissions: "Commandes d'illustrations",
+    "3dServices": "Services 3D",
+    development: "Développement",
+    videoEditing: "Montage vidéo",
+    categories: "Catégories",
+    filters: "Filtres",
+    availability: "Disponibilité",
+    sortBy: "Trier par",
+    featuredFirst: "Mis en avant d'abord",
+    highestRated: "Les mieux notés",
+    mostReviews: "Plus d'avis",
+    priceLowToHigh: "Prix : croissant",
+    priceHighToLow: "Prix : décroissant",
+    fastestTurnaround: "Livraison la plus rapide",
+    searchPlaceholder: "Rechercher des services...",
+    open: "Disponible",
+    limitedSlots: "Places limitées",
+    closed: "Fermé",
+    completed: "Terminé",
+    noServicesInCategory: "Aucun service dans cette catégorie",
+    noServicesMatch: "Aucun service ne correspond à vos filtres",
+    viewProfile: "Voir le profil",
+  },
+
+  tutorials: {
+    description: "Guides pour les créateurs, les acheteurs et les développeurs.",
+    noTutorials: "Aucun tutoriel publié pour le moment.",
+  },
+
+  site: {
+    title: "PawVault - Place de marché de créateurs pour produits numériques",
+    description: "Découvrez et achetez des produits numériques de créateurs talentueux du monde entier. Modèles 3D, textures, plugins et plus encore.",
+    skipToContent: "Aller au contenu principal",
   }
 }

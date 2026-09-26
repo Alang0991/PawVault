@@ -10,6 +10,7 @@ import { CurrencyProvider } from "@/components/providers/currency-provider"
 import { SeasonalEffects } from "@/components/seasonal-effects"
 import { getUserLocale, getEnabledLanguageCodes } from "@/lib/i18n/server"
 import { loadTranslations } from "@/lib/i18n/translation-loader"
+import { en } from "@/lib/i18n/translations/en"
 import { getActiveSeasonalThemeFromDb } from "@/lib/seasonal-themes-server"
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n/localization"
 import type { SeasonalThemeConfig } from "@/lib/seasonal-themes"
@@ -21,9 +22,6 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "PawVault - Creator Marketplace for Digital Products",
-  description:
-    "Discover and buy amazing digital products from talented creators worldwide. 3D models, textures, plugins, and more.",
   icons: {
     icon: "/icons/IMG_1275.png",
     shortcut: "/icons/IMG_1275.png",
@@ -78,9 +76,16 @@ export default async function RootLayout({
     // fall through to null
   }
 
+  const skipToContent = initialLocale.translations.site?.skipToContent ?? en.site.skipToContent
+
   return (
     <html lang={initialLocale.locale} className={inter.variable}>
       <head>
+        <title>{initialLocale.translations.site?.title ?? en.site.title}</title>
+        <meta
+          name="description"
+          content={initialLocale.translations.site?.description ?? en.site.description}
+        />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {initialLocale.accentColor && (
           <script
@@ -133,7 +138,7 @@ export default async function RootLayout({
                   href="#main-content"
                   className="sr-only focus:not-sr-only absolute z-50 top-4 left-4 bg-accent text-accent-foreground px-4 py-2 rounded-md focus-ring"
                 >
-                  Skip to main content
+                  {skipToContent}
                 </a>
                 <SeasonalEffects serverTheme={initialSeasonalTheme} />
                 <Header />

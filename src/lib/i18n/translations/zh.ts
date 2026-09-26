@@ -2,6 +2,15 @@ import type { TranslationKeys } from "./en"
 
 export const zh: TranslationKeys = {
   common: {
+    clear: "清除",
+    creator: "创作者",
+    follower: "粉丝",
+    member: "会员",
+    online: "在线",
+    posts: "帖子",
+    readGuide: "阅读指南",
+    verified: "已验证",
+    locale: "zh-CN",
     ok: "确定",
     cancel: "取消",
     save: "保存",
@@ -66,6 +75,9 @@ export const zh: TranslationKeys = {
     max: "最大",
   },
   navigation: {
+    community: "社区",
+    settings: "设置",
+    tutorials: "教程",
     browse: "浏览",
     categories: "分类",
     creators: "创作者",
@@ -132,6 +144,10 @@ export const zh: TranslationKeys = {
     backToSignIn: "返回登录",
   },
   marketplace: {
+    search: "搜索",
+    noCategoriesFound: "暂无分类，敬请期待",
+    noCreatorsFound: "暂无创作者加入，敬请期待",
+    publishedProducts: "已发布商品",
     browseMarketplace: "浏览市场",
     coolCreators: "酷炫的创作者。",
     coolDigitalThings: "酷炫的数字产品。",
@@ -834,6 +850,8 @@ export const zh: TranslationKeys = {
     },
 
     cookiePolicy: {
+      lastUpdated: "最后更新：2026年7月7日",
+      backToHome: "返回首页",
       title: "Cookie 政策",
       description: "我们如何使用 Cookie 和追踪技术。",
       overview: {
@@ -1083,5 +1101,45 @@ export const zh: TranslationKeys = {
     posts: "帖子",
     member: "成员",
     view: "查看"
+  },
+
+  services: {
+    creatorServicesHub: "创作者服务中心",
+    findTalentedCreators: "为你的下一个项目寻找优秀创作者，从头像委托到定制开发一应俱全。",
+    allServices: "全部服务",
+    avatarCommissions: "头像委托",
+    artCommissions: "插画委托",
+    "3dServices": "3D 服务",
+    development: "开发",
+    videoEditing: "视频剪辑",
+    categories: "分类",
+    filters: "筛选",
+    availability: "接单状态",
+    sortBy: "排序方式",
+    featuredFirst: "精选优先",
+    highestRated: "评分最高",
+    mostReviews: "评价最多",
+    priceLowToHigh: "价格：从低到高",
+    priceHighToLow: "价格：从高到低",
+    fastestTurnaround: "交付最快",
+    searchPlaceholder: "搜索服务...",
+    open: "可接单",
+    limitedSlots: "名额有限",
+    closed: "已关闭",
+    completed: "已完成",
+    noServicesInCategory: "该分类暂无服务",
+    noServicesMatch: "没有符合筛选条件的服务",
+    viewProfile: "查看主页",
+  },
+
+  tutorials: {
+    description: "面向创作者、买家和开发者的指南。",
+    noTutorials: "暂无已发布的教程。",
+  },
+
+  site: {
+    title: "PawVault - 面向数字产品的创作者市场",
+    description: "发现并购买来自世界各地优秀创作者的精彩数字产品。3D 模型、贴图、插件等。",
+    skipToContent: "跳到主要内容",
   }
 }

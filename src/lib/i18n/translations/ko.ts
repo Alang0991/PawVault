@@ -2,6 +2,15 @@ import type { TranslationKeys } from "./en"
 
 export const ko: TranslationKeys = {
   common: {
+    clear: "지우기",
+    creator: "창작자",
+    follower: "팔로워",
+    member: "멤버",
+    online: "온라인",
+    posts: "게시물",
+    readGuide: "가이드 읽기",
+    verified: "인증됨",
+    locale: "ko-KR",
     ok: "확인",
     cancel: "취소",
     save: "저장",
@@ -66,6 +75,9 @@ export const ko: TranslationKeys = {
     max: "최대",
   },
   navigation: {
+    community: "커뮤니티",
+    settings: "설정",
+    tutorials: "튜토리얼",
     browse: "찾아보기",
     categories: "카테고리",
     creators: "크리에이터",
@@ -132,6 +144,10 @@ export const ko: TranslationKeys = {
     backToSignIn: "로그인으로 돌아가기",
   },
 marketplace: {
+  search: "검색",
+  noCategoriesFound: "아직 카테고리가 없습니다. 곧 확인해 주세요",
+  noCreatorsFound: "아직 가입한 창작자가 없습니다. 곧 확인해 주세요",
+  publishedProducts: "게시된 상품",
     browseMarketplace: "마켓 둘러보기",
     coolCreators: "멋진 크리에이터들.",
     coolDigitalThings: "멋진 디지털 물품들.",
@@ -834,6 +850,8 @@ marketplace: {
     },
 
     cookiePolicy: {
+      lastUpdated: "마지막 업데이트: 2026년 7월 7일",
+      backToHome: "홈으로 돌아가기",
       title: "쿠키 정책",
       description: "쿠키 및 추적 기술 사용 방법.",
       overview: {
@@ -1083,5 +1101,45 @@ marketplace: {
     posts: "게시물",
     member: "멤버",
     view: "보기"
+  },
+
+  services: {
+    creatorServicesHub: "크리에이터 서비스 허브",
+    findTalentedCreators: "다음 프로젝트에 맞는 뛰어난 크리에이터를 찾아보세요. 아바타 의뢰부터 맞춤 개발까지 지원합니다.",
+    allServices: "전체 서비스",
+    avatarCommissions: "아바타 의뢰",
+    artCommissions: "일러스트 의뢰",
+    "3dServices": "3D 서비스",
+    development: "개발",
+    videoEditing: "영상 편집",
+    categories: "카테고리",
+    filters: "필터",
+    availability: "가능 여부",
+    sortBy: "정렬 기준",
+    featuredFirst: "추천순",
+    highestRated: "평점 높은순",
+    mostReviews: "리뷰 많은순",
+    priceLowToHigh: "가격: 낮은 순",
+    priceHighToLow: "가격: 높은 순",
+    fastestTurnaround: "가장 빠른 납품",
+    searchPlaceholder: "서비스 검색...",
+    open: "가능",
+    limitedSlots: "남은 자리 제한",
+    closed: "마감",
+    completed: "완료",
+    noServicesInCategory: "이 카테고리에는 서비스가 없습니다",
+    noServicesMatch: "필터와 일치하는 서비스가 없습니다",
+    viewProfile: "프로필 보기",
+  },
+
+  tutorials: {
+    description: "크리에이터, 구매자, 개발자를 위한 안내.",
+    noTutorials: "아직 게시된 튜토리얼이 없습니다.",
+  },
+
+  site: {
+    title: "PawVault - 디지털 제품 크리에이터 마켓플레이스",
+    description: "전 세계 유능한 크리에이터의 디지털 제품을 만나보세요. 3D 모델, 텍스처, 플러그인 등.",
+    skipToContent: "본문으로 건너뛰기",
   }
 }

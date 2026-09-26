@@ -2,6 +2,15 @@ import type { TranslationKeys } from "./en"
 
 export const es: TranslationKeys = {
   common: {
+    clear: "Limpiar",
+    creator: "creador",
+    follower: "seguidor",
+    member: "Miembro",
+    online: "En línea",
+    posts: "publicaciones",
+    readGuide: "Leer la guía",
+    verified: "Verificado",
+    locale: "es-ES",
     ok: "Aceptar",
     cancel: "Cancelar",
     save: "Guardar",
@@ -67,6 +76,9 @@ export const es: TranslationKeys = {
   },
 
   navigation: {
+    community: "Comunidad",
+    settings: "Ajustes",
+    tutorials: "Tutoriales",
     browse: "Explorar",
     categories: "Categorías",
     creators: "Creadores",
@@ -135,6 +147,10 @@ export const es: TranslationKeys = {
   },
 
 marketplace: {
+  search: "Buscar",
+  noCategoriesFound: "Aún no hay categorías. Vuelve pronto.",
+  noCreatorsFound: "Aún no se han unido creadores. Vuelve pronto.",
+  publishedProducts: "producto publicado",
     browseMarketplace: "Explorar marketplace",
     coolCreators: "Creatores geniales.",
     coolDigitalThings: "Cosas digitales geniales.",
@@ -846,6 +862,8 @@ marketplace: {
     },
 
     cookiePolicy: {
+      lastUpdated: "Última actualización: 7 de julio de 2026",
+      backToHome: "Volver al inicio",
       title: "Política de Cookies",
       description: "Cómo usamos cookies y tecnologías de rastreo.",
       overview: {
@@ -1095,5 +1113,45 @@ marketplace: {
     posts: "publicaciones",
     member: "Miembro",
     view: "Ver"
+  },
+
+  services: {
+    creatorServicesHub: "Centro de servicios de creadores",
+    findTalentedCreators: "Encuentra creadores talentosos para tu próximo proyecto. Desde encargos de avatares hasta desarrollo a medida.",
+    allServices: "Todos los servicios",
+    avatarCommissions: "Encargos de avatares",
+    artCommissions: "Encargos de ilustración",
+    "3dServices": "Servicios 3D",
+    development: "Desarrollo",
+    videoEditing: "Edición de vídeo",
+    categories: "Categorías",
+    filters: "Filtros",
+    availability: "Disponibilidad",
+    sortBy: "Ordenar por",
+    featuredFirst: "Destacados primero",
+    highestRated: "Mejor valorados",
+    mostReviews: "Más reseñas",
+    priceLowToHigh: "Precio: de menor a mayor",
+    priceHighToLow: "Precio: de mayor a menor",
+    fastestTurnaround: "Entrega más rápida",
+    searchPlaceholder: "Buscar servicios...",
+    open: "Disponible",
+    limitedSlots: "Plazas limitadas",
+    closed: "Cerrado",
+    completed: "Completado",
+    noServicesInCategory: "No hay servicios en esta categoría",
+    noServicesMatch: "Ningún servicio coincide con tus filtros",
+    viewProfile: "Ver perfil",
+  },
+
+  tutorials: {
+    description: "Guías para creadores, compradores y desarrolladores.",
+    noTutorials: "Todavía no hay tutoriales publicados.",
+  },
+
+  site: {
+    title: "PawVault - Mercado de creadores para productos digitales",
+    description: "Descubre y compra productos digitales increíbles de creadores talentosos de todo el mundo. Modelos 3D, texturas, plugins y mucho más.",
+    skipToContent: "Saltar al contenido principal",
   }
 }

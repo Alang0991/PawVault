@@ -62,6 +62,15 @@ export const en = {
     system: "System",
     min: "Min",
     max: "Max",
+    clear: "Clear",
+    creator: "creator",
+    follower: "follower",
+    member: "Member",
+    online: "Online",
+    posts: "posts",
+    readGuide: "Read guide",
+    verified: "Verified",
+    locale: "en-US",
   },
 
   navigation: {
@@ -97,6 +106,9 @@ export const en = {
     language: "Language",
     currency: "Currency",
     theme: "Theme",
+    community: "Community",
+    settings: "Settings",
+    tutorials: "Tutorials",
   },
 
   auth: {
@@ -137,6 +149,10 @@ export const en = {
     coolCreators: "Cool creators.",
     coolDigitalThings: "Cool digital things.",
     searchPlaceholder: "Search for products, creators, tags...",
+    search: "Search",
+    noCategoriesFound: "No categories yet. Check back soon.",
+    noCreatorsFound: "No creators have joined yet. Check back soon.",
+    publishedProducts: "published product",
     noProductsFound: "No products found",
     noResults: "No results found",
     tryDifferentSearch: "Try a different search term",
@@ -843,9 +859,11 @@ export const en = {
       backToHome: "Back to home"
     },
 
-    cookiePolicy: {
-      title: "Cookie Policy",
-      description: "How we use cookies and tracking technologies.",
+      cookiePolicy: {
+        title: "Cookie Policy",
+        lastUpdated: "Last updated: July 7, 2026",
+        backToHome: "Back to Home",
+        description: "How we use cookies and tracking technologies.",
       overview: {
         heading: "Overview",
         text: "This article is being written. Please check back soon for detailed content."
@@ -1093,6 +1111,46 @@ export const en = {
     posts: "posts",
     member: "Member",
     view: "View"
+  },
+
+  services: {
+    creatorServicesHub: "Creator Services Hub",
+    findTalentedCreators: "Find talented creators for your next project. From avatar commissions to custom development.",
+    allServices: "All Services",
+    avatarCommissions: "Avatar Commissions",
+    artCommissions: "Art Commissions",
+    "3dServices": "3D Services",
+    development: "Development",
+    videoEditing: "Video Editing",
+    categories: "Categories",
+    filters: "Filters",
+    availability: "Availability",
+    sortBy: "Sort by",
+    featuredFirst: "Featured First",
+    highestRated: "Highest Rated",
+    mostReviews: "Most Reviews",
+    priceLowToHigh: "Price: Low to High",
+    priceHighToLow: "Price: High to Low",
+    fastestTurnaround: "Fastest Turnaround",
+    searchPlaceholder: "Search services...",
+    open: "Open",
+    limitedSlots: "Limited Slots",
+    closed: "Closed",
+    completed: "Completed",
+    noServicesInCategory: "No services in this category",
+    noServicesMatch: "No services match your filters",
+    viewProfile: "View Profile"
+  },
+
+  tutorials: {
+    description: "Guides for creators, buyers, and developers.",
+    noTutorials: "No tutorials published yet."
+  },
+
+  site: {
+    title: "PawVault - Creator Marketplace for Digital Products",
+    description: "Discover and buy amazing digital products from talented creators worldwide. 3D models, textures, plugins, and more.",
+    skipToContent: "Skip to main content",
   }
 }
 
