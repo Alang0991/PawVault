@@ -33,7 +33,7 @@ export function HelpSearch({ articles }: { articles: HelpArticle[] }) {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={t("help.searchPlaceholder")}
+          placeholder={(t("help.searchPlaceholder") as string)}
           className="w-full rounded-lg border bg-background py-2.5 pl-10 pr-4 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-ring"
         />
         {query && (
@@ -41,7 +41,7 @@ export function HelpSearch({ articles }: { articles: HelpArticle[] }) {
             type="button"
             onClick={() => setQuery("")}
             className="absolute right-2 top-2.5 rounded p-1 text-text-secondary hover:text-text-primary"
-            aria-label={t("common.clear")}
+            aria-label={(t("common.clear") as string)}
           >
             <X className="h-4 w-4" />
           </button>
@@ -53,7 +53,7 @@ export function HelpSearch({ articles }: { articles: HelpArticle[] }) {
           {results.length === 0 ? (
             <div className="p-4 text-sm text-text-secondary">
               <FileText className="h-4 w-4 inline-block mr-2" />
-              {t("help.noResults")}
+              {t("help.noResults") as string}
             </div>
           ) : (
             <ul className="py-1">

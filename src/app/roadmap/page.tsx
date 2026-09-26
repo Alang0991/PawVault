@@ -90,15 +90,15 @@ export default function RoadmapPage() {
   )
 
   const statusLabels: Record<string, string> = {
-    PLANNED: t("roadmap.status.planned"),
-    IN_PROGRESS: t("roadmap.status.inProgress"),
-    COMPLETED: t("roadmap.status.completed"),
-    ON_HOLD: t("roadmap.status.onHold"),
+    PLANNED: t("roadmap.status.planned") as string,
+    IN_PROGRESS: t("roadmap.status.inProgress") as string,
+    COMPLETED: t("roadmap.status.completed") as string,
+    ON_HOLD: t("roadmap.status.onHold") as string,
   }
 
   const priorityLabels: Record<string, string> = {
-    HIGH: t("roadmap.priority.high"),
-    CRITICAL: t("roadmap.priority.critical"),
+    HIGH: t("roadmap.priority.high") as string,
+    CRITICAL: t("roadmap.priority.critical") as string,
   }
 
   if (loading) {

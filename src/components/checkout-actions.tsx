@@ -56,7 +56,7 @@ export function CheckoutActions({ cartId, paymentCurrency }: CheckoutActionsProp
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || t("checkout.checkoutError"))
+        setError(data.error || (t("checkout.checkoutError") as string) || "Checkout failed")
         return
       }
 
@@ -74,7 +74,7 @@ export function CheckoutActions({ cartId, paymentCurrency }: CheckoutActionsProp
         setMultiOrders(data.orders)
       }
     } catch {
-      setError(t("errors.somethingWentWrong"))
+      setError((t("errors.somethingWentWrong") as string) || "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -84,7 +84,7 @@ export function CheckoutActions({ cartId, paymentCurrency }: CheckoutActionsProp
     return (
       <div className="space-y-3">
         <p className="text-sm text-text-secondary">
-          {t("checkout.multiCreatorMessage")}
+          {t("checkout.multiCreatorMessage") as string}
         </p>
         {multiOrders.map((order) => (
           <Button
@@ -94,11 +94,11 @@ export function CheckoutActions({ cartId, paymentCurrency }: CheckoutActionsProp
             onClick={() => (window.location.href = order.checkoutUrl)}
           >
             <span>
-              {t("checkout.pay", { amount: formatOrderCurrency(order.total, order.currency || "USD") })}
+              {t("checkout.pay", { amount: formatOrderCurrency(order.total, order.currency || "USD") }) as string}
             </span>
             {paymentCurrency && order.currency !== paymentCurrency && (
               <span className="text-xs text-muted-foreground">
-                ({t("checkout.paymentIn", { currency: order.currency || "USD" })})
+                ({t("checkout.paymentIn", { currency: order.currency || "USD" }) as string})
               </span>
             )}
             <ExternalLink className="h-4 w-4" />
@@ -112,7 +112,7 @@ export function CheckoutActions({ cartId, paymentCurrency }: CheckoutActionsProp
     <div className="space-y-4">
       <Input
         type="text"
-        placeholder={t("checkout.couponPlaceholder")}
+        placeholder={(t("checkout.couponPlaceholder") as string)}
         value={coupon}
         onChange={(e) => setCoupon(e.target.value.toUpperCase())}
         maxLength={20}
@@ -120,11 +120,11 @@ export function CheckoutActions({ cartId, paymentCurrency }: CheckoutActionsProp
 
       <Button className="w-full" size="lg" onClick={startCheckout} disabled={loading}>
         {loading ? (
-          t("checkout.processing")
+          (t("checkout.processing") as string)
         ) : (
           <>
             <CreditCard className="h-4 w-4 mr-2" />
-            {t("checkout.completePurchase")}
+            {(t("checkout.completePurchase") as string)}
           </>
         )}
       </Button>

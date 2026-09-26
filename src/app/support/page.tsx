@@ -46,10 +46,10 @@ export default function SupportPage() {
           const data = await res.json()
           setTickets(data.tickets || [])
         } else {
-          setError(t("support.error"))
+          setError((t("support.error") as string) || "Error loading tickets")
         }
       } catch {
-        setError(t("support.error"))
+        setError((t("support.error") as string) || "Error loading tickets")
       } finally {
         setLoading(false)
       }
@@ -96,31 +96,31 @@ export default function SupportPage() {
     }
   }
 
-  const tabLabels = {
-    all: t("support.tabs.all"),
-    open: t("support.tabs.open"),
-    waiting: t("support.tabs.waiting"),
-    resolved: t("support.tabs.resolved"),
+  const tabLabels: Record<string, string> = {
+    all: t("support.tabs.all") as string,
+    open: t("support.tabs.open") as string,
+    waiting: t("support.tabs.waiting") as string,
+    resolved: t("support.tabs.resolved") as string,
   }
 
   const categoryLabels: Record<string, string> = {
-    billing: t("support.categories.billing"),
-    technical: t("support.categories.technical"),
-    account: t("support.categories.account"),
-    legal: t("support.categories.legal"),
-    other: t("support.categories.other"),
+    billing: t("support.categories.billing") as string,
+    technical: t("support.categories.technical") as string,
+    account: t("support.categories.account") as string,
+    legal: t("support.categories.legal") as string,
+    other: t("support.categories.other") as string,
   }
 
   const statusLabels: Record<string, string> = {
-    OPEN: t("support.status.open"),
-    WAITING: t("support.status.waiting"),
-    RESOLVED: t("support.status.resolved"),
+    OPEN: t("support.status.open") as string,
+    WAITING: t("support.status.waiting") as string,
+    RESOLVED: t("support.status.resolved") as string,
   }
 
   const priorityLabels: Record<string, string> = {
-    HIGH: t("support.priority.high"),
-    MEDIUM: t("support.priority.medium"),
-    LOW: t("support.priority.low"),
+    HIGH: t("support.priority.high") as string,
+    MEDIUM: t("support.priority.medium") as string,
+    LOW: t("support.priority.low") as string,
   }
 
   return (
@@ -172,7 +172,7 @@ export default function SupportPage() {
                       onChange={(e) =>
                         setForm({ ...form, subject: e.target.value })
                       }
-                      placeholder={t("support.subjectPlaceholder")}
+                      placeholder={(t("support.subjectPlaceholder") as string)}
                       required
                       minLength={3}
                       maxLength={200}
@@ -185,7 +185,7 @@ export default function SupportPage() {
                       onChange={(e) =>
                         setForm({ ...form, message: e.target.value })
                       }
-                      placeholder={t("support.messagePlaceholder")}
+                      placeholder={(t("support.messagePlaceholder") as string)}
                       required
                       minLength={10}
                       maxLength={5000}
@@ -194,14 +194,14 @@ export default function SupportPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit" disabled={submitting}>
-                      {submitting ? t("support.submitting") : t("support.submit")}
+                      {submitting ? (t("support.submitting") as string) : (t("support.submit") as string)}
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setShowForm(false)}
                     >
-                      {t("support.cancel")}
+                      {(t("support.cancel") as string)}
                     </Button>
                   </div>
                 </form>
@@ -219,21 +219,21 @@ export default function SupportPage() {
           </Tabs>
 
           {loading ? (
-            <div className="text-center py-12 text-text-muted">{t("support.loading")}</div>
+            <div className="text-center py-12 text-text-muted">{(t("support.loading") as string)}</div>
           ) : error ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <AlertCircle className="h-10 w-10 mx-auto mb-4 text-destructive" />
                 <p className="text-text-secondary">{error}</p>
-                <p className="text-sm text-text-muted mt-1">{t("support.retry")}</p>
+                <p className="text-sm text-text-muted mt-1">{(t("support.retry") as string)}</p>
               </CardContent>
             </Card>
           ) : filteredTickets.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <MessageSquare className="h-10 w-10 mx-auto mb-4 text-text-muted" />
-                <p className="text-text-secondary">{t("support.noTickets")}</p>
-                <p className="text-sm text-text-muted mt-1">{t("support.createTicketHint")}</p>
+                <p className="text-text-secondary">{(t("support.noTickets") as string)}</p>
+                <p className="text-sm text-text-muted mt-1">{(t("support.createTicketHint") as string)}</p>
               </CardContent>
             </Card>
           ) : (
@@ -269,13 +269,13 @@ export default function SupportPage() {
                         </div>
                         <p className="text-sm text-text-muted">
                           {new Date(ticket.createdAt).toLocaleDateString()} ·{" "}
-                          {ticket._count.messages} {t("support.messages")}
+                          {ticket._count.messages} {(t("support.messages") as string)}
                           {ticket._count.messages !== 1 ? "s" : ""}
                         </p>
                       </div>
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/support/${ticket.id}`}>
-                          {t("support.view")} <ArrowRight className="h-4 w-4 ml-1" />
+                          {(t("support.view") as string)} <ArrowRight className="h-4 w-4 ml-1" />
                         </Link>
                       </Button>
                     </div>

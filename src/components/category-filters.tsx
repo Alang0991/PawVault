@@ -97,11 +97,11 @@ export function CategoryFilters({
       <CardHeader className="flex flex-row items-center justify-between py-3">
         <CardTitle className="text-sm flex items-center gap-1.5">
           <Filter className="h-3.5 w-3.5" />
-          {t("marketplace.filters")}
+          {(t("marketplace.filters") as string)}
         </CardTitle>
         {activeFilters && showClear && (
           <Link href="/browse" className="text-xs text-sale hover:underline">
-            {t("marketplace.resetFilters")}
+            {(t("marketplace.resetFilters") as string)}
           </Link>
         )}
       </CardHeader>
@@ -110,23 +110,23 @@ export function CategoryFilters({
           <input type="hidden" name="sort" value={searchParams.sort || "newest"} />
 
           <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">{t("marketplace.search")}</Label>
+            <Label className="text-xs text-text-muted">{(t("marketplace.search") as string)}</Label>
             <input
               name="q"
               defaultValue={searchParams.q || ""}
-              placeholder={t("marketplace.searchPlaceholder")}
+              placeholder={(t("marketplace.searchPlaceholder") as string)}
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">{t("marketplace.category")}</Label>
+            <Label className="text-xs text-text-muted">{(t("marketplace.category") as string)}</Label>
             <select
               name="category"
               defaultValue={searchParams.category || ""}
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
             >
-              <option value="">{t("marketplace.allCategories")}</option>
+              <option value="">{t("marketplace.allCategories") as string}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.slug}>
                   {c.name}
@@ -137,12 +137,12 @@ export function CategoryFilters({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">{t("marketplace.priceRange")}</Label>
+            <Label className="text-xs text-text-muted">{(t("marketplace.priceRange") as string)}</Label>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 name="priceMin"
-                placeholder={t("common.min")}
+                placeholder={(t("common.min") as string)}
                 defaultValue={searchParams.priceMin || ""}
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
               />
@@ -150,7 +150,7 @@ export function CategoryFilters({
               <input
                 type="number"
                 name="priceMax"
-                placeholder={t("common.max")}
+                placeholder={(t("common.max") as string)}
                 defaultValue={searchParams.priceMax || ""}
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
               />
@@ -158,16 +158,16 @@ export function CategoryFilters({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">{t("marketplace.rating")}</Label>
+            <Label className="text-xs text-text-muted">{(t("marketplace.rating") as string)}</Label>
             <select
               name="rating"
               defaultValue={searchParams.rating || ""}
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
             >
-              <option value="">{t("marketplace.any")}</option>
-              <option value="3">{t("marketplace.threePlus")}</option>
-              <option value="4">{t("marketplace.fourPlus")}</option>
-              <option value="4.5">{t("marketplace.fourPointFivePlus")}</option>
+              <option value="">{t("marketplace.any") as string}</option>
+              <option value="3">{t("marketplace.threePlus") as string}</option>
+              <option value="4">{t("marketplace.fourPlus") as string}</option>
+              <option value="4.5">{t("marketplace.fourPointFivePlus") as string}</option>
             </select>
           </div>
 
@@ -180,7 +180,7 @@ export function CategoryFilters({
                 defaultChecked={searchParams.free === "true"}
                 className="accent-accent"
               />
-              {t("marketplace.free")}
+              {t("marketplace.free") as string}
             </label>
             <label className="flex items-center gap-1.5 text-xs text-text-secondary">
               <input
@@ -190,7 +190,7 @@ export function CategoryFilters({
                 defaultChecked={searchParams.onSale === "true"}
                 className="accent-accent"
               />
-              {t("marketplace.onSale")}
+              {t("marketplace.onSale") as string}
             </label>
           </div>
 
@@ -198,7 +198,7 @@ export function CategoryFilters({
             <div className="space-y-1.5">
               <Label className="text-xs text-text-muted flex items-center gap-1">
                 <Tag className="h-3 w-3" />
-                {t("marketplace.tags")}
+                {(t("marketplace.tags") as string)}
               </Label>
               <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
                 {popularTags.map((t) => {
@@ -230,7 +230,7 @@ export function CategoryFilters({
           )}
 
           <Button type="submit" size="sm" className="w-full">
-            {t("marketplace.applyFilters")}
+            {(t("marketplace.applyFilters") as string)}
           </Button>
         </form>
       </CardContent>

@@ -1,12 +1,14 @@
 import Link from "next/link"
 import { getLocaleFromRequest, loadTranslationsForLocale } from "@/lib/i18n/server-locale"
-import { t } from "@/lib/i18n/translation-loader"
+import { t as serverT } from "@/lib/i18n/translation-loader"
 
 export const dynamic = "force-dynamic"
 
 export default async function MarketplaceGuidelinesPage() {
   const locale = await getLocaleFromRequest()
   const translations = await loadTranslationsForLocale(locale)
+
+  const t = (key: string, params?: Record<string, unknown>) => serverT(translations, key, params)
 
   return (
     <div className="min-h-screen py-12">

@@ -140,7 +140,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
             variant="ghost"
             size="sm"
             onClick={removeItem}
-            aria-label={t("marketplace.removeFromCart")}
+            aria-label={(t("marketplace.removeFromCart") as string)}
             disabled={busy}
           >
             <Trash2 className="h-4 w-4 text-text-muted hover:text-error" />
@@ -151,7 +151,7 @@ export function CartItemRow({ item }: CartItemRowProps) {
           <div className="flex items-center gap-1.5">
             {isBundleItem && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
-                {t("marketplace.bundle")}
+                {(t("marketplace.bundle") as string)}
               </span>
             )}
             <Button

@@ -32,18 +32,18 @@ export function LanguageSelector({ compact = false, showCurrency = true, showThe
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {compact ? (
-          <Button variant="ghost" size="sm" className="h-8 w-8 px-0" aria-label={t("navigation.language")}>
+          <Button variant="ghost" size="sm" className="h-8 w-8 px-0" aria-label={(t("navigation.language") as string)}>
             <Globe className="h-4 w-4" />
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" aria-label={t("navigation.language")}>
+          <Button variant="ghost" size="sm" aria-label={(t("navigation.language") as string)}>
             <Globe className="h-4 w-4 mr-2" />
             <span>{currentLanguage.flag} {currentLanguage.code.toUpperCase()}</span>
           </Button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>{t("navigation.language")}</DropdownMenuLabel>
+        <DropdownMenuLabel>{(t("navigation.language") as string)}</DropdownMenuLabel>
         {availableLanguages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
@@ -62,7 +62,7 @@ export function LanguageSelector({ compact = false, showCurrency = true, showThe
         {showCurrency && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>{t("navigation.currency")}</DropdownMenuLabel>
+            <DropdownMenuLabel>{(t("navigation.currency") as string)}</DropdownMenuLabel>
             {supportedCurrencies.map((cur) => (
               <DropdownMenuItem
                 key={cur.code}
@@ -83,24 +83,24 @@ export function LanguageSelector({ compact = false, showCurrency = true, showThe
         {showTheme && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>{t("navigation.theme")}</DropdownMenuLabel>
+            <DropdownMenuLabel>{(t("navigation.theme") as string)}</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => setTheme("light")}
               className={theme === "light" ? "bg-accent/10 font-medium" : ""}
             >
-              {t("theme.light")}
+              {t("theme.light") as string}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => setTheme("dark")}
               className={theme === "dark" ? "bg-accent/10 font-medium" : ""}
             >
-              {t("theme.dark")}
+              {t("theme.dark") as string}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => setTheme("system")}
               className={theme === "system" ? "bg-accent/10 font-medium" : ""}
             >
-              {t("theme.system")}
+              {t("theme.system") as string}
             </DropdownMenuItem>
           </>
         )}

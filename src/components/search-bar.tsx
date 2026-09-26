@@ -112,7 +112,7 @@ export function SearchBar() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder={t("marketplace.searchPlaceholder")}
+            placeholder={(t("marketplace.searchPlaceholder") as string)}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -161,7 +161,7 @@ export function SearchBar() {
             onClick={() => go(query)}
             className="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-muted border-t"
           >
-            {t("marketplace.seeAllResults", { query })}
+            {(t("marketplace.seeAllResults", { query }) as string)}
           </button>
         </div>
       )}

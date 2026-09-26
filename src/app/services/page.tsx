@@ -78,17 +78,17 @@ export default function ServicesPage() {
   const [sortBy, setSortBy] = useState("featured")
 
   const SERVICE_CATEGORIES = [
-    { id: "avatar-commissions", label: t("services.avatarCommissions") || "Avatar Commissions", icon: User, href: "/services/avatar-commissions" },
-    { id: "art-commissions", label: t("services.artCommissions") || "Art Commissions", icon: Palette, href: "/services/art-commissions" },
-    { id: "3d-services", label: t("services.3dServices") || "3D Services", icon: Box, href: "/services/3d-services" },
-    { id: "development", label: t("services.development") || "Development", icon: Code, href: "/services/development" },
-    { id: "video-editing", label: t("services.videoEditing") || "Video Editing", icon: Video, href: "/services/video-editing" },
+    { id: "avatar-commissions", label: (t("services.avatarCommissions") as string) || "Avatar Commissions", icon: User, href: "/services/avatar-commissions" },
+    { id: "art-commissions", label: (t("services.artCommissions") as string) || "Art Commissions", icon: Palette, href: "/services/art-commissions" },
+    { id: "3d-services", label: (t("services.3dServices") as string) || "3D Services", icon: Box, href: "/services/3d-services" },
+    { id: "development", label: (t("services.development") as string) || "Development", icon: Code, href: "/services/development" },
+    { id: "video-editing", label: (t("services.videoEditing") as string) || "Video Editing", icon: Video, href: "/services/video-editing" },
   ]
 
   const AVAILABILITY_BADGES = {
-    open: { variant: "default" as const, label: t("services.open") || "Open", color: "green" },
-    limited: { variant: "secondary" as const, label: t("services.limitedSlots") || "Limited Slots", color: "amber" },
-    closed: { variant: "destructive" as const, label: t("services.closed") || "Closed", color: "red" },
+    open: { variant: "default" as const, label: (t("services.open") as string) || "Open", color: "green" },
+    limited: { variant: "secondary" as const, label: (t("services.limitedSlots") as string) || "Limited Slots", color: "amber" },
+    closed: { variant: "destructive" as const, label: (t("services.closed") as string) || "Closed", color: "red" },
   }
 
   useEffect(() => {
@@ -103,11 +103,11 @@ export default function ServicesPage() {
         params.set("limit", "20")
 
         const res = await fetch(`/api/services?${params.toString()}`)
-        if (!res.ok) throw new Error(t("errors.somethingWentWrong") || "Failed to load services")
+        if (!res.ok) throw new Error((t("errors.somethingWentWrong") as string) || "Failed to load services")
         const data = await res.json()
         setProviders(data.providers || [])
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("errors.somethingWentWrong") || "Something went wrong")
+        setError(err instanceof Error ? err.message : (t("errors.somethingWentWrong") as string) || "Something went wrong")
       } finally {
         setLoading(false)
       }
@@ -126,9 +126,9 @@ export default function ServicesPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 via-violet-600 to-indigo-600 mb-6">
                 <Grid className="h-8 w-8 text-white" />
               </div>
-              <h1 className="text-4xl font-bold text-text-primary mb-4">{t("services.creatorServicesHub") || "Creator Services Hub"}</h1>
+              <h1 className="text-4xl font-bold text-text-primary mb-4">{(t("services.creatorServicesHub") as string) || "Creator Services Hub"}</h1>
               <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-                {t("services.findTalentedCreators") || "Find talented creators for your next project. From avatar commissions to custom development."}
+                {(t("services.findTalentedCreators") as string) || "Find talented creators for your next project. From avatar commissions to custom development."}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -168,7 +168,7 @@ export default function ServicesPage() {
             <aside className="lg:col-span-1 space-y-6">
               <Card>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-text-primary mb-4">{t("services.categories") || "Categories"}</h3>
+                  <h3 className="font-semibold text-text-primary mb-4">{(t("services.categories") as string) || "Categories"}</h3>
                   <div className="space-y-2">
                     {SERVICE_CATEGORIES.map((cat) => {
                       const Icon = cat.icon
@@ -193,10 +193,10 @@ export default function ServicesPage() {
 
               <Card>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-text-primary mb-4">{t("services.filters") || "Filters"}</h3>
+                  <h3 className="font-semibold text-text-primary mb-4">{(t("services.filters") as string) || "Filters"}</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-text-secondary mb-2 block">{t("services.availability") || "Availability"}</label>
+                      <label className="text-sm font-medium text-text-secondary mb-2 block">{(t("services.availability") as string) || "Availability"}</label>
                       <div className="space-y-2">
                         {Object.entries(AVAILABILITY_BADGES).map(([key, config]) => (
                           <label key={key} className="flex items-center gap-2 cursor-pointer">
@@ -229,26 +229,26 @@ export default function ServicesPage() {
                             className="sr-only peer"
                           />
                           <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:border-accent/50">
-                            <span className="text-sm text-text-secondary">{t("common.all") || "All"}</span>
+                            <span className="text-sm text-text-secondary">{(t("common.all") as string) || "All"}</span>
                           </div>
                         </label>
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-text-secondary mb-2 block">{t("services.sortBy") || "Sort by"}</label>
+                      <label className="text-sm font-medium text-text-secondary mb-2 block">{(t("services.sortBy") as string) || "Sort by"}</label>
                       <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       >
-                        <option value="featured">{t("services.featuredFirst") || "Featured First"}</option>
-                        <option value="rating">{t("services.highestRated") || "Highest Rated"}</option>
-                        <option value="reviews">{t("services.mostReviews") || "Most Reviews"}</option>
-                        <option value="price_asc">{t("services.priceLowToHigh") || "Price: Low to High"}</option>
-                        <option value="price_desc">{t("services.priceHighToLow") || "Price: High to Low"}</option>
-                        <option value="newest">{t("marketplace.sortNewest") || "Newest"}</option>
-                        <option value="turnaround">{t("services.fastestTurnaround") || "Fastest Turnaround"}</option>
+                        <option value="featured">{(t("services.featuredFirst") as string) || "Featured First"}</option>
+                        <option value="rating">{(t("services.highestRated") as string) || "Highest Rated"}</option>
+                        <option value="reviews">{(t("services.mostReviews") as string) || "Most Reviews"}</option>
+                        <option value="price_asc">{(t("services.priceLowToHigh") as string) || "Price: Low to High"}</option>
+                        <option value="price_desc">{(t("services.priceHighToLow") as string) || "Price: High to Low"}</option>
+                        <option value="newest">{(t("marketplace.sortNewest") as string) || "Newest"}</option>
+                        <option value="turnaround">{(t("services.fastestTurnaround") as string) || "Fastest Turnaround"}</option>
                       </select>
                     </div>
                   </div>
@@ -263,24 +263,24 @@ export default function ServicesPage() {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t("services.searchPlaceholder") || "Search services..."}
+                    placeholder={(t("services.searchPlaceholder") as string) || "Search services..."}
                     className="pl-9"
                   />
                 </div>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
-                  {t("services.filters") || "Filters"}
+{t("services.filters") as string || "Filters"}
                 </Button>
               </div>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                  <TabsTrigger value="all">{t("services.allServices") || "All Services"}</TabsTrigger>
-                  <TabsTrigger value="avatar-commissions">{t("services.avatarCommissions") || "Avatar Commissions"}</TabsTrigger>
-                  <TabsTrigger value="art-commissions">{t("services.artCommissions") || "Art Commissions"}</TabsTrigger>
-                  <TabsTrigger value="3d-services">{t("services.3dServices") || "3D Services"}</TabsTrigger>
-                  <TabsTrigger value="development">{t("services.development") || "Development"}</TabsTrigger>
-                  <TabsTrigger value="video-editing">{t("services.videoEditing") || "Video Editing"}</TabsTrigger>
+                  <TabsTrigger value="all">{t("services.allServices") as string || "All Services"}</TabsTrigger>
+                  <TabsTrigger value="avatar-commissions">{t("services.avatarCommissions") as string || "Avatar Commissions"}</TabsTrigger>
+                  <TabsTrigger value="art-commissions">{(t("services.artCommissions") as string) || "Art Commissions"}</TabsTrigger>
+                  <TabsTrigger value="3d-services">{(t("services.3dServices") as string) || "3D Services"}</TabsTrigger>
+                  <TabsTrigger value="development">{(t("services.development") as string) || "Development"}</TabsTrigger>
+                  <TabsTrigger value="video-editing">{(t("services.videoEditing") as string) || "Video Editing"}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="all" className="space-y-4">
@@ -288,7 +288,7 @@ export default function ServicesPage() {
                     <Card>
                       <CardContent className="p-12 text-center">
                         <Search className="h-12 w-12 mx-auto mb-4 text-text-muted" />
-                        <p className="text-text-secondary">{t("services.noServicesMatch") || "No services match your filters."}</p>
+                        <p className="text-text-secondary">{(t("services.noServicesMatch") as string) || "No services match your filters."}</p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -306,7 +306,7 @@ export default function ServicesPage() {
                       <Card>
                         <CardContent className="p-12 text-center">
                           <cat.icon className="h-12 w-12 mx-auto mb-4 text-text-muted" />
-                          <p className="text-text-secondary">{t("services.noServicesInCategory") || `No ${cat.label.toLowerCase()} available at the moment.`}</p>
+                          <p className="text-text-secondary">{(t("services.noServicesInCategory") as string) || `No ${cat.label.toLowerCase()} available at the moment.`}</p>
                         </CardContent>
                       </Card>
                     ) : (
@@ -327,7 +327,7 @@ export default function ServicesPage() {
   )
 }
 
-function ServiceCard({ provider, t }: { provider: ServiceProvider; t: (key: string) => string }) {
+function ServiceCard({ provider, t }: { provider: ServiceProvider; t: (key: string) => string | string[] }) {
   const availabilityConfig = AVAILABILITY_BADGES[provider.availability]
 
   return (
@@ -349,13 +349,13 @@ function ServiceCard({ provider, t }: { provider: ServiceProvider; t: (key: stri
               {provider.isVerified && (
                 <Badge variant="default" className="bg-green-500 text-green-foreground gap-1 shrink-0">
                   <Shield className="h-3 w-3" />
-                  {t("common.verified") || "Verified"}
+                  {t("common.verified") as string || "Verified"}
                 </Badge>
               )}
               {provider.isFeatured && (
                 <Badge variant="default" className="bg-amber-500 text-amber-foreground gap-1 shrink-0">
                   <Star className="h-3 w-3" />
-                  {t("common.featured") || "Featured"}
+                  {t("common.featured") as string || "Featured"}
                 </Badge>
               )}
             </div>
@@ -387,7 +387,7 @@ function ServiceCard({ provider, t }: { provider: ServiceProvider; t: (key: stri
           </span>
           <span className="flex items-center gap-1">
             <Box className="h-3.5 w-3.5" />
-            {provider.completedOrders} {t("services.completed") || "completed"}
+            {provider.completedOrders} {(t("services.completed") as string) || "completed"}
           </span>
         </div>
 
@@ -404,7 +404,7 @@ function ServiceCard({ provider, t }: { provider: ServiceProvider; t: (key: stri
             href={`/services/${provider.serviceType}/${provider.id}`}
             className="text-sm font-medium text-accent-foreground hover:underline flex items-center gap-1"
           >
-            {t("services.viewProfile") || "View Profile"}
+            {(t("services.viewProfile") as string) || "View Profile"}
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
