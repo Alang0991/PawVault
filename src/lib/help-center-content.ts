@@ -1149,7 +1149,7 @@ export const publishedHelpArticles: HelpArticle[] = [
     "Use a supported browser and configuration for the best PawVault experience.",
     3,
     ["browser", "compatibility", "javascript", "cookies", "mobile"],
-    ["website-troubleshooting", "account-session-troubleshooting", "technical"],
+    ["website-troubleshooting", "account-session-troubleshooting", "api"],
     [
       {
         heading: "Supported browsers",
@@ -1250,7 +1250,7 @@ export const publishedHelpArticles: HelpArticle[] = [
     "Learn how PawVault communicates service availability and report incidents.",
     4,
     ["status", "incident", "uptime", "availability", "service"],
-    ["website-troubleshooting", "support", "api"],
+    ["website-troubleshooting", "storage-download-errors", "api"],
     [
       {
         heading: "Where updates appear",
@@ -1280,6 +1280,12 @@ export function getHelpArticle(slug: string): HelpArticle | undefined {
   return publishedHelpArticles.find((article) => article.slug === slug)
 }
 
-export function getPublishedHelpArticle(slug: string): HelpArticle | null {
-  return publishedHelpArticles.find((article) => article.slug === slug) ?? null
+export function getRelatedHelpArticles(related: string[] | undefined): HelpArticle[] {
+  if (!Array.isArray(related)) {
+    return []
+  }
+  const resolved = related
+    .map((id) => getHelpArticle(id))
+    .filter((article): article is HelpArticle => Boolean(article))
+  return resolved.filter((article) => article.slug !== undefined && article.slug !== null)
 }

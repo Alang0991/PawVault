@@ -1,13 +1,10 @@
 import Link from "next/link"
 import { ArrowLeft, Clock, CalendarDays, LifeBuoy, Dot } from "lucide-react"
 import type { HelpArticle } from "@/lib/help-center-content"
-import { helpSectionLabels } from "@/lib/help-center-content"
-import { getPublishedHelpArticle } from "@/lib/help-center-content"
+import { getRelatedHelpArticles, helpSectionLabels } from "@/lib/help-center-content"
 
 export function HelpArticleView({ article }: { article: HelpArticle }) {
-  const related = (article.related || [])
-    .map((id) => getPublishedHelpArticle(id))
-    .filter((item): item is HelpArticle => item !== undefined)
+  const related = getRelatedHelpArticles(article.related)
 
   return (
     <div className="min-h-screen bg-background">

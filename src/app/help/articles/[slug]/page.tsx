@@ -10,7 +10,9 @@ import {
 export const dynamicParams = false
 
 export function generateStaticParams() {
-  return publishedHelpArticles.map((article) => ({ slug: article.slug }))
+  return publishedHelpArticles
+    .filter((article) => Boolean(article && article.slug))
+    .map((article) => ({ slug: article.slug }))
 }
 
 export function generateMetadata({
