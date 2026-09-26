@@ -64,5 +64,12 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.0",
     "typescript": "^5.3.0"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "esbuild": false,
+    "prisma": false,
+    "unrs-resolver": false
   }
 }
