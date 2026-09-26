@@ -199,7 +199,7 @@ export default function Header() {
   const { data: session, status: sessionStatus } = useSession()
   const { wishlist, cart } = useHeaderCounts()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { account, isLoading } = useAccountState()
+  const { account } = useAccountState()
   const { t } = useTranslation()
 
   const role = account?.user?.role || session?.user?.role
@@ -249,7 +249,7 @@ export default function Header() {
                 <Link href="/creator/dashboard"><Store className="h-4 w-4 mr-1.5" />{t("header.creatorHub")}</Link>
               </Button>
             )}
-            {sessionStatus === "authenticated" && !isLoading ? (
+            {sessionStatus === "authenticated" ? (
               <AccountMenu isFounder={isFounder} isStaff={isStaff} isCreator={isCreator} avatar={account?.user?.avatar || session?.user?.image || ""} initials={initials} name={displayName} email={account?.user?.email || session?.user?.email || ""} />
             ) : (
               <Button size="sm" className="hidden sm:inline-flex rounded-xl px-4" asChild><Link href="/auth/signin"><User className="h-4 w-4 mr-1.5" />{t("auth.signIn")}</Link></Button>
@@ -271,7 +271,7 @@ export default function Header() {
             {NavLinks.map((link) => link.hasDropdown ? <ServicesDropdownMobile key={link.href} onSelect={() => setIsMobileMenuOpen(false)} /> : (
               <Link key={link.href} href={link.href} className="pv-mobile-link" onClick={() => setIsMobileMenuOpen(false)}>{t(link.labelKey)}</Link>
             ))}
-            {sessionStatus === "authenticated" && !isLoading ? (
+            {sessionStatus === "authenticated" ? (
               <div className="mt-3 border-t border-border/60 pt-3 space-y-1">
                 <div className="flex items-center gap-3 px-3 py-2">
                   <Avatar className="h-10 w-10"><AvatarImage src={account?.user?.avatar || session?.user?.image || ""} alt={displayName} /><AvatarFallback>{initials}</AvatarFallback></Avatar>

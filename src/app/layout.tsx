@@ -9,6 +9,7 @@ import { I18nProvider } from "@/components/providers/i18n-provider"
 import { CurrencyProvider } from "@/components/providers/currency-provider"
 import { SeasonalEffects } from "@/components/seasonal-effects"
 import { getUserLocale, getEnabledLanguageCodes } from "@/lib/i18n/server"
+import { getServerAuthSession } from "@/lib/session"
 import { loadTranslations } from "@/lib/i18n/translation-loader"
 import { en } from "@/lib/i18n/translations/en"
 import { getActiveSeasonalThemeFromDb } from "@/lib/seasonal-themes-server"
@@ -69,6 +70,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const initialLocale = await getInitialLocale()
+  const session = await getServerAuthSession()
   let initialSeasonalTheme: SeasonalThemeConfig | null = null
   try {
     initialSeasonalTheme = await getActiveSeasonalThemeFromDb()
@@ -117,7 +119,7 @@ export default async function RootLayout({
         )}
       </head>
       <body className="font-sans">
-        <Providers>
+        <Providers session={session}>
           <I18nProvider
             initialLocale={initialLocale.locale}
             initialMessages={initialLocale.translations}
