@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useSession, signOut } from "next-auth/react"
+import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,6 +20,7 @@ import { SearchBar } from "@/components/search-bar"
 import { useHeaderCounts } from "@/components/header-counts"
 import { ROLES } from "@/lib/roles"
 import { useAccountState } from "@/hooks/use-account-state"
+import { useAuthStatus } from "@/hooks/use-auth-status"
 import { useTranslation } from "@/hooks/use-translation"
 import {
   ShoppingCart,
@@ -196,7 +197,7 @@ function ServicesDropdownMobile({ onSelect }: { onSelect: () => void }) {
 }
 
 export default function Header() {
-  const { data: session, status: sessionStatus } = useSession()
+  const { session, isAuthenticated } = useAuthStatus()
   const { wishlist, cart } = useHeaderCounts()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { account } = useAccountState()
@@ -249,7 +250,7 @@ export default function Header() {
                 <Link href="/creator/dashboard"><Store className="h-4 w-4 mr-1.5" />{t("header.creatorHub")}</Link>
               </Button>
             )}
-            {sessionStatus === "authenticated" ? (
+            {isAuthenticated ? (
               <AccountMenu isFounder={isFounder} isStaff={isStaff} isCreator={isCreator} avatar={account?.user?.avatar || session?.user?.image || ""} initials={initials} name={displayName} email={account?.user?.email || session?.user?.email || ""} />
             ) : (
               <Button size="sm" className="hidden sm:inline-flex rounded-xl px-4" asChild><Link href="/auth/signin"><User className="h-4 w-4 mr-1.5" />{t("auth.signIn")}</Link></Button>
@@ -271,7 +272,7 @@ export default function Header() {
             {NavLinks.map((link) => link.hasDropdown ? <ServicesDropdownMobile key={link.href} onSelect={() => setIsMobileMenuOpen(false)} /> : (
               <Link key={link.href} href={link.href} className="pv-mobile-link" onClick={() => setIsMobileMenuOpen(false)}>{t(link.labelKey)}</Link>
             ))}
-            {sessionStatus === "authenticated" ? (
+            {isAuthenticated ? (
               <div className="mt-3 border-t border-border/60 pt-3 space-y-1">
                 <div className="flex items-center gap-3 px-3 py-2">
                   <Avatar className="h-10 w-10"><AvatarImage src={account?.user?.avatar || session?.user?.image || ""} alt={displayName} /><AvatarFallback>{initials}</AvatarFallback></Avatar>
