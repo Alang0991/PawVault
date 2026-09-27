@@ -20,7 +20,10 @@ export async function GET() {
         _count: {
           select: {
             products: {
-              where: { isPublished: true },
+              where: {
+                isPublished: true,
+                creator: { isInternal: false },
+              },
             },
           },
         },

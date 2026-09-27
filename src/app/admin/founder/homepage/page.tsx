@@ -15,14 +15,16 @@ export const dynamic = 'force-dynamic'
 
 const SECTION_TYPES = [
   { value: 'hero', label: 'Hero Banner', description: 'Main hero section with CTA buttons' },
-  { value: 'featuredProducts', label: 'Featured Products', description: 'Curated featured products grid' },
-  { value: 'staffPicks', label: 'Staff Picks', description: 'Staff-curated product selections' },
+  { value: 'trendingProducts', label: 'Trending Products', description: 'Calculated from recent sales, downloads, favourites and views' },
+  { value: 'newDrops', label: 'New Releases', description: 'Recently published products' },
+  { value: 'popularCreators', label: 'Popular Creators', description: 'Creators ranked by sales and followers' },
+  { value: 'commissions', label: 'Commissions', description: 'Commissions call-to-action band' },
+  { value: 'featuredProducts', label: 'Featured Products', description: 'Creator-flagged products grid' },
   { value: 'followingFeed', label: 'Following Feed', description: 'Products from followed creators (logged-in users)' },
-  { value: 'trendingProducts', label: 'Trending Products', description: 'Popular products by favorites/views' },
-  { value: 'newDrops', label: 'New Drops', description: 'Recently published products' },
   { value: 'categories', label: 'Categories', description: 'Shop by category grid' },
-  { value: 'creatorSpotlight', label: 'Creator Spotlight', description: 'Featured creator profile' },
   { value: 'freeProducts', label: 'Free Products', description: 'Free assets showcase' },
+  { value: 'bundles', label: 'Bundles', description: 'Curated product bundles' },
+  { value: 'creatorSpotlight', label: 'Creator Spotlight', description: 'Single featured creator' },
   { value: 'announcements', label: 'Announcements', description: 'Platform announcements bar' },
   { value: 'customHtml', label: 'Custom HTML', description: 'Custom content block' },
 ]

@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { getServerUser } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
@@ -87,9 +88,11 @@ function BundleRow({ bundle }: { bundle: any }) {
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="h-16 w-16 rounded-md overflow-hidden bg-muted shrink-0 flex items-center justify-center">
             {bundle.items?.[0]?.product?.media?.[0] ? (
-              <img
+              <Image
                 src={bundle.items[0].product.media[0].url}
                 alt={bundle.name}
+                width={64}
+                height={64}
                 className="h-full w-full object-cover"
               />
             ) : (

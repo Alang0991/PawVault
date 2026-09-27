@@ -54,12 +54,18 @@ const config = {
         surface: {
           DEFAULT: "hsl(var(--pv-surface))",
           elevated: "hsl(var(--pv-surface-elevated))",
+          raised: "hsl(var(--pv-surface-raised))",
+          overlay: "hsl(var(--pv-surface-overlay))",
           subtle: "hsl(var(--pv-surface-subtle))",
         },
         text: {
           primary: "hsl(var(--pv-text-primary))",
           secondary: "hsl(var(--pv-text-secondary))",
           muted: "hsl(var(--pv-text-muted))",
+        },
+        pvBorder: {
+          DEFAULT: "hsl(var(--pv-border))",
+          strong: "hsl(var(--pv-border-strong))",
         },
         success: {
           DEFAULT: "hsl(var(--pv-success))",
@@ -91,8 +97,8 @@ const config = {
         md: "calc(var(--radius) - 0.125rem)",
         sm: "calc(var(--radius) - 0.25rem)",
         xl: "0.75rem",
-        "2xl": "1rem",
-        "3xl": "1.5rem",
+        "2xl": "0.875rem",
+        "3xl": "1rem",
         full: "9999px",
       },
       fontFamily: {
@@ -122,17 +128,22 @@ const config = {
         "15": "3.75rem",
       },
       boxShadow: {
-        card: "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)",
-        "card-hover": "0 10px 25px 0 rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.06)",
-        "card-elevated": "0 6px 12px 0 rgb(0 0 0 / 0.05)",
+        card: "0 1px 2px 0 rgb(0 0 0 / 0.04)",
+        "card-hover": "0 6px 16px 0 rgb(0 0 0 / 0.07)",
+        "card-elevated": "0 2px 6px 0 rgb(0 0 0 / 0.05)",
         subtle: "0 1px 2px 0 rgb(0 0 0 / 0.03)",
       },
+      transitionDuration: {
+        150: "150ms",
+        200: "200ms",
+        250: "250ms",
+      },
       animation: {
-        "fade-in": "fade-in 0.5s ease-out",
-        "slide-up": "slide-up 0.5s ease-out",
-        "slide-down": "slide-down 0.5s ease-out",
-        "scale-in": "scale-in 0.5s ease-out",
-        "wish-pop": "wish-pop 0.35s ease-out",
+        "fade-in": "fade-in 0.2s ease-out",
+        "slide-up": "slide-up 0.2s ease-out",
+        "slide-down": "slide-down 0.2s ease-out",
+        "scale-in": "scale-in 0.2s ease-out",
+        "wish-pop": "wish-pop 0.25s ease-out",
       },
       keyframes: {
         "fade-in": {

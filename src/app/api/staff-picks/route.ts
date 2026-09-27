@@ -19,6 +19,7 @@ export async function GET() {
                 displayName: true,
                 avatar: true,
                 isVerified: true,
+                isInternal: true,
               },
             },
             media: { where: { isThumbnail: true }, take: 1 },
@@ -36,23 +37,25 @@ export async function GET() {
     return NextResponse.json({ picks: [] })
   }
 
-  const enriched = picks.map((p) => {
-    const avgRating =
-      p.product.reviews.length > 0
-        ? p.product.reviews.reduce((s: number, r: any) => s + r.rating, 0) / p.product.reviews.length
-        : 0
-    return {
-      id: p.id,
-      note: p.note,
-      createdAt: p.createdAt,
-      product: {
-        ...p.product,
-        rating: avgRating,
-        reviewCount: p.product.reviews.length,
-      },
-      staff: p.staff,
-    }
-  })
+  const enriched = picks
+    .filter((p) => !p.product.creator.isInternal)
+    .map((p) => {
+      const avgRating =
+        p.product.reviews.length > 0
+          ? p.product.reviews.reduce((s: number, r: any) => s + r.rating, 0) / p.product.reviews.length
+          : 0
+      return {
+        id: p.id,
+        note: p.note,
+        createdAt: p.createdAt,
+        product: {
+          ...p.product,
+          rating: avgRating,
+          reviewCount: p.product.reviews.length,
+        },
+        staff: p.staff,
+      }
+    })
 
   return NextResponse.json({ picks: enriched })
 }

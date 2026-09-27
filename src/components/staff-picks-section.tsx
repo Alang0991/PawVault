@@ -42,7 +42,6 @@ export function StaffPicksSection({ picks }: { picks: StaffPick[] }) {
       <SectionHeader
         title="Staff Picks"
         subtitle="Hand-picked by the PawVault team"
-        icon={<Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
         actionLabel="See all"
         actionHref="/browse?staff-picks=true"
       />

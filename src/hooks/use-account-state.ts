@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react"
 import { useSession } from "next-auth/react"
+import { useAuthStatus } from "@/hooks/use-auth-status"
+import type { AuthStatus } from "@/hooks/use-auth-status"
 
 export interface AccountState {
   authenticated: boolean
@@ -38,6 +40,9 @@ export interface AccountState {
 export interface UseAccountStateReturn {
   account: AccountState | null
   isLoading: boolean
+  /** Tri-state auth: unknown while resolving, then a definite answer. */
+  authStatus: AuthStatus
+  isAuthenticated: boolean
   error: string | null
   refreshCurrentAccount: () => Promise<void>
 }
@@ -76,20 +81,46 @@ function createEmptyAccountState(): AccountState {
   }
 }
 
+function sameStringSet(a: unknown, b: unknown): boolean {
+  if (!Array.isArray(a) || !Array.isArray(b)) return false
+  if (a.length !== b.length) return false
+  const left = a.map(String).sort()
+  const right = b.map(String).sort()
+  return left.every((value, index) => value === right[index])
+}
+
+function sameFeatureFlags(a: unknown, b: unknown): boolean {
+  const left = (a ?? {}) as Record<string, unknown>
+  const right = (b ?? {}) as Record<string, unknown>
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)])
+  for (const key of keys) {
+    if (Boolean(left[key]) !== Boolean(right[key])) return false
+  }
+  return true
+}
+
 export function useAccountState(): UseAccountStateReturn {
-  const { data: session, status: sessionStatus, update: updateSession } = useSession()
+  const { update: updateSession } = useSession()
+  // Auth is derived from session presence, not from NextAuth's `status`
+  // string. The server hands the session to SessionProvider during SSR, so
+  // this is already correct on the first render.
+  const { session, status: authStatus, isAuthenticated } = useAuthStatus()
   // The server-resolved account payload. This is ENRICHMENT ONLY: it fills in
   // fields the JWT does not carry (displayName, avatar, bio, store...). It is
   // never used to decide whether the user is authenticated.
   const [profile, setProfile] = useState<AccountState | null>(null)
-  const [isProfileLoading, setIsProfileLoading] = useState(sessionStatus !== "unauthenticated")
+  const [isProfileLoading, setIsProfileLoading] = useState(isAuthenticated)
   const [error, setError] = useState<string | null>(null)
   const refreshToken = useRef(0)
   const channelRef = useRef<BroadcastChannel | null>(null)
   const isMountedRef = useRef(true)
 
   const sessionUser = session?.user
-  const isAuthenticated = sessionStatus === "authenticated"
+  // Latest session user, readable from callbacks without making their identity
+  // depend on it. Keeps fetchAccountState stable so the effects below are not
+  // torn down and restarted on every session refresh.
+  const sessionUserRef = useRef(sessionUser)
+  sessionUserRef.current = sessionUser
 
   /**
    * Identity derived from the session alone. The session is provided by the
@@ -169,8 +200,37 @@ export function useAccountState(): UseAccountStateReturn {
         const sessionUpdate = res.headers.get("x-session-update")
         if (sessionUpdate) {
           try {
-            const updateData = JSON.parse(sessionUpdate)
-            await updateSession(updateData)
+            const updateData = JSON.parse(sessionUpdate) as {
+              user?: {
+                role?: string | null
+                permissions?: string[]
+                features?: Record<string, boolean>
+              }
+            }
+
+            // Only push a session update when it would actually change the JWT.
+            //
+            // `useSession().update()` round-trips through /api/auth/session and
+            // NextAuth flips its GLOBAL `status` to "loading" for the duration
+            // of that round-trip, even though the user is still signed in.
+            // /api/account/state returns this header on every response, so
+            // firing it unconditionally put the whole app through a
+            // "loading" state on every page load, every 60s poll, every window
+            // focus and every cross-tab broadcast. Any consumer reading
+            // `status` to decide "signed out" flipped to the signed-out UI for
+            // the duration, which was the flicker.
+            const nextUser = updateData.user
+            if (nextUser) {
+              const current = (sessionUserRef.current ?? {}) as Record<string, unknown>
+              const roleChanged =
+                (nextUser.role ?? null) !== ((current.role as string | null | undefined) ?? null)
+              const permissionsChanged = !sameStringSet(nextUser.permissions, current.permissions)
+              const featuresChanged = !sameFeatureFlags(nextUser.features, current.features)
+
+              if (roleChanged || permissionsChanged || featuresChanged) {
+                await updateSession(updateData)
+              }
+            }
           } catch {
             // Ignore update errors
           }
@@ -264,5 +324,12 @@ export function useAccountState(): UseAccountStateReturn {
   // already known synchronously.
   const isLoading = isProfileLoading
 
-  return { account, isLoading, error, refreshCurrentAccount: fetchAccountState }
+  return {
+    account,
+    isLoading,
+    authStatus,
+    isAuthenticated,
+    error,
+    refreshCurrentAccount: fetchAccountState,
+  }
 }

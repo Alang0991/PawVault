@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -199,7 +200,13 @@ export default function CreateBundlePage() {
                         >
                           <div className="h-10 w-10 rounded-md overflow-hidden bg-muted shrink-0">
                             {p.thumbnail ? (
-                              <img src={p.thumbnail} alt="" className="h-full w-full object-cover" />
+                              <Image
+                                src={p.thumbnail}
+                                alt=""
+                                width={40}
+                                height={40}
+                                className="h-full w-full object-cover"
+                              />
                             ) : (
                               <Package className="h-5 w-5 mx-auto mt-2 text-muted-foreground" />
                             )}

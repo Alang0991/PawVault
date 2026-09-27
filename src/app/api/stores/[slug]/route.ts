@@ -46,6 +46,7 @@ export async function GET(
           where: {
             isPublished: true,
             status: "PUBLISHED",
+            creator: { isInternal: false },
           },
           include: {
             media: {
@@ -85,33 +86,34 @@ export async function GET(
                   followersCount: true,
                 },
               },
-              products: {
-                where: {
-                  isPublished: true,
-                  status: "PUBLISHED",
-                },
-                include: {
-                  creator: {
-                    select: {
-                      id: true,
-                      username: true,
-                      displayName: true,
-                      avatar: true,
-                    },
-                  },
-                  media: {
-                    where: { isThumbnail: true },
-                    take: 1,
-                  },
-                  reviews: {
-                    select: { rating: true },
-                  },
-                  _count: {
-                    select: { favorites: true },
-                  },
-                },
-                orderBy: { createdAt: "desc" },
+products: {
+              where: {
+                isPublished: true,
+                status: "PUBLISHED",
+                creator: { isInternal: false },
               },
+              include: {
+                creator: {
+                  select: {
+                    id: true,
+                    username: true,
+                    displayName: true,
+                    avatar: true,
+                  },
+                },
+                media: {
+                  where: { isThumbnail: true },
+                  take: 1,
+                },
+                reviews: {
+                  select: { rating: true },
+                },
+                _count: {
+                  select: { favorites: true },
+                },
+              },
+              orderBy: { createdAt: "desc" },
+            },
             },
           },
         },

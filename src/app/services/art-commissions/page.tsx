@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,7 +21,6 @@ import {
   Clock,
   DollarSign,
   MessageSquare,
-  Image,
   Brush,
   Layers,
 } from "lucide-react"
@@ -446,10 +446,12 @@ function ArtCommissionerCard({ commissioner }: { commissioner: ArtCommissioner }
       )}
       {commissioner.bannerImage && (
         <div className="h-24 w-full relative overflow-hidden">
-          <img
+          <Image
             src={commissioner.bannerImage}
             alt=""
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover"
           />
         </div>
       )}

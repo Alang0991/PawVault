@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { MessageSquare, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,11 +30,7 @@ export function DiscussionSection({ productId }: { productId: string }) {
   const [newContent, setNewContent] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    loadDiscussions()
-  }, [])
-
-  async function loadDiscussions() {
+  const loadDiscussions = useCallback(async () => {
     try {
       const res = await fetch(`/api/discussions?productId=${productId}`)
       if (res.ok) {
@@ -45,7 +41,11 @@ export function DiscussionSection({ productId }: { productId: string }) {
       // silent fail
     }
     setLoading(false)
-  }
+  }, [productId])
+
+  useEffect(() => {
+    void loadDiscussions()
+  }, [loadDiscussions])
 
   const submitDiscussion = async () => {
     if (!newTitle.trim() || !newContent.trim()) return

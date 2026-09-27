@@ -23,6 +23,7 @@ import {
   Plus,
   Menu,
   X,
+  Palette,
   CreditCard,
   FolderOpen,
   FileText,
@@ -38,6 +39,7 @@ interface StoreInfo {
 const items = [
   { href: "/creator/dashboard", label: "Overview", icon: BarChart3 },
   { href: "/creator/products", label: "Products", icon: Package },
+  { href: "/creator/commissions", label: "Commissions", icon: Palette },
   { href: "/creator/orders", label: "Orders", icon: ShoppingBag },
   { href: "/creator/customers", label: "Customers", icon: Users },
   { href: "/creator/licenses", label: "Licenses", icon: KeyRound },
@@ -83,7 +85,7 @@ export function CreatorSidebar({ user }: { user?: { avatar?: string | null; disp
         <Button variant="outline" size="sm" onClick={() => setOpen(true)} aria-label="Open menu">
           <Menu className="h-4 w-4 mr-2" /> Menu
         </Button>
-        <Button asChild size="sm" className="gradient-bg text-white">
+        <Button asChild size="sm" className="">
           <Link href="/creator/products/new"><Plus className="h-4 w-4 mr-1" /> New</Link>
         </Button>
       </div>
@@ -115,7 +117,7 @@ export function CreatorSidebar({ user }: { user?: { avatar?: string | null; disp
               <div className="flex items-center gap-4 mb-6">
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={user.avatar || undefined} alt={user.displayName || ""} />
-                  <AvatarFallback className="text-xl bg-gradient-to-br from-purple-600 to-rose-500 text-white">
+                  <AvatarFallback className="bg-muted text-xl font-semibold text-text-secondary">
                     {user.displayName?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
@@ -128,7 +130,7 @@ export function CreatorSidebar({ user }: { user?: { avatar?: string | null; disp
                 </div>
               </div>
             )}
-            <Button asChild className="w-full mb-4 gradient-bg text-white">
+            <Button asChild className="w-full mb-4">
               <Link href="/creator/products/new" onClick={() => setOpen(false)}>
                 <Plus className="h-4 w-4 mr-2" /> Create Product
               </Link>
@@ -144,7 +146,7 @@ export function CreatorSidebar({ user }: { user?: { avatar?: string | null; disp
                     onClick={() => setOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       active
-                        ? "bg-gradient-to-r from-purple-600 to-rose-500 text-white"
+                        ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
                   >

@@ -11,6 +11,8 @@ import { AdultContentPreview } from "@/components/adult-content-preview"
 import { formatDate } from "@/lib/helpers"
 import { getServerCurrency, makeServerPriceFormatter } from "@/lib/currency-server"
 import { ShoppingBag, ArrowRight, Package } from "lucide-react"
+import { EmptyState } from "@/components/empty-state"
+import { formatCount } from "@/lib/format"
 
 function OrderStatusBadge({ status }: { status: string }) {
   const map: Record<string, "default" | "secondary" | "outline" | "destructive" | "success" | "warning" | "error" | "info" | "sale" | "price" | "subtle" | null | undefined> = {
@@ -59,31 +61,25 @@ export default async function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-10 md:py-12">
+      <div className="pv-shell py-8 md:py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text-primary">My Orders</h1>
-          <p className="text-sm text-text-secondary mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
+            Orders
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">
             {orders.length === 0
-              ? "Order history will appear here."
-              : `${orders.length} order${orders.length === 1 ? "" : "s"} total`}
+              ? "Your order history will appear here."
+              : `${formatCount(orders.length)} ${orders.length === 1 ? "order" : "orders"}`}
           </p>
         </div>
 
         {orders.length === 0 ? (
-          <Card className="p-12 text-center">
-            <div className="mx-auto h-14 w-14 rounded-full bg-surface-subtle flex items-center justify-center mb-4">
-              <ShoppingBag className="h-7 w-7 text-text-muted" />
-            </div>
-            <h2 className="text-xl font-semibold text-text-primary mb-2">
-              No orders yet
-            </h2>
-            <p className="text-sm text-text-secondary mb-6 max-w-md mx-auto">
-              Start browsing to find digital products from creators you'll love.
-            </p>
-            <Button asChild>
-              <Link href="/browse">Browse Marketplace</Link>
-            </Button>
-          </Card>
+          <EmptyState
+            icon={<ShoppingBag className="h-6 w-6" />}
+            title="Nothing here yet."
+            description="When you buy something it will show up here, with its downloads and receipts."
+            action={{ label: "Browse products", href: "/browse" }}
+          />
         ) : (
           <div className="space-y-6">
             {orders.map((order) => (

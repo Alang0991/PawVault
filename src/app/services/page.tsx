@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Slider } from "@/components/ui/slider"
 import {
   Search,
   User,
@@ -22,8 +23,12 @@ import {
   Filter,
   ChevronDown,
   MoreHorizontal,
+  Clock,
+  DollarSign,
+  Tag,
 } from "lucide-react"
 import { useTranslation } from "@/hooks/use-translation"
+import { cn } from "@/lib/utils"
 
 interface ServiceProvider {
   id: string
@@ -76,6 +81,9 @@ export default function ServicesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
   const [availabilityFilter, setAvailabilityFilter] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState("featured")
+  const [maxBudget, setMaxBudget] = useState(1000)
+  const [maxTurnaround, setMaxTurnaround] = useState<number | null>(null)
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
 
   const SERVICE_CATEGORIES = [
     { id: "avatar-commissions", label: (t("services.avatarCommissions") as string) || "Avatar Commissions", icon: User, href: "/services/avatar-commissions" },
@@ -100,6 +108,9 @@ export default function ServicesPage() {
         if (availabilityFilter) params.set("availability", availabilityFilter)
         if (searchQuery) params.set("q", searchQuery)
         params.set("sort", sortBy)
+        if (maxBudget < 1000) params.set("maxPrice", maxBudget.toString())
+        if (maxTurnaround) params.set("maxTurnaround", maxTurnaround.toString())
+        if (selectedTags.length > 0) params.set("tags", selectedTags.join(","))
         params.set("limit", "20")
 
         const res = await fetch(`/api/services?${params.toString()}`)
@@ -113,7 +124,7 @@ export default function ServicesPage() {
       }
     }
     load()
-  }, [activeTab, categoryFilter, availabilityFilter, searchQuery, sortBy, t])
+  }, [activeTab, categoryFilter, availabilityFilter, searchQuery, sortBy, maxBudget, maxTurnaround, selectedTags, t])
 
   const filteredProviders = providers
 
@@ -170,21 +181,36 @@ export default function ServicesPage() {
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-text-primary mb-4">{(t("services.categories") as string) || "Categories"}</h3>
                   <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("all")}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left",
+                        activeTab === "all"
+                          ? "bg-accent/10 text-accent-foreground"
+                          : "text-text-secondary hover:text-text-primary hover:bg-accent/5"
+                      )}
+                    >
+                      <Grid className="h-5 w-5 shrink-0" />
+                      <span className="font-medium">{(t("services.allServices") as string) || "All Services"}</span>
+                    </button>
                     {SERVICE_CATEGORIES.map((cat) => {
                       const Icon = cat.icon
                       return (
-                        <Link
+                        <button
                           key={cat.id}
-                          href={cat.href}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          type="button"
+                          onClick={() => setActiveTab(cat.id)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left",
                             activeTab === cat.id
                               ? "bg-accent/10 text-accent-foreground"
                               : "text-text-secondary hover:text-text-primary hover:bg-accent/5"
-                          }`}
+                          )}
                         >
                           <Icon className="h-5 w-5 shrink-0" />
                           <span className="font-medium">{cat.label}</span>
-                        </Link>
+                        </button>
                       )
                     })}
                   </div>
@@ -250,6 +276,99 @@ export default function ServicesPage() {
                         <option value="newest">{(t("marketplace.sortNewest") as string) || "Newest"}</option>
                         <option value="turnaround">{(t("services.fastestTurnaround") as string) || "Fastest Turnaround"}</option>
                       </select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-text-secondary mb-2 block">
+                        {(t("services.maxBudget") as string) || "Max Budget"}
+                        <span className="ml-2 text-text-muted">${maxBudget}</span>
+                      </label>
+                      <Slider
+                        min={0}
+                        max={1000}
+                        step={50}
+                        value={maxBudget}
+                        onValueChange={setMaxBudget}
+                        showValue
+                        label=""
+                        valueText={`$${maxBudget}`}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-text-muted mt-1">
+                        <span>$0</span>
+                        <span>$500</span>
+                        <span>$1000+</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-text-secondary mb-2 block flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {(t("services.maxTurnaround") as string) || "Max Turnaround"}
+                        {maxTurnaround && <span className="ml-2 text-text-muted">({maxTurnaround} days)</span>}
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {[3, 7, 14, 30].map((days) => (
+                          <button
+                            key={days}
+                            type="button"
+                            onClick={() => setMaxTurnaround(maxTurnaround === days ? null : days)}
+                            className={cn(
+                              "px-3 py-1.5 rounded-full text-sm transition-all border",
+                              maxTurnaround === days
+                                ? "border-accent bg-accent/10 text-accent-foreground"
+                                : "border-border hover:border-accent/50 text-text-secondary"
+                            )}
+                          >
+                            {days} {(t("services.days") as string) || "days"}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setMaxTurnaround(null)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full text-sm transition-all border",
+                            !maxTurnaround
+                              ? "border-accent bg-accent/10 text-accent-foreground"
+                              : "border-border hover:border-accent/50 text-text-secondary"
+                          )}
+                        >
+                          {(t("common.any") as string) || "Any"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-text-secondary mb-2 block flex items-center gap-1">
+                        <Tag className="h-4 w-4" />
+                        {(t("services.specialties") as string) || "Specialties"}
+                      </label>
+                      <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                        {["anime", "realistic", "stylized", "chibi", "environment", "character", "props", "rigging", "animation", "vfx"].map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
+                            className={cn(
+                              "px-3 py-1.5 rounded-full text-xs transition-all border",
+                              selectedTags.includes(tag)
+                                ? "border-accent bg-accent/10 text-accent-foreground"
+                                : "border-border hover:border-accent/50 text-text-secondary"
+                            )}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedTags.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTags([])}
+                          className="mt-2 text-sm text-accent-foreground hover:underline"
+                        >
+                          {(t("services.clearAll") as string) || "Clear all"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

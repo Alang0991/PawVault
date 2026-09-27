@@ -81,48 +81,57 @@ export default async function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-10 md:py-12">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center gap-3 mb-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/cart">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to cart
-              </Link>
-            </Button>
-          </div>
+      <div className="pv-shell py-8 md:py-10">
+        <div className="max-w-4xl">
+          <Button variant="ghost" size="sm" asChild className="-ml-2 mb-2">
+            <Link href="/cart">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back to cart
+            </Link>
+          </Button>
 
-          <h1 className="text-3xl font-bold text-text-primary mb-2">
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
             Checkout
           </h1>
-          <p className="text-sm text-text-secondary mb-8">
-            {lineItems.length} item{lineItems.length === 1 ? "" : "s"} · Secure Stripe checkout
+          <p className="mt-1 text-sm text-text-muted">
+            {lineItems.length} {lineItems.length === 1 ? "item" : "items"} · Secure
+            Stripe checkout
           </p>
 
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={user.avatar || ""} alt={user.displayName || user.username} />
-                  <AvatarFallback>{user.displayName?.[0] || user.username[0]?.toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-semibold text-text-primary">Customer Details</h2>
-                  <p className="text-sm text-text-muted">{user.displayName || user.username}</p>
-                  <p className="text-sm text-text-secondary">{user.email}</p>
-                </div>
+          <section className="mt-6 rounded-xl border border-border bg-surface p-5">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-11 w-11 shrink-0">
+                <AvatarImage
+                  src={user.avatar || ""}
+                  alt={user.displayName || user.username}
+                />
+                <AvatarFallback className="bg-muted text-sm text-text-secondary">
+                  {(user.displayName || user.username)[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold text-text-primary">
+                  Paying as {user.displayName || user.username}
+                </h2>
+                <p className="text-sm text-text-muted">{user.email}</p>
               </div>
-              <div className="mt-4 pt-4 border-t">
-                <p className="text-xs text-text-muted">
-                  Billing details will be collected securely during Stripe checkout. By completing your purchase you agree to the Terms of Service and Privacy Policy.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="mt-4 border-t border-border pt-4 text-xs leading-relaxed text-text-muted">
+              Billing details are collected securely by Stripe. By completing your
+              purchase you agree to the{" "}
+              <Link href="/terms" className="underline underline-offset-4">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline underline-offset-4">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
-            {/* Order summary */}
-            <div className="space-y-4">
+          <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
+            <ul className="divide-y divide-border rounded-xl border border-border">
               {lineItems.map((item) => {
                 const product = item.product
                 const thumbnail = product.media?.[0]
@@ -130,93 +139,75 @@ export default async function CheckoutPage() {
                   product.creator.displayName || product.creator.username
 
                 return (
-                  <Card key={item.id}>
-                    <CardContent className="flex gap-4 p-4">
-                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded border bg-surface-subtle">
-                        {thumbnail ? (
-                          <AdultContentPreview
-                            mediaId={thumbnail.id}
-                            directUrl={thumbnail.url}
-                            contentRating={product.contentRating || "SFW"}
-                            alt={product.title}
-                            variant="image"
-                            className="h-16 w-16"
-                            imgClassName="h-16 w-16 object-cover"
-                            showBadge={false}
-                          />
-                        ) : (
-                          <div className="h-16 w-16 flex items-center justify-center text-text-muted">
-                            <ShoppingCart className="h-6 w-6 opacity-30" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-medium text-sm text-text-primary line-clamp-1">
-                              {product.title}
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <Avatar className="h-4 w-4">
-                                <AvatarImage
-                                  src={product.creator.avatar || ""}
-                                  alt={creatorName}
-                                />
-                                <AvatarFallback className="text-[8px]">
-                                  {creatorName[0]?.toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-xs text-text-muted">
-                                {creatorName}
-                              </span>
-                            </div>
-                          </div>
-                          <Price
-                            amount={item.product.price}
-                            salePrice={item.product.salePrice}
-                            isFree={item.product.isFree}
-                            amountClassName="text-sm"
-                          />
+                  <li key={item.id} className="flex gap-4 p-4">
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-subtle">
+                      {thumbnail ? (
+                        <AdultContentPreview
+                          mediaId={thumbnail.id}
+                          directUrl={thumbnail.url}
+                          contentRating={product.contentRating || "SFW"}
+                          alt={product.title}
+                          variant="image"
+                          className="h-16 w-16"
+                          imgClassName="h-16 w-16 object-cover"
+                          showBadge={false}
+                        />
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center text-text-muted">
+                          <ShoppingCart className="h-6 w-6 opacity-30" />
                         </div>
+                      )}
+                    </div>
+
+                    <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="line-clamp-1 text-sm font-medium text-text-primary">
+                          {product.title}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-text-muted">
+                          by {creatorName}
+                        </p>
                         {item.quantity > 1 && (
-                          <p className="text-xs text-text-muted mt-1">
-                            Qty: {item.quantity}
+                          <p className="mt-1 text-xs text-text-muted">
+                            Qty {item.quantity}
                           </p>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
+                      <Price
+                        amount={product.price}
+                        salePrice={product.salePrice}
+                        isFree={product.isFree}
+                        amountClassName="text-sm shrink-0"
+                      />
+                    </div>
+                  </li>
                 )
               })}
-            </div>
+            </ul>
 
-            {/* Payment summary */}
-            <div>
-              <Card className="sticky top-20">
-                <CardHeader>
-                  <CardTitle>Payment Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <SummaryRow label="Subtotal" value={formatPriceDisplay(subtotal)} />
-                  <SummaryRow
-                    label={`Platform fee (${feeConfig.feePercent}%)`}
-                    value={formatPriceDisplay(platformFee)}
-                  />
-                  <SummaryRow label="Taxes" value={formatPriceDisplay(tax)} />
-                  <div className="border-t pt-3">
-                    <SummaryRow label="Total" value={formatPriceDisplay(total)} bold />
-                  </div>
-                </CardContent>
-                <CardFooter className="flex-col gap-4 pt-0">
-                  <CheckoutActions cartId={cart.id} paymentCurrency={paymentCurrency} />
-                  <p className="text-xs text-text-muted text-center">
-                    You will be redirected to Stripe to complete your purchase
-                    securely.
-                  </p>
-                </CardFooter>
-              </Card>
-            </div>
+            <section className="sticky top-20 h-fit rounded-xl border border-border bg-surface p-5">
+              <h2 className="text-lg font-bold tracking-tight text-text-primary">
+                Payment summary
+              </h2>
+              <div className="mt-4 space-y-3">
+                <SummaryRow label="Subtotal" value={formatPriceDisplay(subtotal)} />
+                <SummaryRow
+                  label={`Platform fee (${feeConfig.feePercent}%)`}
+                  value={formatPriceDisplay(platformFee)}
+                />
+                <SummaryRow label="Taxes" value={formatPriceDisplay(tax)} />
+                <div className="border-t border-border pt-3">
+                  <SummaryRow label="Total" value={formatPriceDisplay(total)} bold />
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <CheckoutActions cartId={cart.id} paymentCurrency={paymentCurrency} />
+                <p className="mt-3 text-center text-xs text-text-muted">
+                  You&apos;ll be redirected to Stripe to complete your purchase.
+                </p>
+              </div>
+            </section>
           </div>
         </div>
       </div>

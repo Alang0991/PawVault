@@ -193,12 +193,15 @@ export function CurrencyProvider({
     [supportedCurrencies],
   )
 
-  const syncDisplayCurrency = useCallback((code: string): void => {
-    const normalized = code.toUpperCase()
-    if (supportedCurrencies.some((currency) => currency.code === normalized)) {
-      setDisplayCurrencyState(normalized)
-    }
-  }, [])
+  const syncDisplayCurrency = useCallback(
+    (code: string): void => {
+      const normalized = code.toUpperCase()
+      if (supportedCurrencies.some((currency) => currency.code === normalized)) {
+        setDisplayCurrencyState(normalized)
+      }
+    },
+    [supportedCurrencies],
+  )
 
   const value: CurrencyContextValue = {
     currency: displayCurrency,

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { useSession } from "next-auth/react"
+import { useAuthStatus } from "@/hooks/use-auth-status"
 
 export interface HeaderCounts {
   wishlist: number
@@ -9,11 +9,16 @@ export interface HeaderCounts {
 }
 
 export function useHeaderCounts(): HeaderCounts {
-  const { data: session, status } = useSession()
+  const { session, isAuthenticated } = useAuthStatus()
   const [counts, setCounts] = useState<HeaderCounts>({ wishlist: 0, cart: 0 })
 
+  const userId = session?.user?.id
+
   const fetchCounts = useCallback(async () => {
-    if (!session?.user?.id || status !== "authenticated") {
+    // Keyed on the user id alone. Gating on NextAuth's `status` meant a
+    // background session refresh re-ran this with `status === "loading"`,
+    // which reset the wishlist and cart badges to 0 and then refilled them.
+    if (!userId || !isAuthenticated) {
       setCounts({ wishlist: 0, cart: 0 })
       return
     }
@@ -41,10 +46,10 @@ export function useHeaderCounts(): HeaderCounts {
     } catch {
       setCounts({ wishlist: 0, cart: 0 })
     }
-  }, [session?.user?.id, status])
+  }, [userId, isAuthenticated])
 
   useEffect(() => {
-    fetchCounts()
+    void fetchCounts()
   }, [fetchCounts])
 
   return counts

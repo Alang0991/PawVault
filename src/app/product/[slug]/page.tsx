@@ -5,12 +5,11 @@ import { StatusBadge } from "@/components/status-badge"
 import { ProductActions } from "@/components/product-actions"
 import { ProductGallery } from "@/components/product-gallery"
 import { ProductGrid } from "@/components/product-grid"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { SectionHeader } from "@/components/section-header"
 import { ShareButton } from "@/components/share-button"
 import { ReportProductDialog } from "@/components/report-product-dialog"
 import { ReportReviewButton } from "@/components/report-review-button"
@@ -19,22 +18,9 @@ import { LikeButton } from "@/components/like-button"
 import { DiscussionSection } from "@/components/discussion-section"
 import { getServerUser } from "@/lib/session"
 import { hasProductAccess } from "@/lib/ownership"
-import { AdultContentPreview } from "@/components/adult-content-preview"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import {
-  FileText,
-  Tag,
-  ExternalLink,
-  Star,
-  Clock,
-  Package,
-  Scale,
-  Cpu,
-  HardDrive,
-  ShieldCheck,
-  MessageSquare,
-} from "lucide-react"
+import { Check } from "lucide-react"
 
 async function getProduct(slug: string) {
   const product = await prisma.product.findUnique({
@@ -248,6 +234,12 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   const totalLikes = await prisma.favorite.count({ where: { productId: product.id } })
 
+  // A download means the buyer received the file, which is the closest
+  // honest proxy for "sales" on a page that has no denormalised counter.
+  const salesCount = await prisma.download.count({
+    where: { productId: product.id },
+  })
+
   const hasDiscount =
     product.isOnSale && product.salePrice && product.salePrice < product.price
 
@@ -261,8 +253,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[480px_1fr]">
+      <div className="pv-shell py-8 md:py-10">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
           {/* Gallery */}
           <div>
             <ProductGallery
@@ -272,58 +264,72 @@ export default async function ProductPage({ params }: { params: { slug: string }
             />
           </div>
 
-          {/* Purchase area */}
+          {/* Purchase area — the decision has to be obvious here (§8) */}
           <div className="space-y-5">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {hasDiscount && <StatusBadge type="sale" />}
-              {product.isFree && <StatusBadge type="free" />}
-              {ownership.hasAccess && <StatusBadge type="owned" />}
+              {!hasDiscount && product.isFree && <StatusBadge type="free" />}
+              {!hasDiscount && !product.isFree && ownership.hasAccess && (
+                <StatusBadge type="owned" />
+              )}
               {product.contentRating !== "SFW" && <StatusBadge type="mature" />}
             </div>
 
             <div>
-              <h1 className="text-3xl font-bold text-text-primary">
+              <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
                 {product.title}
               </h1>
               {product.subtitle && (
-                <p className="mt-1 text-text-secondary">{product.subtitle}</p>
+                <p className="mt-1.5 text-text-secondary">{product.subtitle}</p>
               )}
             </div>
 
             <Link
               href={`/creators/${product.creator.username}`}
-              className="flex items-center gap-3 hover:bg-muted p-2 -mx-2 rounded-lg transition-colors"
+              className="-mx-2 flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted focus-ring"
             >
-              <Avatar className="h-10 w-10 border">
+              <Avatar className="h-9 w-9">
                 <AvatarImage src={product.creator.avatar || ""} alt={creatorName} />
-                <AvatarFallback className="bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white font-semibold">
+                <AvatarFallback className="bg-muted text-sm font-semibold text-text-secondary">
                   {creatorName[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <p className="font-medium text-sm text-text-primary">
-                    {creatorName}
-                  </p>
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
+                  <span className="truncate">{creatorName}</span>
                   {product.creator.isVerified && (
                     <StatusBadge type="verified" size="sm" />
                   )}
-                </div>
+                </p>
                 <p className="text-xs text-text-muted">View profile</p>
               </div>
             </Link>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <Rating
                 rating={product.rating}
                 reviewCount={product.reviews.length}
                 size="md"
-                showCount={product.reviews.length > 0}
+                showCount={false}
               />
-              <span className="text-xs text-text-muted">
-                {product.reviews.length} review
-                {product.reviews.length === 1 ? "" : "s"}
-              </span>
+              <span className="text-text-secondary">{product.rating.toFixed(1)}</span>
+              {product.reviews.length > 0 && (
+                <>
+                  <span className="text-text-muted">·</span>
+                  <Link href="#reviews" className="text-text-muted hover:text-text-primary">
+                    {product.reviews.length}{" "}
+                    {product.reviews.length === 1 ? "review" : "reviews"}
+                  </Link>
+                </>
+              )}
+              {salesCount > 0 && (
+                <>
+                  <span className="text-text-muted">·</span>
+                  <span className="text-text-muted">
+                    {salesCount} {salesCount === 1 ? "sale" : "sales"}
+                  </span>
+                </>
+              )}
             </div>
 
             <div>
@@ -332,7 +338,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                 amount={product.price}
                 salePrice={product.salePrice}
                 isFree={product.isFree}
-                amountClassName="text-3xl"
+                amountClassName="text-3xl font-bold"
               />
             </div>
 
@@ -341,292 +347,313 @@ export default async function ProductPage({ params }: { params: { slug: string }
               isFree={product.isFree}
               initialWishlisted={!!isWishlisted}
             />
-            <ShareButton
-              url={`https://pawvault.com/product/${product.slug}`}
-              title={product.title}
-            />
-            {currentUser && (
-              <LikeButton
-                productId={product.slug}
-                initialLiked={!!isLiked}
-                initialTotal={totalLikes}
-              />
-            )}
-            <ReportProductDialog
-              productId={product.id}
-              productTitle={product.title}
-              isAuthenticated={!!currentUser}
-            />
 
-            {/* Key metadata badges */}
-            <div className="flex flex-wrap gap-2">
-              {product.version && (
-                <Badge variant="outline" size="sm">
-                  v{product.version}
-                </Badge>
+            <ul className="space-y-1.5 border-t border-border pt-4 text-sm text-text-secondary">
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                Instant download after purchase
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                {product.licenseType ? `${product.licenseType} license` : "License included"}
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                Updates and creator support
+              </li>
+            </ul>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <ShareButton
+                url={`https://pawvault.com/product/${product.slug}`}
+                title={product.title}
+              />
+              {currentUser && (
+                <LikeButton
+                  productId={product.slug}
+                  initialLiked={!!isLiked}
+                  initialTotal={totalLikes}
+                />
               )}
-              {product.licenseType && (
-                <Badge variant="outline" size="sm">
-                  {product.licenseType}
-                </Badge>
-              )}
-              {product.unityVersion && (
-                <Badge variant="outline" size="sm">
-                  Unity {product.unityVersion}
-                </Badge>
-              )}
-              {product.pcCompatible && (
-                <Badge variant="outline" size="sm">
-                  PC
-                </Badge>
-              )}
-              {product.questCompatible && (
-                <Badge variant="outline" size="sm">
-                  Quest
-                </Badge>
-              )}
+              <ReportProductDialog
+                productId={product.id}
+                productTitle={product.title}
+                isAuthenticated={!!currentUser}
+              />
             </div>
 
             <Separator />
 
             <Tabs defaultValue="description" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
                 <TabsTrigger value="description">Description</TabsTrigger>
                 <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="reviews">
-                Reviews ({product.reviews.length})
-              </TabsTrigger>
-              <TabsTrigger value="discussions">Discussions</TabsTrigger>
-              <TabsTrigger value="versions">Versions</TabsTrigger>
+                <TabsTrigger value="reviews">
+                  Reviews ({product.reviews.length})
+                </TabsTrigger>
+                <TabsTrigger value="discussions">Discussions</TabsTrigger>
+                <TabsTrigger value="versions">Versions</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="description" className="mt-4">
-                <p className="text-sm text-text-secondary whitespace-pre-wrap">
-                  {product.description || "No description provided."}
-                </p>
-              </TabsContent>
-
-              <TabsContent value="details" className="mt-4 space-y-4">
-                {product.files.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-sm text-text-primary mb-2 flex items-center gap-1.5">
-                      <FileText className="h-4 w-4" /> What&apos;s Included
-                    </h3>
-                    <div className="space-y-2">
-                      {product.files.map((file) => (
-                        <div
-                          key={file.id}
-                          className="flex items-center justify-between text-sm"
-                        >
-                          <span className="text-text-secondary">
-                            {file.filename}
-                          </span>
-                          <span className="text-xs text-text-muted">
-                            {(file.size / 1024 / 1024).toFixed(1)} MB
-                            {file.platform && ` · ${file.platform}`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  {product.version && (
-                    <DetailItem label="Version">{product.version}</DetailItem>
-                  )}
-                  <DetailItem label="License">
-                    {product.licenseType || "Standard"}
-                  </DetailItem>
-                  <DetailItem label="File Size">
-                    {product.fileSize
-                      ? `${(product.fileSize / 1024 / 1024).toFixed(1)} MB`
-                      : "N/A"}
-                  </DetailItem>
-                  {product.polygonCount && (
-                    <DetailItem label="Polygons">
-                      {product.polygonCount.toLocaleString()}
-                    </DetailItem>
-                  )}
-                  <DetailItem label="PC Compatible">
-                    {product.pcCompatible ? "Yes" : "No"}
-                  </DetailItem>
-                  <DetailItem label="Quest Compatible">
-                    {product.questCompatible ? "Yes" : "No"}
-                  </DetailItem>
-                  {product.unityVersion && (
-                    <DetailItem label="Unity">{product.unityVersion}</DetailItem>
-                  )}
-                  {product.vrcSdkVersion && (
-                    <DetailItem label="VRChat SDK">{product.vrcSdkVersion}</DetailItem>
-                  )}
-                </div>
-
-                {product.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {product.tags.map(({ tag }) => (
-                      <Badge key={tag.id} variant="secondary" size="sm">
-                        <Tag className="h-3 w-3 mr-1" />
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-
-                {product.category && (
-                  <div className="text-sm">
-                    <span className="text-text-muted">Category: </span>
-                    <Link
-                      href={`/categories/${product.category.slug}`}
-                      className="text-accent hover:text-accent-hover"
-                    >
-                      {product.category.name}
-                    </Link>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="versions" className="mt-4">
-                {product.versions && product.versions.length > 0 ? (
-                  <div className="space-y-3">
-                    {product.versions.map((v: any) => (
-                      <Card key={v.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">
-                              Version {v.version}
-                            </CardTitle>
-                            {v.isCurrent && (
-                              <Badge variant="success" size="sm">Current</Badge>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          {v.releaseNotes && (
-                            <p className="text-sm text-text-secondary whitespace-pre-wrap">
-                              {v.releaseNotes}
-                            </p>
-                          )}
-                          {v.changelog && (
-                            <p className="text-xs text-text-muted mt-2">
-                              {v.changelog}
-                            </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+              <TabsContent value="description" className="mt-5">
+                {product.description ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                    {product.description}
+                  </p>
                 ) : (
-                  <p className="text-sm text-text-muted py-8 text-center">
-                    No version history available yet.
+                  <p className="text-sm text-text-muted">
+                    This creator hasn&apos;t written a description yet.
                   </p>
                 )}
               </TabsContent>
 
-              <TabsContent value="reviews" className="mt-4">
+              <TabsContent value="details" className="mt-5 space-y-6">
+                <section>
+                  <h3 className="mb-2 text-sm font-semibold text-text-primary">
+                    Compatibility
+                  </h3>
+                  <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                    <DetailItem label="PC">
+                      {product.pcCompatible ? "Yes" : "No"}
+                    </DetailItem>
+                    <DetailItem label="Quest">
+                      {product.questCompatible ? "Yes" : "No"}
+                    </DetailItem>
+                    {product.unityVersion && (
+                      <DetailItem label="Unity">{product.unityVersion}</DetailItem>
+                    )}
+                    {product.vrcSdkVersion && (
+                      <DetailItem label="VRChat SDK">
+                        {product.vrcSdkVersion}
+                      </DetailItem>
+                    )}
+                    {product.version && (
+                      <DetailItem label="Version">v{product.version}</DetailItem>
+                    )}
+                    {product.polygonCount && (
+                      <DetailItem label="Polygons">
+                        {product.polygonCount.toLocaleString()}
+                      </DetailItem>
+                    )}
+                  </dl>
+                </section>
+
+                <section>
+                  <h3 className="mb-2 text-sm font-semibold text-text-primary">License</h3>
+                  <p className="text-sm text-text-secondary">
+                    {product.licenseType || "Standard"} — see the{" "}
+                    <Link href="/license-agreement" className="text-accent hover:text-accent-hover">
+                      license agreement
+                    </Link>{" "}
+                    for full terms.
+                  </p>
+                </section>
+
+                {product.files.length > 0 && (
+                  <section>
+                    <h3 className="mb-2 text-sm font-semibold text-text-primary">
+                      Files included
+                    </h3>
+                    <ul className="divide-y divide-border rounded-lg border border-border">
+                      {product.files.map((file) => (
+                        <li
+                          key={file.id}
+                          className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                        >
+                          <span className="truncate text-text-secondary">
+                            {file.filename}
+                          </span>
+                          <span className="shrink-0 text-xs text-text-muted">
+                            {(file.size / 1024 / 1024).toFixed(1)} MB
+                            {file.platform ? ` · ${file.platform}` : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                {product.tags.length > 0 && (
+                  <section>
+                    <h3 className="mb-2 text-sm font-semibold text-text-primary">Tags</h3>
+                    <ul className="flex flex-wrap gap-1.5">
+                      {product.tags.map(({ tag }) => (
+                        <li key={tag.id}>
+                          <Link href={`/browse?tags=${tag.slug}`}>
+                            <Badge variant="secondary" size="sm">
+                              {tag.name}
+                            </Badge>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                {product.category && (
+                  <section>
+                    <h3 className="mb-2 text-sm font-semibold text-text-primary">Category</h3>
+                    <Link
+                      href={`/categories/${product.category.slug}`}
+                      className="text-sm text-accent hover:text-accent-hover"
+                    >
+                      {product.category.name}
+                    </Link>
+                  </section>
+                )}
+              </TabsContent>
+
+              <TabsContent value="versions" className="mt-5">
+                {product.versions && product.versions.length > 0 ? (
+                  <ul className="space-y-3">
+                    {product.versions.map((v: any) => (
+                      <li
+                        key={v.id}
+                        className="rounded-lg border border-border p-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-text-primary">
+                            Version {v.version}
+                          </p>
+                          {v.isCurrent && (
+                            <Badge variant="success" size="sm">
+                              Current
+                            </Badge>
+                          )}
+                        </div>
+                        {v.releaseNotes && (
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-text-secondary">
+                            {v.releaseNotes}
+                          </p>
+                        )}
+                        {v.changelog && (
+                          <p className="mt-1 text-xs text-text-muted">{v.changelog}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-8 text-center text-sm text-text-muted">
+                    No version history yet.
+                  </p>
+                )}
+              </TabsContent>
+
+              <TabsContent value="reviews" className="mt-5" id="reviews">
                 {product.reviews.length === 0 ? (
-                  <p className="text-sm text-text-muted py-8 text-center">
+                  <p className="py-8 text-center text-sm text-text-muted">
                     No reviews yet. Be the first to review.
                   </p>
                 ) : (
                   <div className="space-y-6">
                     {/* Review distribution */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Rating Distribution</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center gap-4">
-                          <div className="text-3xl font-bold">
+                    <div className="rounded-lg border border-border p-4">
+                      <div className="flex items-center gap-5">
+                        <div className="text-center">
+                          <p className="text-3xl font-bold text-text-primary">
                             {product.rating.toFixed(1)}
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            {product.distribution.map((d: any) => (
-                              <div key={d.stars} className="flex items-center gap-2 text-sm">
-                                <span className="w-8 text-right">{d.stars}★</span>
-                                <div className="flex-1 h-2 bg-surface-subtle rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-amber-400"
-                                    style={{ width: `${d.percentage}%` }}
-                                  />
-                                </div>
-                                <span className="w-8 text-text-muted">{d.count}</span>
-                              </div>
-                            ))}
-                          </div>
+                          </p>
+                          <Rating
+                            rating={product.rating}
+                            size="sm"
+                            showCount={false}
+                            className="justify-center"
+                          />
+                          <p className="mt-1 text-xs text-text-muted">
+                            {product.reviews.length}{" "}
+                            {product.reviews.length === 1 ? "review" : "reviews"}
+                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div className="flex-1 space-y-1">
+                          {product.distribution.map((d: any) => (
+                            <div key={d.stars} className="flex items-center gap-2 text-sm">
+                              <span className="w-8 text-right text-text-muted">
+                                {d.stars}★
+                              </span>
+                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                                <div
+                                  className="h-full bg-amber-400"
+                                  style={{ width: `${d.percentage}%` }}
+                                />
+                              </div>
+                              <span className="w-8 text-text-muted">{d.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Reviews list */}
-                    <div className="space-y-4">
+                    <ul className="space-y-4">
                       {product.reviews.map((review) => (
-                        <Card key={review.id}>
-                          <CardHeader className="pb-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage
-                                    src={review.user.avatar || ""}
-                                    alt={review.user.displayName || review.user.username}
-                                  />
-                                  <AvatarFallback className="text-xs">
-                                    {(review.user.displayName || review.user.username)[0]?.toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="min-w-0">
-                                  <p className="font-medium text-sm truncate">
-                                    {review.user.displayName || review.user.username}
-                                  </p>
-                                  <div className="flex items-center gap-1">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                      <Rating
-                                        key={i}
-                                        rating={i < review.rating ? 1 : 0}
-                                        size="sm"
-                                        showCount={false}
-                                      />
-                                    ))}
-                                    {review.isVerified && (
-                                      <Badge variant="outline" className="text-xs ml-2">
-                                        Verified Purchase
-                                      </Badge>
-                                    )}
-                                  </div>
+                        <li
+                          key={review.id}
+                          className="rounded-lg border border-border p-4"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 flex-1 items-center gap-2">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage
+                                  src={review.user.avatar || ""}
+                                  alt={review.user.displayName || review.user.username}
+                                />
+                                <AvatarFallback className="text-xs">
+                                  {(review.user.displayName || review.user.username)[0]?.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-text-primary">
+                                  {review.user.displayName || review.user.username}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <StarRow rating={review.rating} />
+                                  {review.isVerified && (
+                                    <span className="text-xs text-text-muted">
+                                      Verified purchase
+                                    </span>
+                                  )}
                                 </div>
                               </div>
-                              {currentUser && currentUser.id !== review.userId && (
-                                <ReportReviewButton reviewId={review.id} />
-                              )}
                             </div>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            {review.title && (
-                              <p className="font-medium text-sm text-text-primary">
-                                {review.title}
+                            {currentUser && currentUser.id !== review.userId && (
+                              <ReportReviewButton reviewId={review.id} />
+                            )}
+                          </div>
+
+                          {review.title && (
+                            <p className="mt-3 text-sm font-medium text-text-primary">
+                              {review.title}
+                            </p>
+                          )}
+                          {review.content && (
+                            <p className="mt-1 text-sm text-text-secondary">
+                              {review.content}
+                            </p>
+                          )}
+
+                          {review.creatorResponse ? (
+                            <div className="mt-3 border-l-2 border-border pl-3">
+                              <p className="text-xs font-medium text-text-muted">
+                                Creator response
+                                {review.creatorResponseAt &&
+                                  ` · ${new Date(review.creatorResponseAt).toLocaleDateString()}`}
                               </p>
-                            )}
-                            {review.content && (
-                              <p className="text-sm text-text-secondary">
-                                {review.content}
+                              <p className="mt-1 text-sm text-text-secondary">
+                                {review.creatorResponse}
                               </p>
-                            )}
-                            {review.creatorResponse && (
-                              <div className="border-l-2 border-primary pl-3 py-2 bg-primary/5 rounded-r">
-                                <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
-                                  <span className="font-medium text-primary">Creator Response</span>
-                                  <span>{new Date(review.creatorResponseAt!).toLocaleDateString()}</span>
-                                </div>
-                                <p className="text-sm text-text-secondary">{review.creatorResponse}</p>
-                              </div>
-                            )}
-                            {currentUser && currentUser.id === product.creatorId && !review.creatorResponse && (
-                              <CreatorResponseForm reviewId={review.id} productId={product.id} />
-                            )}
-                          </CardContent>
-                        </Card>
+                            </div>
+                          ) : (
+                            currentUser &&
+                            currentUser.id === product.creatorId && (
+                              <CreatorResponseForm
+                                reviewId={review.id}
+                                productId={product.id}
+                              />
+                            )
+                          )}
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
                 )}
               </TabsContent>
@@ -639,39 +666,31 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
         {/* Related sections */}
         {moreFromCreator.length > 0 && (
-          <div className="mt-12">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-text-primary">
-                More from {creatorName}
-              </h2>
-              <Link
-                href={product.store?.slug ? `/store/${product.store.slug}` : `/store/${product.creator.username}`}
-                className="text-sm text-text-secondary hover:text-accent flex items-center gap-1"
-              >
-                View store <ExternalLink className="h-3 w-3" />
-              </Link>
-            </div>
+          <section className="mt-14">
+            <SectionHeader
+              title={`More from ${creatorName}`}
+              actionLabel="View store"
+              actionHref={
+                product.store?.slug
+                  ? `/store/${product.store.slug}`
+                  : `/store/${product.creator.username}`
+              }
+            />
             <ProductGrid products={moreFromCreator} />
-          </div>
+          </section>
         )}
 
         {relatedProducts.length > 0 && (
-          <div className="mt-12">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-text-primary">
-                Related Products
-              </h2>
-              {product.category && (
-                <Link
-                  href={`/categories/${product.category.slug}`}
-                  className="text-sm text-text-secondary hover:text-accent flex items-center gap-1"
-                >
-                  Browse {product.category.name} <ExternalLink className="h-3 w-3" />
-                </Link>
-              )}
-            </div>
+          <section className="mt-14">
+            <SectionHeader
+              title="Related products"
+              actionLabel={product.category ? `Browse ${product.category.name}` : undefined}
+              actionHref={
+                product.category ? `/categories/${product.category.slug}` : undefined
+              }
+            />
             <ProductGrid products={relatedProducts} />
-          </div>
+          </section>
         )}
       </div>
     </div>
@@ -681,10 +700,29 @@ export default async function ProductPage({ params }: { params: { slug: string }
 function DetailItem({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs text-text-muted uppercase tracking-wider">
-        {label}
-      </p>
-      <p className="font-medium text-text-primary">{children}</p>
+      <dt className="text-xs uppercase tracking-wide text-text-muted">{label}</dt>
+      <dd className="font-medium text-text-primary">{children}</dd>
     </div>
+  )
+}
+
+/** A single row of stars. Rating renders its own five, so it cannot be reused here. */
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <span className="flex items-center gap-0.5" aria-label={`${rating} out of 5`}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <svg
+          key={i}
+          viewBox="0 0 24 24"
+          fill={i < Math.round(rating) ? "currentColor" : "none"}
+          stroke="currentColor"
+          strokeWidth={i < Math.round(rating) ? 0 : 1.5}
+          className="h-3 w-3 text-amber-400"
+          aria-hidden="true"
+        >
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      ))}
+    </span>
   )
 }

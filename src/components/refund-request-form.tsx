@@ -166,7 +166,7 @@ export function RefundRequestForm({ order }: { order: Order }) {
               />
             </div>
 
-            <Button type="submit" className="w-full gradient-bg text-white" disabled={submitting}>
+            <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

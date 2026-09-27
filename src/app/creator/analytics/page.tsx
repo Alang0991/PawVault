@@ -4,6 +4,9 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { StatGrid } from "@/components/creator/stat-tile"
+import { EmptyState } from "@/components/empty-state"
+import { formatCount } from "@/lib/format"
 import Link from "next/link"
 import { formatPrice } from "@/lib/helpers"
 import { useFormattedDate } from "@/components/providers/i18n-provider"
@@ -104,106 +107,88 @@ export default function CreatorAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading analytics...</p>
+      <div className="pv-shell py-8 md:py-10">
+        <div className="flex items-end justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-8 w-40 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-64 animate-pulse rounded bg-muted" />
+          </div>
+          <div className="h-10 w-56 animate-pulse rounded-lg bg-muted" />
         </div>
+        <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-surface p-4">
+              <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+              <div className="mt-2 h-7 w-16 animate-pulse rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 h-64 animate-pulse rounded-xl border border-border bg-surface" />
       </div>
     )
   }
 
   if (!data) {
     return (
-      <div className="text-center py-8">
-        <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-        <p className="text-muted-foreground">Unable to load analytics data</p>
-        <Button onClick={fetchData} className="mt-4">Retry</Button>
+      <div className="pv-shell py-10">
+        <EmptyState
+          icon={<BarChart3 className="h-6 w-6" />}
+          title="We couldn't load your analytics."
+          description="Nothing has come through yet. Try again in a moment."
+          action={{ label: "Retry", onClick: fetchData }}
+        />
       </div>
     )
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="pv-shell py-8 md:py-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Analytics</h1>
-          <p className="text-text-secondary">Track your store performance and customer insights</p>
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
+            Analytics
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">
+            How your store is performing.
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1 self-start border-b border-border">
           {(["7d", "30d", "90d"] as const).map((r) => (
-            <Button
+            <button
               key={r}
-              variant={range === r ? "default" : "outline"}
-              size="sm"
+              aria-current={range === r}
               onClick={() => setRange(r)}
+              className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${
+                range === r
+                  ? "border-accent font-medium text-text-primary"
+                  : "border-transparent text-text-muted hover:text-text-primary"
+              }`}
             >
-              {r === "7d" ? "7 Days" : r === "30d" ? "30 Days" : "90 Days"}
-            </Button>
+              {r === "7d" ? "7 days" : r === "30d" ? "30 days" : "90 days"}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-xl">
-              <DollarSign className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Revenue</p>
-              <p className="text-2xl font-bold">{formatPrice(data.totalRevenue)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl">
-              <ShoppingBag className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Orders</p>
-              <p className="text-2xl font-bold">{data.orders}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-xl">
-              <Package className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Units Sold</p>
-              <p className="text-2xl font-bold">{data.unitsSold}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-xl">
-              <TrendingUp className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Avg Order</p>
-              <p className="text-2xl font-bold">{formatPrice(data.avgOrder)}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid
+        className="mt-8"
+        stats={[
+          { label: "Revenue", value: formatPrice(data.totalRevenue) },
+          { label: "Orders", value: formatCount(data.orders) },
+          { label: "Units sold", value: formatCount(data.unitsSold) },
+          { label: "Average order", value: formatPrice(data.avgOrder) },
+        ]}
+      />
 
-      {/* Revenue Over Time */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Revenue Over Time
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.revenueOverTime.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No revenue data for this period.</p>
-          ) : (
+      <section className="mt-8 rounded-xl border border-border bg-surface p-5">
+        <h2 className="text-lg font-bold tracking-tight text-text-primary">
+          Revenue over time
+        </h2>
+        {data.revenueOverTime.length === 0 ? (
+          <p className="py-10 text-center text-sm text-text-muted">
+            No revenue in this period yet.
+          </p>
+        ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -216,19 +201,20 @@ export default function CreatorAnalyticsPage() {
                 </thead>
                 <tbody>
                   {data.revenueOverTime.map((row) => (
-                    <tr key={row.date} className="border-b last:border-0">
-                      <td className="py-2 px-4">{fmtDate(row.date)}</td>
-                      <td className="text-right py-2 px-4 font-medium">{formatPrice(row.revenue)}</td>
-                      <td className="text-right py-2 px-4">{row.orders}</td>
-                      <td className="text-right py-2 px-4">{row.units}</td>
+                    <tr key={row.date} className="border-b border-border last:border-0">
+                      <td className="px-4 py-2 text-text-secondary">{fmtDate(row.date)}</td>
+                      <td className="px-4 py-2 text-right font-medium text-text-primary">
+                        {formatPrice(row.revenue)}
+                      </td>
+                      <td className="px-4 py-2 text-right text-text-secondary">{row.orders}</td>
+                      <td className="px-4 py-2 text-right text-text-secondary">{row.units}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Top Products */}

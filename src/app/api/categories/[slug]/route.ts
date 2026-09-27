@@ -22,7 +22,11 @@ export async function GET(
         _count: {
           select: {
             products: {
-              where: { isPublished: true, status: "PUBLISHED" },
+              where: {
+                isPublished: true,
+                status: "PUBLISHED",
+                creator: { isInternal: false },
+              },
             },
           },
         },

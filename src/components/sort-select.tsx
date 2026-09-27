@@ -2,16 +2,20 @@
 
 import { useRouter } from "next/navigation"
 import { Label } from "@/components/ui/label"
+import { useTranslation } from "@/hooks/use-translation"
 
 const SORT_OPTIONS = [
-  { value: "newest", label: "Newest" },
-  { value: "oldest", label: "Oldest" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "popular", label: "Most Popular" },
-  { value: "rating", label: "Highest Rated" },
-]
+  { value: "trending", translationKey: "marketplace.sortTrending", fallback: "Trending" },
+  { value: "newest", translationKey: "marketplace.sortNewest", fallback: "Newest" },
+  { value: "price-asc", translationKey: "marketplace.sortPriceLow", fallback: "Price: Low to High" },
+  { value: "price-desc", translationKey: "marketplace.sortPriceHigh", fallback: "Price: High to Low" },
+  { value: "rating", translationKey: "marketplace.sortRating", fallback: "Highest Rated" },
+] as const
 
+/**
+ * Sort control. Trending leads because it is the marketplace default —
+ * see the design direction §5 and §7.
+ */
 export function SortSelect({
   current,
   params,
@@ -22,6 +26,7 @@ export function SortSelect({
   basePath?: string
 }) {
   const router = useRouter()
+  const { t } = useTranslation()
 
   const onChange = (value: string) => {
     const next = new URLSearchParams(
@@ -35,15 +40,18 @@ export function SortSelect({
 
   return (
     <div className="flex items-center gap-2">
-      <Label className="text-sm">Sort by</Label>
+      <Label htmlFor="sort-select" className="text-sm text-text-muted">
+        {(t("marketplace.sortBy") as string) || "Sort"}
+      </Label>
       <select
+        id="sort-select"
         value={current}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm text-text-secondary transition-colors hover:border-accent/50 focus-ring"
       >
-        {SORT_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
+        {SORT_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {(t(option.translationKey) as string) || option.fallback}
           </option>
         ))}
       </select>

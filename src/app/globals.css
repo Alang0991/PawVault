@@ -32,10 +32,13 @@
   --ring: 262 83% 55%;
   --radius: 0.5rem;
 
-  /* ---- PawVault marketplace semantic tokens ---- */
+  /* ---- PawVault marketplace semantic tokens ----
+     Layered surfaces (background → surface → raised) instead of
+     decoration. The accent guides attention; it does not paint
+     every surface. */
   --pv-surface: 0 0% 100%;
   --pv-surface-elevated: 0 0% 100%;
-  --pv-surface-subtle: 210 38% 99%;
+  --pv-surface-subtle: 210 38% 98%;
   --pv-text-primary: 222 84% 4.5%;
   --pv-text-secondary: 224 71% 8%;
   --pv-text-muted: 215 18% 45%;
@@ -53,10 +56,10 @@
   /* ---- Themeable accent (overridden by user preference) ---- */
   --pv-accent-override: 262 83% 55%;
 
-  /* ---- Gradients (subtle, brand-aligned) ---- */
-  --pv-gradient: linear-gradient(135deg, hsl(var(--pv-accent)), hsl(312 83% 55%));
-  --pv-gradient-soft: linear-gradient(135deg, hsl(var(--pv-accent-soft)), hsl(312 93% 94%));
-  --pv-gradient-muted: linear-gradient(135deg, hsl(215 38% 93%), hsl(220 38% 89%));
+  /* ---- Layout rhythm ---- */
+  --pv-header-height: 64px;
+  --pv-page-max: 1320px;
+  --pv-section-gap: 4.5rem;
 }
 
 /* ---- Dark mode: moody, makes artwork pop ---- */
@@ -82,13 +85,17 @@
   --ring: var(--pv-accent-override, 262 83% 55%);
   --radius: 0.5rem;
 
+  /* Layered surfaces: background → surface → raised → overlay */
   --pv-surface: 222 84% 6.5%;
   --pv-surface-elevated: 222 84% 8.5%;
+  --pv-surface-raised: 222 84% 10%;
+  --pv-surface-overlay: 222 84% 12%;
   --pv-surface-subtle: 223 84% 5%;
   --pv-text-primary: 210 40% 98%;
   --pv-text-secondary: 215 20% 80%;
   --pv-text-muted: 215 20.2% 65%;
   --pv-border: 217 33% 19%;
+  --pv-border-strong: 217 33% 25%;
   --pv-accent: var(--pv-accent-override, 262 83% 55%);
   --pv-accent-hover: var(--pv-accent-override, 271 83% 58%);
   --pv-accent-soft: 262 93% 22%;
@@ -98,10 +105,13 @@
   --pv-info: 210 98% 70%;
   --pv-price: 150 55% 58%;
   --pv-sale: 0 75% 60%;
+}
 
-  --pv-gradient: linear-gradient(135deg, hsl(var(--pv-accent)), hsl(312 83% 55%));
-  --pv-gradient-soft: linear-gradient(135deg, hsl(var(--pv-accent-soft)), hsl(312 93% 12%));
-  --pv-gradient-muted: linear-gradient(135deg, hsl(223 84% 10%), hsl(225 84% 8%));
+/* Light mode layered surfaces */
+:root {
+  --pv-surface-raised: 0 0% 100%;
+  --pv-surface-overlay: 0 0% 100%;
+  --pv-border-strong: 214 32% 80%;
 }
 
 @layer base {
@@ -153,17 +163,6 @@
     overflow: hidden;
   }
 
-  /* Brand touches — used sparingly, intentionally */
-  .pv-gradient-text {
-    background: var(--pv-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .pv-gradient-bg {
-    background: var(--pv-gradient);
-  }
-
   /* Focus ring — consistent, accessible */
   .focus-ring {
     outline: 2px solid var(--ring);
@@ -196,72 +195,181 @@
 
 
 /* ============================================================
-   PawVault 2.0 visual layer
-   This is intentionally token-driven so Founder/theme controls
-   can change the same UI without replacing components.
+   PawVault marketplace visual layer
+
+   Token-driven so Founder/theme controls can restyle the same
+   components without replacing them. Deliberately restrained:
+   no gradient washes, no glow, no glass. Hierarchy comes from
+   spacing, weight and the single brand accent.
    ============================================================ */
 
-:root {
-  --pv-header-height: 72px;
-  --pv-page-max: 1380px;
-  --pv-shadow-glow: 0 24px 80px hsl(var(--pv-accent) / 0.14);
-}
-
 body {
-  background:
-    radial-gradient(circle at 80% -10%, hsl(var(--pv-accent-soft) / .55), transparent 34rem),
-    hsl(var(--background));
+  background: hsl(var(--background));
 }
 
-.dark body {
-  background:
-    radial-gradient(circle at 80% -10%, hsl(var(--pv-accent-soft) / .28), transparent 34rem),
-    hsl(var(--background));
-}
-
+/* ---- Header: solid surface, hairline border, no blur ---- */
 .pv-header {
-  background: hsl(var(--pv-surface) / .86);
-  border-bottom: 1px solid hsl(var(--pv-border) / .72);
-  backdrop-filter: blur(22px) saturate(150%);
-  box-shadow: 0 1px 0 hsl(var(--pv-surface) / .8);
+  background: hsl(var(--pv-surface));
+  border-bottom: 1px solid hsl(var(--pv-border));
 }
-.pv-header-glow { position:absolute; inset:0 0 auto; height:1px; background:linear-gradient(90deg, transparent, hsl(var(--pv-accent) / .65), transparent); pointer-events:none; }
-.pv-logo-mark { width:38px; height:38px; border-radius:13px; display:grid; place-items:center; color:white; font-size:18px; font-weight:900; background:linear-gradient(145deg, hsl(var(--pv-accent)), hsl(312 83% 58%)); box-shadow:0 10px 24px hsl(var(--pv-accent) / .28); transition:transform .2s ease, box-shadow .2s ease; }
-.group:hover .pv-logo-mark { transform:translateY(-1px) rotate(-2deg); box-shadow:0 14px 30px hsl(var(--pv-accent) / .34); }
-.pv-nav-link { display:inline-flex; align-items:center; border-radius:11px; padding:.55rem .72rem; color:hsl(var(--pv-text-secondary)); font-size:.82rem; font-weight:650; transition:all .18s ease; }
-.pv-nav-link:hover { color:hsl(var(--pv-text-primary)); background:hsl(var(--pv-accent) / .07); }
-.pv-search-shell > * { width:100%; }
-.pv-search-shell input { height:42px !important; border-radius:14px !important; border-color:hsl(var(--pv-border) / .75) !important; background:hsl(var(--pv-surface-subtle) / .9) !important; box-shadow:inset 0 1px 1px hsl(var(--pv-text-primary) / .03); }
-.pv-search-shell input:focus { background:hsl(var(--pv-surface)) !important; border-color:hsl(var(--pv-accent) / .45) !important; box-shadow:0 0 0 4px hsl(var(--pv-accent) / .08) !important; }
-.pv-icon-button { border-radius:12px !important; color:hsl(var(--pv-text-secondary)); }
-.pv-icon-button:hover { color:hsl(var(--pv-text-primary)); background:hsl(var(--pv-accent) / .08) !important; }
-.pv-mobile-link { display:flex; align-items:center; gap:.7rem; width:100%; padding:.7rem .8rem; border-radius:12px; color:hsl(var(--pv-text-secondary)); font-size:.9rem; font-weight:650; }
-.pv-mobile-link:hover { color:hsl(var(--pv-text-primary)); background:hsl(var(--pv-accent) / .08); }
 
-.pv-hero { position:relative; overflow:hidden; border:1px solid hsl(var(--pv-border) / .72); border-radius:30px; background:linear-gradient(135deg, hsl(var(--pv-surface) / .98), hsl(var(--pv-accent-soft) / .36)); box-shadow:0 30px 90px hsl(var(--pv-accent) / .09); }
-.dark .pv-hero { background:linear-gradient(135deg, hsl(var(--pv-surface-elevated) / .96), hsl(var(--pv-accent-soft) / .18)); }
-.pv-hero:before { content:""; position:absolute; width:480px; height:480px; right:-180px; top:-220px; border-radius:999px; background:hsl(var(--pv-accent) / .14); filter:blur(6px); }
-.pv-hero-grid { min-height:580px; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr); align-items:center; gap:2rem; padding:clamp(2rem,6vw,5.5rem); }
-.pv-eyebrow { display:inline-flex; align-items:center; gap:.45rem; padding:.45rem .7rem; border-radius:999px; background:hsl(var(--pv-accent) / .09); border:1px solid hsl(var(--pv-accent) / .15); color:hsl(var(--pv-accent)); font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.12em; }
-.pv-dot { width:7px; height:7px; border-radius:50%; background:hsl(var(--pv-accent)); box-shadow:0 0 0 4px hsl(var(--pv-accent) / .1); }
-.pv-dot-green { background:hsl(var(--pv-success)); box-shadow:0 0 0 4px hsl(var(--pv-success) / .1); }
-.pv-dot-pink { background:hsl(var(--pv-sale)); box-shadow:0 0 0 4px hsl(var(--pv-sale) / .1); }
-.pv-hero-art { position:relative; min-height:420px; display:grid; place-items:center; }
-.pv-orb { position:absolute; border-radius:50%; filter:blur(2px); }
-.pv-orb-one { width:280px; height:280px; background:radial-gradient(circle at 35% 30%, hsl(312 90% 72% / .75), hsl(var(--pv-accent) / .16) 58%, transparent 70%); top:35px; right:10px; }
-.pv-orb-two { width:180px; height:180px; background:radial-gradient(circle, hsl(190 90% 70% / .22), transparent 68%); left:15px; bottom:20px; }
-.pv-hero-card { position:absolute; width:min(360px,75%); aspect-ratio:1.18; border-radius:24px; border:1px solid hsl(var(--pv-surface) / .5); background:linear-gradient(145deg, hsl(var(--pv-surface) / .88), hsl(var(--pv-surface) / .62)); backdrop-filter:blur(18px); box-shadow:var(--pv-shadow-glow), 0 20px 55px hsl(var(--pv-text-primary) / .1); }
-.pv-hero-card-back { transform:rotate(8deg) translate(22px,16px); opacity:.55; display:flex; align-items:flex-end; justify-content:space-between; padding:24px; color:hsl(var(--pv-text-muted)); font-size:.7rem; font-weight:900; letter-spacing:.18em; }
-.pv-spark { font-size:70px; color:hsl(var(--pv-accent) / .6); line-height:1; }
-.pv-hero-card-front { transform:rotate(-4deg); padding:18px; overflow:hidden; }
-.pv-card-window { height:46%; border-radius:16px; background:linear-gradient(135deg, hsl(var(--pv-accent) / .28), hsl(312 83% 58% / .18)), repeating-linear-gradient(135deg, transparent 0 16px, hsl(var(--pv-surface) / .08) 17px 18px); border:1px solid hsl(var(--pv-surface) / .45); display:flex; gap:5px; align-items:flex-start; padding:12px; }
-.pv-card-window span { width:6px; height:6px; border-radius:50%; background:hsl(var(--pv-text-primary) / .22); }
-.pv-art-line { margin-top:18px; width:76%; height:10px; border-radius:99px; background:hsl(var(--pv-text-primary) / .12); }
-.pv-art-line.short { width:48%; margin-top:9px; }
-.pv-mini-row { margin-top:24px; display:flex; justify-content:space-between; align-items:center; font-size:.85rem; color:hsl(var(--pv-text-secondary)); }
-.pv-mini-row em { font-style:normal; font-size:1.6rem; color:hsl(var(--pv-accent)); }
-.pv-home-content > section:not(.pv-hero) { position:relative; }
-.pv-product-card { min-width:0; }
+.pv-logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: hsl(var(--primary-foreground));
+  font-size: 15px;
+  font-weight: 800;
+  background: hsl(var(--pv-accent));
+  transition: opacity 0.18s ease;
+}
+.group:hover .pv-logo-mark {
+  opacity: 0.85;
+}
 
-@media (max-width: 1023px) { .pv-hero-grid { grid-template-columns:1fr; min-height:0; } .pv-hero-art { min-height:300px; max-width:520px; width:100%; margin:0 auto; } }
-@media (max-width: 640px) { .pv-hero { border-radius:22px; } .pv-hero-grid { padding:2rem 1.2rem; } .pv-hero-art { min-height:250px; } .pv-hero-card { width:72%; } }
+.pv-nav-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  color: hsl(var(--pv-text-secondary));
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+.pv-nav-link:hover {
+  color: hsl(var(--pv-text-primary));
+  background: hsl(var(--pv-accent) / 0.07);
+}
+.pv-nav-link[aria-current="page"] {
+  color: hsl(var(--pv-text-primary));
+  font-weight: 600;
+}
+
+.pv-search-shell > * {
+  width: 100%;
+}
+.pv-search-shell input {
+  height: 40px !important;
+  border-radius: 10px !important;
+  border-color: hsl(var(--pv-border)) !important;
+  background: hsl(var(--pv-surface-subtle)) !important;
+}
+.pv-search-shell input:focus {
+  background: hsl(var(--pv-surface)) !important;
+  border-color: hsl(var(--pv-accent) / 0.55) !important;
+  box-shadow: 0 0 0 3px hsl(var(--pv-accent) / 0.1) !important;
+}
+
+.pv-icon-button {
+  border-radius: 9px !important;
+  color: hsl(var(--pv-text-secondary));
+}
+.pv-icon-button:hover {
+  color: hsl(var(--pv-text-primary));
+  background: hsl(var(--pv-accent) / 0.08) !important;
+}
+
+.pv-mobile-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border-radius: 9px;
+  color: hsl(var(--pv-text-secondary));
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.pv-mobile-link:hover {
+  color: hsl(var(--pv-text-primary));
+  background: hsl(var(--pv-accent) / 0.08);
+}
+
+/* ---- Page rhythm ---- */
+.pv-shell {
+  width: 100%;
+  max-width: var(--pv-page-max);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+@media (min-width: 768px) {
+  .pv-shell {
+    padding-inline: 1.5rem;
+  }
+}
+
+.pv-section + .pv-section {
+  margin-top: var(--pv-section-gap);
+}
+
+/* ---- Hero: a calm editorial block, not a glowing container ---- */
+.pv-hero {
+  padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(2rem, 4vw, 3rem);
+}
+
+.pv-hero-heading {
+  font-size: clamp(2.25rem, 5.2vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: hsl(var(--pv-text-primary));
+  text-wrap: balance;
+}
+
+.pv-hero-sub {
+  font-size: clamp(1rem, 1.6vw, 1.125rem);
+  line-height: 1.65;
+  color: hsl(var(--pv-text-secondary));
+}
+
+/* ---- Category chips: quiet, neutral, one hover state ---- */
+.pv-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--pv-border));
+  background: hsl(var(--pv-surface));
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: hsl(var(--pv-text-secondary));
+  white-space: nowrap;
+  transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+}
+.pv-chip:hover {
+  color: hsl(var(--pv-text-primary));
+  border-color: hsl(var(--pv-accent) / 0.5);
+  background: hsl(var(--pv-accent) / 0.05);
+}
+
+/* ---- Product card: image leads, everything else is quiet ---- */
+.pv-product-card {
+  min-width: 0;
+}
+.pv-product-media {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--pv-border));
+  background: hsl(var(--pv-surface-subtle));
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.pv-product-media img {
+  transition: transform 0.2s ease;
+}
+.group:hover .pv-product-media {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px hsl(var(--pv-text-primary) / 0.08);
+}
+.group:hover .pv-product-media img {
+  transform: scale(1.03);
+}
+
+/* ---- Commissions band: the one place the accent is allowed to fill ---- */
+.pv-commissions {
+  background: hsl(var(--pv-surface-subtle));
+  border-block: 1px solid hsl(var(--pv-border));
+}
