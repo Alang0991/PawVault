@@ -1,15 +1,17 @@
 export const dynamic = "force-dynamic"
 
 import { prisma } from "@/lib/prisma"
+import { getTrendingProductIds } from "@/lib/trending"
 import { ProductGrid } from "@/components/product-grid"
-import { SectionHeader } from "@/components/section-header"
 import { SearchBar } from "@/components/search-bar"
 import { SortSelect } from "@/components/sort-select"
-import { Badge } from "@/components/ui/badge"
+import {
+  MarketplaceFilters,
+  type CategoryOption,
+  type TagOption,
+} from "@/components/marketplace-filters"
+import { EmptyBrowseState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 
 const PAGE_SIZE = 24
@@ -17,39 +19,22 @@ const PAGE_SIZE = 24
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: {
-    category?: string
-    priceMin?: string
-    priceMax?: string
-    rating?: string
-    tags?: string
-    free?: string
-    onSale?: string
-    sort?: string
-    page?: string
-    q?: string
-    featured?: string
-    creator?: string
-    pc?: string
-    quest?: string
-    platform?: string
-  }
+  searchParams: Record<string, string | undefined>
 }) {
   const page = Math.max(1, parseInt(searchParams.page || "1"))
-  const tagList = searchParams.tags
-    ? searchParams.tags.split(",").map((t) => t.trim()).filter(Boolean)
-    : []
+  const sort = searchParams.sort || "trending"
+
+  const tagList = (searchParams.tags ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
   const creatorQuery = searchParams.creator?.trim()
   const platformQuery = searchParams.platform?.trim()
-  const ratingThreshold = searchParams.rating
-    ? parseFloat(searchParams.rating)
-    : null
+  const ratingThreshold = searchParams.rating ? parseFloat(searchParams.rating) : null
   const validRatingThreshold =
-    ratingThreshold !== null && !Number.isNaN(ratingThreshold)
-      ? ratingThreshold
-      : null
+    ratingThreshold !== null && !Number.isNaN(ratingThreshold) ? ratingThreshold : null
 
-  const price: any = {}
+  const price: Record<string, number> = {}
   if (searchParams.priceMin) price.gte = parseFloat(searchParams.priceMin)
   if (searchParams.priceMax) price.lte = parseFloat(searchParams.priceMax)
 
@@ -60,9 +45,7 @@ export default async function BrowsePage({
       creatorStatus: "APPROVED",
       status: "ACTIVE",
       isInternal: false,
-      store: {
-        visibility: "PUBLISHED",
-      },
+      store: { visibility: "PUBLISHED" },
       ...(creatorQuery && {
         OR: [
           { username: { contains: creatorQuery, mode: "insensitive" } },
@@ -86,87 +69,73 @@ export default async function BrowsePage({
       ],
     }),
     ...(Object.keys(price).length > 0 && { price }),
-    ...(tagList.length > 0 && {
-      tags: { some: { tag: { slug: { in: tagList } } } },
-    }),
+    ...(tagList.length > 0 && { tags: { some: { tag: { slug: { in: tagList } } } } }),
+  }
+
+  const productInclude = {
+    creator: {
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatar: true,
+        isVerified: true,
+      },
+    },
+    category: true,
+    media: { where: { isThumbnail: true }, take: 1 },
+    reviews: { select: { rating: true } },
+    tags: { include: { tag: true } },
+    _count: { select: { favorites: true, reviews: true, downloads: true } },
   }
 
   let products: any[] = []
   let total = 0
-  let categories: any[] = []
-  let popularTags: any[] = []
-
-  let countWhere: any = where
+  let categories: CategoryOption[] = []
+  let tags: TagOption[] = []
 
   try {
+    // A minimum-rating filter has to be resolved to product ids first,
+    // because the threshold applies to the average, not to a column.
+    let countWhere: any = where
     if (validRatingThreshold !== null) {
       const ratedProductIds = (
         await prisma.review.groupBy({
           by: ["productId"],
           _avg: { rating: true },
-          having: {
-            rating: { _avg: { gte: validRatingThreshold } },
-          },
+          having: { rating: { _avg: { gte: validRatingThreshold } } },
         })
       ).map((review) => review.productId)
       countWhere = { ...where, id: { in: ratedProductIds } }
     }
 
-    const [fetchedProducts, fetchedTotal, fetchedCategories, fetchedTags] =
-      await Promise.all([
-        prisma.product.findMany({
-          where,
-          orderBy: browseOrderBy(searchParams.sort || "newest"),
-          skip: (page - 1) * PAGE_SIZE,
-          take: PAGE_SIZE,
-          include: {
-            creator: {
-              select: {
-                id: true,
-                username: true,
-                displayName: true,
-                avatar: true,
-                isVerified: true,
-              },
-            },
-            category: true,
-            media: {
-              where: { isThumbnail: true },
-              take: 1,
-            },
-            reviews: { select: { rating: true } },
-            tags: { include: { tag: true } },
-            _count: { select: { favorites: true, reviews: true } },
-          },
-        }),
-        prisma.product.count({ where: countWhere }),
-        prisma.category.findMany({
-          include: { _count: { select: { products: true } } },
-          orderBy: { name: "asc" },
-        }),
-        prisma.tag.findMany({
-          include: { _count: { select: { products: true } } },
-          orderBy: { products: { _count: "desc" } },
-          take: 15,
-        }),
-      ])
+    const [fetchedTotal, fetchedCategories, fetchedTags] = await Promise.all([
+      prisma.product.count({ where: countWhere }),
+      prisma.category.findMany({
+        where: { parentId: null },
+        orderBy: { displayOrder: "asc" },
+        select: { id: true, name: true, slug: true },
+      }),
+      prisma.tag.findMany({
+        orderBy: { products: { _count: "desc" } },
+        take: 15,
+        select: { id: true, name: true, slug: true },
+      }),
+    ])
 
-    products = fetchedProducts
     total = fetchedTotal
     categories = fetchedCategories
-    popularTags = fetchedTags
+    tags = fetchedTags
+
+    products = await queryProducts({ sort, where, countWhere, page, productInclude })
   } catch (error) {
     console.error("Browse page error:", error)
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-12">
-          <h1 className="text-2xl font-bold mb-2 text-text-primary">
-            Browse Products
-          </h1>
-          <p className="text-text-secondary">
-            Unable to load products. Please try again later.
-          </p>
-        </div>
+      <div className="pv-shell py-12">
+        <h1 className="text-3xl font-bold tracking-tight text-text-primary">Explore</h1>
+        <p className="mt-2 text-text-secondary">
+          We couldn&apos;t load products right now. Please try again.
+        </p>
       </div>
     )
   }
@@ -178,59 +147,101 @@ export default async function BrowsePage({
       p.reviews.length > 0
         ? p.reviews.reduce((s: number, r: any) => s + r.rating, 0) / p.reviews.length
         : 0
-    return { ...p, rating: avgRating, reviewCount: p.reviews.length }
+    return {
+      ...p,
+      rating: avgRating,
+      reviewCount: p.reviews.length,
+      salesCount: p._count?.downloads ?? 0,
+    }
   })
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="mb-6">
-          <SectionHeader
-            title="Browse Marketplace"
-            subtitle={`${total} product${total === 1 ? "" : "s"} found`}
-          />
-          <div className="mt-4 max-w-xl">
-            <SearchBar />
-          </div>
+    <div className="pv-shell py-8 md:py-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
+            Explore
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">
+            {total} {total === 1 ? "product" : "products"}
+          </p>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-          <aside className="lg:col-span-1">
-            <FiltersCard
-              categories={categories}
-              popularTags={popularTags}
-              searchParams={searchParams}
-              tagList={tagList}
-            />
-          </aside>
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <SortSelect
-                current={searchParams.sort || "newest"}
-                params={searchParams}
-              />
-            </div>
-
-            <ProductGrid
-              products={productsWithRating}
-              emptyMessage={
-                <EmptyBrowseState hasFilters={hasActiveFilters(searchParams)} />
-              }
-            />
-
-            {totalPages > 1 && (
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                searchParams={searchParams}
-              />
-            )}
-          </div>
-        </div>
+        <SortSelect current={sort} params={searchParams} />
       </div>
+
+      <div className="mt-5 max-w-xl">
+        <SearchBar />
+      </div>
+
+      <MarketplaceFilters
+        categories={categories}
+        tags={tags}
+        className="mt-6 border-b border-border pb-5"
+      />
+
+      <div className="mt-6">
+        <ProductGrid
+          products={productsWithRating}
+          emptyMessage={
+            <EmptyBrowseState hasFilters={hasActiveFilters(searchParams)} query={searchParams.q} />
+          }
+        />
+      </div>
+
+      {totalPages > 1 && (
+        <Pagination page={page} totalPages={totalPages} searchParams={searchParams} />
+      )}
     </div>
   )
+}
+
+/**
+ * Fetches one page of products.
+ *
+ * Trending cannot be expressed as a Prisma orderBy — it is a weighted
+ * score across several relations — so that path ranks the whole matching
+ * set by score and then slices the requested page.
+ */
+async function queryProducts({
+  sort,
+  where,
+  countWhere,
+  page,
+  productInclude,
+}: {
+  sort: string
+  where: any
+  countWhere: any
+  page: number
+  productInclude: any
+}) {
+  if (sort === "trending") {
+    const candidateIds = (
+      await prisma.product.findMany({ where: countWhere, select: { id: true } })
+    ).map((p) => p.id)
+
+    if (candidateIds.length === 0) return []
+
+    const rankedIds = await getTrendingProductIds(candidateIds.length, [], candidateIds)
+    const start = (page - 1) * PAGE_SIZE
+    const pageIds = rankedIds.slice(start, start + PAGE_SIZE)
+    if (pageIds.length === 0) return []
+
+    const products = await prisma.product.findMany({
+      where: { id: { in: pageIds } },
+      include: productInclude,
+    })
+    const order = new Map(pageIds.map((id, i) => [id, i]))
+    return products.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+  }
+
+  return prisma.product.findMany({
+    where,
+    orderBy: browseOrderBy(sort),
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+    include: productInclude,
+  })
 }
 
 function browseOrderBy(sort: string): any {
@@ -240,7 +251,6 @@ function browseOrderBy(sort: string): any {
       oldest: { createdAt: "asc" },
       "price-asc": { price: "asc" },
       "price-desc": { price: "desc" },
-      popular: { favorites: { _count: "desc" } },
       rating: { reviews: { _count: "desc" } },
     }[sort] || { createdAt: "desc" }
   )
@@ -279,220 +289,6 @@ function buildHref(
   return qs ? `/browse?${qs}` : "/browse"
 }
 
-function FiltersCard({
-  categories,
-  popularTags,
-  searchParams,
-  tagList,
-}: {
-  categories: any[]
-  popularTags: any[]
-  searchParams: Record<string, string | undefined>
-  tagList: string[]
-}) {
-  const activeFilters = hasActiveFilters(searchParams)
-
-  return (
-    <Card className="sticky top-4">
-      <CardHeader className="flex flex-row items-center justify-between py-3">
-        <CardTitle className="text-sm">Filters</CardTitle>
-        {activeFilters && (
-          <Link href="/browse" className="text-xs text-sale hover:underline">
-            Clear
-          </Link>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form className="space-y-4">
-          <input type="hidden" name="sort" value={searchParams.sort || "newest"} />
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">Search</Label>
-            <Input
-              name="q"
-              defaultValue={searchParams.q || ""}
-              placeholder="Search products..."
-              className="text-xs"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">Creator</Label>
-            <Input
-              name="creator"
-              defaultValue={searchParams.creator || ""}
-              placeholder="Creator name or username"
-              className="text-xs"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">Category</Label>
-            <select
-              name="category"
-              defaultValue={searchParams.category || ""}
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-text-primary"
-            >
-              <option value="">All</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">Price</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                name="priceMin"
-                placeholder="Min"
-                defaultValue={searchParams.priceMin || ""}
-                className="text-xs"
-              />
-              <span className="text-text-muted">-</span>
-              <Input
-                type="number"
-                name="priceMax"
-                placeholder="Max"
-                defaultValue={searchParams.priceMax || ""}
-                className="text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">Min rating</Label>
-            <select
-              name="rating"
-              defaultValue={searchParams.rating || ""}
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-text-primary"
-            >
-              <option value="">Any</option>
-              <option value="3">3+</option>
-              <option value="4">4+</option>
-              <option value="4.5">4.5+</option>
-            </select>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <input
-                type="checkbox"
-                name="pc"
-                value="true"
-                defaultChecked={searchParams.pc === "true"}
-                className="accent-accent"
-              />
-              PC
-            </label>
-            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <input
-                type="checkbox"
-                name="quest"
-                value="true"
-                defaultChecked={searchParams.quest === "true"}
-                className="accent-accent"
-              />
-              Quest
-            </label>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-text-muted">Platform</Label>
-            <Input
-              name="platform"
-              defaultValue={searchParams.platform || ""}
-              placeholder="Windows, macOS, Blender..."
-              className="text-xs"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <input
-                type="checkbox"
-                name="free"
-                value="true"
-                defaultChecked={searchParams.free === "true"}
-                className="accent-accent"
-              />
-              Free
-            </label>
-            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <input
-                type="checkbox"
-                name="onSale"
-                value="true"
-                defaultChecked={searchParams.onSale === "true"}
-                className="accent-accent"
-              />
-              On sale
-            </label>
-          </div>
-
-          {popularTags.length > 0 && (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-text-muted">Tags</Label>
-              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
-                {popularTags.map((t) => {
-                  const active = tagList.includes(t.slug)
-                  return (
-                    <label key={t.id} className="cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="tags"
-                        value={t.slug}
-                        defaultChecked={active}
-                        className="sr-only"
-                      />
-                      <Badge
-                        variant={active ? "default" : "outline"}
-                        className="text-[11px]"
-                        size="sm"
-                      >
-                        {t.name}
-                      </Badge>
-                    </label>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          <Button type="submit" size="sm" className="w-full">
-            Apply
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  )
-}
-
-function EmptyBrowseState({ hasFilters }: { hasFilters: boolean }) {
-  return (
-    <div className="text-center py-16">
-      <h3 className="text-lg font-semibold mb-1 text-text-primary">
-        {hasFilters
-          ? "No products match your filters"
-          : "No products yet"}
-      </h3>
-      <p className="text-sm text-text-secondary mb-4">
-        {hasFilters
-          ? "Try adjusting or clearing your filters."
-          : "More drops are on the way. Check back soon."}
-      </p>
-      <Button asChild variant="outline" size="sm">
-        <Link href={hasFilters ? "/browse" : "/creator/dashboard"}>
-          {hasFilters ? "Clear filters" : "Start selling"}
-        </Link>
-      </Button>
-    </div>
-  )
-}
-
 function Pagination({
   page,
   totalPages,
@@ -503,7 +299,10 @@ function Pagination({
   searchParams: Record<string, string | undefined>
 }) {
   return (
-    <div className="flex items-center justify-center gap-2 mt-8">
+    <nav
+      aria-label="Pagination"
+      className="mt-10 flex items-center justify-center gap-3"
+    >
       <Button
         variant="outline"
         size="sm"
@@ -511,14 +310,12 @@ function Pagination({
         asChild={page > 1}
       >
         {page > 1 ? (
-          <Link href={buildHref(searchParams, { page: String(page - 1) })}>
-            Previous
-          </Link>
+          <Link href={buildHref(searchParams, { page: String(page - 1) })}>Previous</Link>
         ) : (
           <span>Previous</span>
         )}
       </Button>
-      <span className="text-xs text-text-muted px-2">
+      <span className="text-sm text-text-muted">
         {page} / {totalPages}
       </span>
       <Button
@@ -528,13 +325,11 @@ function Pagination({
         asChild={page < totalPages}
       >
         {page < totalPages ? (
-          <Link href={buildHref(searchParams, { page: String(page + 1) })}>
-            Next
-          </Link>
+          <Link href={buildHref(searchParams, { page: String(page + 1) })}>Next</Link>
         ) : (
           <span>Next</span>
         )}
       </Button>
-    </div>
+    </nav>
   )
 }

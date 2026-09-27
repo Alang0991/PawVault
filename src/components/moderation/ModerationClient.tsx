@@ -17,7 +17,7 @@ export default function ModerationClient() {
           <div className="space-y-4">
             <p className="text-muted-foreground">You must sign in to access moderation tools.</p>
             <div className="flex items-center gap-2">
-              <Button onClick={() => signIn(undefined, { callbackUrl: '/moderation' })} className="gradient-bg text-white">Sign In</Button>
+              <Button onClick={() => signIn(undefined, { callbackUrl: '/moderation' })}>Sign In</Button>
               <Link href="/auth/signin" className="text-sm text-blue-600 hover:underline">Open full sign-in page</Link>
             </div>
           </div>

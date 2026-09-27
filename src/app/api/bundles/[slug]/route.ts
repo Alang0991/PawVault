@@ -36,6 +36,7 @@ async function getBundleWithItems(where: any) {
           displayName: true,
           avatar: true,
           isVerified: true,
+          isInternal: true,
         },
       },
       store: {
@@ -101,6 +102,9 @@ async function resolveBundle(slug: string, currentUser: any) {
     currentUser &&
     (bundle.creatorId === currentUser.id ||
       ["ADMIN", "FOUNDER"].includes(currentUser.role))
+
+  // Exclude internal/tester bundles from non-founders
+  if (bundle.creator.isInternal && !isOwner) return null
 
   if (!bundle.isPublished && !isOwner) return null
 

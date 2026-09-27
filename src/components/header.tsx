@@ -36,163 +36,51 @@ import {
   AlertTriangle,
   Store,
   X,
-  ChevronDown,
-  Palette,
-  Box,
-  Code,
-  Video,
-  Grid,
+  MoreHorizontal,
 } from "lucide-react"
 
-const NavLinks = [
+/**
+ * Primary navigation stays short so the marketplace reads first:
+ * Explore, Creators, Commissions, Free. Everything else the platform
+ * offers lives under More rather than crowding the bar — see the
+ * design direction §11.
+ */
+const PrimaryNavLinks = [
   { href: "/browse", labelKey: "navigation.browse" },
   { href: "/creators", labelKey: "navigation.creators" },
-  { href: "/services", labelKey: "header.services", hasDropdown: true },
-  { href: "/tutorials", labelKey: "header.tutorials" },
-  { href: "/community", labelKey: "header.community" },
-  { href: "/help", labelKey: "navigation.help" },
-  { href: "/feedback", labelKey: "navigation.feedback" },
-  { href: "/credits", labelKey: "header.credits" },
+  { href: "/services", labelKey: "home.commissions" },
+  { href: "/browse?free=true", labelKey: "home.free" },
 ]
 
-function ServicesDropdown() {
+const OverflowNavLinks = [
+  { href: "/tutorials", labelKey: "header.tutorials" },
+  { href: "/community", labelKey: "header.community" },
+  { href: "/categories", labelKey: "navigation.categories" },
+  { href: "/bundles", labelKey: "home.bundles" },
+  { href: "/help", labelKey: "navigation.help" },
+  { href: "/feedback", labelKey: "navigation.feedback" },
+]
+
+const MobileNavLinks = [...PrimaryNavLinks, ...OverflowNavLinks]
+
+function MoreMenu() {
   const { t } = useTranslation()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="px-3 py-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-accent/10 transition-colors flex items-center gap-1">
-          {t("header.services")}
-          <ChevronDown className="h-4 w-4" />
+        <button className="pv-nav-link" aria-label={t("common.more") as string}>
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only sm:not-sr-only">{t("common.more")}</span>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>{t("header.services")}</DropdownMenuLabel>
-        <DropdownMenuItem asChild>
-          <Link href="/services/avatar-commissions" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            {t("header.avatarCommissions")}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/services/art-commissions" className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            {t("header.artCommissions")}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>{t("header.otherServices")}</DropdownMenuLabel>
-        <DropdownMenuItem asChild>
-          <Link href="/services/3d-services" className="flex items-center gap-2">
-            <Box className="h-4 w-4" />
-            {t("header.threeDServices")}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/services/development" className="flex items-center gap-2">
-            <Code className="h-4 w-4" />
-            {t("header.development")}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/services/video-editing" className="flex items-center gap-2">
-            <Video className="h-4 w-4" />
-            {t("header.videoEditing")}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/services" className="flex items-center gap-2 font-medium">
-            <Grid className="h-4 w-4" />
-            {t("header.allServices")}
-          </Link>
-        </DropdownMenuItem>
+      <DropdownMenuContent align="start" className="w-52">
+        {OverflowNavLinks.map((link) => (
+          <DropdownMenuItem key={link.href} asChild>
+            <Link href={link.href}>{t(link.labelKey)}</Link>
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
-
-function ServicesDropdownMobile({ onSelect }: { onSelect: () => void }) {
-  const { t } = useTranslation()
-  const [isOpen, setIsOpen] = useState(false)
-
-  return (
-    <div className="group">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md flex items-center justify-between"
-      >
-        {t("header.services")}
-        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-      </button>
-      {isOpen && (
-        <div className="ml-4 mt-1 space-y-1 border-l-2 border-accent/20 pl-3 animate-slide-down">
-          <p className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">{t("header.commissionServices")}</p>
-          <Link
-            href="/services/avatar-commissions"
-            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
-            onClick={onSelect}
-          >
-            <span className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              {t("header.avatarCommissions")}
-            </span>
-          </Link>
-          <Link
-            href="/services/art-commissions"
-            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
-            onClick={onSelect}
-          >
-            <span className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              {t("header.artCommissions")}
-            </span>
-          </Link>
-          <div className="my-1 border-t border-border" />
-          <p className="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">{t("header.otherServices")}</p>
-          <Link
-            href="/services/3d-services"
-            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
-            onClick={onSelect}
-          >
-            <span className="flex items-center gap-2">
-              <Box className="h-4 w-4" />
-              {t("header.threeDServices")}
-            </span>
-          </Link>
-          <Link
-            href="/services/development"
-            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
-            onClick={onSelect}
-          >
-            <span className="flex items-center gap-2">
-              <Code className="h-4 w-4" />
-              {t("header.development")}
-            </span>
-          </Link>
-          <Link
-            href="/services/video-editing"
-            className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
-            onClick={onSelect}
-          >
-            <span className="flex items-center gap-2">
-              <Video className="h-4 w-4" />
-              {t("header.videoEditing")}
-            </span>
-          </Link>
-          <div className="my-1 border-t border-border" />
-          <Link
-            href="/services"
-            className="block px-2 py-1.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-accent/10 rounded-md"
-            onClick={onSelect}
-          >
-            <span className="flex items-center gap-2">
-              <Grid className="h-4 w-4" />
-              {t("header.allServices")}
-            </span>
-          </Link>
-        </div>
-      )}
-    </div>
   )
 }
 
@@ -212,68 +100,67 @@ export default function Header() {
 
   return (
     <header className="pv-header sticky top-0 z-50 w-full">
-      <div className="pv-header-glow" />
-      <div className="container mx-auto px-4">
-        <div className="flex min-h-[72px] items-center gap-3">
-          <Link href="/" className="group flex shrink-0 items-center gap-3" aria-label="PawVault home">
+      <div className="pv-shell">
+        <div className="flex min-h-[64px] items-center gap-3">
+          <Link href="/" className="group flex shrink-0 items-center gap-2.5" aria-label="PawVault home">
             <div className="pv-logo-mark">
               <span>P</span>
             </div>
-            <div className="hidden sm:block">
-              <div className="text-[17px] font-black tracking-tight text-text-primary">PawVault</div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">Creator marketplace</div>
-            </div>
+            <span className="hidden text-[17px] font-bold tracking-tight text-text-primary sm:block">
+              PawVault
+            </span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-1 ml-5" aria-label="Primary navigation">
-            {NavLinks.slice(0, 5).map((link) => (
-              link.hasDropdown ? <ServicesDropdown key={link.href} /> : (
-                <Link key={link.href} href={link.href} className="pv-nav-link">{t(link.labelKey)}</Link>
-              )
+          <nav className="ml-4 hidden items-center gap-0.5 lg:flex" aria-label="Primary navigation">
+            {PrimaryNavLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="pv-nav-link">
+                {t(link.labelKey)}
+              </Link>
             ))}
+            <MoreMenu />
           </nav>
 
-          <div className="hidden md:block flex-1 max-w-[440px] mx-auto">
+          <div className="mx-auto hidden max-w-[420px] flex-1 md:block">
             <div className="pv-search-shell"><SearchBar /></div>
           </div>
 
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ml-auto flex items-center gap-1">
             <LanguageSelector compact />
-            <IconButton variant="ghost" size="sm" asChild aria-label="Wishlist" className="relative hidden sm:inline-flex pv-icon-button">
-              <Link href="/wishlist"><Heart className="h-[18px] w-[18px]" />{wishlist > 0 && <Badge variant="sale" size="sm" className="absolute -top-1 -right-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{wishlist > 99 ? "99+" : wishlist}</Badge>}</Link>
+            <IconButton variant="ghost" size="sm" asChild aria-label={t("navigation.wishlist") as string} className="pv-icon-button relative hidden sm:inline-flex">
+              <Link href="/wishlist"><Heart className="h-[18px] w-[18px]" />{wishlist > 0 && <Badge variant="sale" size="sm" className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{wishlist > 99 ? "99+" : wishlist}</Badge>}</Link>
             </IconButton>
-            <IconButton variant="ghost" size="sm" asChild aria-label="Cart" className="relative hidden sm:inline-flex pv-icon-button">
-              <Link href="/cart"><ShoppingCart className="h-[18px] w-[18px]" />{cart > 0 && <Badge variant="default" size="sm" className="absolute -top-1 -right-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{cart > 99 ? "99+" : cart}</Badge>}</Link>
+            <IconButton variant="ghost" size="sm" asChild aria-label={t("navigation.cart") as string} className="pv-icon-button relative hidden sm:inline-flex">
+              <Link href="/cart"><ShoppingCart className="h-[18px] w-[18px]" />{cart > 0 && <Badge variant="default" size="sm" className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{cart > 99 ? "99+" : cart}</Badge>}</Link>
             </IconButton>
             {isCreator && (
-              <Button variant="secondary" size="sm" className="hidden lg:inline-flex rounded-xl px-4" asChild>
-                <Link href="/creator/dashboard"><Store className="h-4 w-4 mr-1.5" />{t("header.creatorHub")}</Link>
+              <Button variant="secondary" size="sm" className="hidden rounded-lg px-3.5 lg:inline-flex" asChild>
+                <Link href="/creator/dashboard"><Store className="h-4 w-4" />{t("header.creatorHub")}</Link>
               </Button>
             )}
             {isAuthenticated ? (
               <AccountMenu isFounder={isFounder} isStaff={isStaff} isCreator={isCreator} avatar={account?.user?.avatar || session?.user?.image || ""} initials={initials} name={displayName} email={account?.user?.email || session?.user?.email || ""} />
             ) : (
-              <Button size="sm" className="hidden sm:inline-flex rounded-xl px-4" asChild><Link href="/auth/signin"><User className="h-4 w-4 mr-1.5" />{t("auth.signIn")}</Link></Button>
+              <Button size="sm" className="hidden rounded-lg px-3.5 sm:inline-flex" asChild><Link href="/auth/signin">{t("auth.signIn")}</Link></Button>
             )}
-            <IconButton variant="ghost" size="sm" className="lg:hidden pv-icon-button" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
+            <IconButton variant="ghost" size="sm" className="pv-icon-button lg:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </IconButton>
           </div>
         </div>
 
-        <div className="md:hidden pb-3">
+        <div className="pb-3 md:hidden">
           <div className="pv-search-shell"><SearchBar /></div>
         </div>
       </div>
 
       {isMobileMenuOpen && (
-        <div className="lg:hidden border-t border-border/60 bg-surface/95 backdrop-blur-xl shadow-card-hover animate-slide-down">
-          <div className="container mx-auto px-4 py-4 space-y-2">
-            {NavLinks.map((link) => link.hasDropdown ? <ServicesDropdownMobile key={link.href} onSelect={() => setIsMobileMenuOpen(false)} /> : (
+        <div className="animate-slide-down border-t border-border bg-surface lg:hidden">
+          <div className="pv-shell space-y-1 py-4">
+            {MobileNavLinks.map((link) => (
               <Link key={link.href} href={link.href} className="pv-mobile-link" onClick={() => setIsMobileMenuOpen(false)}>{t(link.labelKey)}</Link>
             ))}
             {isAuthenticated ? (
-              <div className="mt-3 border-t border-border/60 pt-3 space-y-1">
+              <div className="mt-3 space-y-1 border-t border-border pt-3">
                 <div className="flex items-center gap-3 px-3 py-2">
                   <Avatar className="h-10 w-10"><AvatarImage src={account?.user?.avatar || session?.user?.image || ""} alt={displayName} /><AvatarFallback>{initials}</AvatarFallback></Avatar>
                   <div className="min-w-0"><p className="font-semibold text-sm truncate">{displayName}</p><p className="text-xs text-text-muted truncate">{account?.user?.email || session?.user?.email}</p></div>
@@ -286,7 +173,7 @@ export default function Header() {
                 <Link href="/settings" className="pv-mobile-link" onClick={() => setIsMobileMenuOpen(false)}><Settings className="h-4 w-4" />{t("navigation.settings")}</Link>
                 <button onClick={() => signOut()} className="pv-mobile-link w-full text-left"><LogOut className="h-4 w-4" />{t("auth.signOut")}</button>
               </div>
-            ) : <Link href="/auth/signin" className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 font-semibold text-accent-foreground" onClick={() => setIsMobileMenuOpen(false)}><User className="h-4 w-4" />{t("auth.signIn")}</Link>}
+            ) : <Link href="/auth/signin" className="pv-mobile-link mt-3 justify-center rounded-lg bg-accent font-medium text-accent-foreground" onClick={() => setIsMobileMenuOpen(false)}><User className="h-4 w-4" />{t("auth.signIn")}</Link>}
           </div>
         </div>
       )}
@@ -324,7 +211,7 @@ function AccountMenu({
         >
           <Avatar className="h-9 w-9">
             <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback className="text-sm bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white">
+            <AvatarFallback className="bg-muted text-sm font-semibold text-text-secondary">
               {initials}
             </AvatarFallback>
           </Avatar>

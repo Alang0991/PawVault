@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { AdultContentPreview } from "@/components/adult-content-preview"
 import { formatDate } from "@/lib/helpers"
 import { getServerCurrency } from "@/lib/currency-server"
+import { EmptyState } from "@/components/empty-state"
+import { formatCount } from "@/lib/format"
 import {
   Download,
   ExternalLink,
@@ -148,32 +150,25 @@ export default async function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-10 md:py-12">
+      <div className="pv-shell py-8 md:py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text-primary">My Library</h1>
-          <p className="text-sm text-text-secondary mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
+            Library
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">
             {licenses.length === 0
-              ? "Products you purchase appear here."
-              : `${licenses.length} product${licenses.length === 1 ? "" : "s"} in your collection`}
+              ? "Everything you buy ends up here."
+              : `${formatCount(licenses.length)} ${licenses.length === 1 ? "product" : "products"}`}
           </p>
         </div>
 
         {licenses.length === 0 ? (
-          <Card className="p-12 text-center">
-            <div className="mx-auto h-14 w-14 rounded-full bg-surface-subtle flex items-center justify-center mb-4">
-              <Package className="h-7 w-7 text-text-muted" />
-            </div>
-            <h2 className="text-xl font-semibold text-text-primary mb-2">
-              No products yet
-            </h2>
-            <p className="text-sm text-text-secondary mb-6 max-w-md mx-auto">
-              Purchase products to add them to your library. Your downloads and
-              license keys will appear here.
-            </p>
-            <Button asChild>
-              <Link href="/browse">Browse Marketplace</Link>
-            </Button>
-          </Card>
+          <EmptyState
+            icon={<Package className="h-6 w-6" />}
+            title="Nothing here yet."
+            description="Buy something and its downloads, files and license will live here."
+            action={{ label: "Browse products", href: "/browse" }}
+          />
         ) : (
           <div className="space-y-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

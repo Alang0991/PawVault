@@ -1,28 +1,18 @@
 import { prisma } from "@/lib/prisma"
-import { ProductCard } from "@/components/product-card"
+import { getTrendingProductIds } from "@/lib/trending"
 import { ProductGrid } from "@/components/product-grid"
 import { BundleCard } from "@/components/bundle-card"
 import { SectionHeader } from "@/components/section-header"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { MarketplaceHero } from "@/components/marketplace-hero"
+import { PopularCreators } from "@/components/popular-creators"
+import { CommissionsBand } from "@/components/commissions-band"
 import { CategoryCard } from "@/components/category-card"
 import { CreatorCard } from "@/components/creator-card"
 import { AnnouncementBar } from "@/components/announcement-bar"
-import { StaffPicksSection } from "@/components/staff-picks-section"
 import { FollowingFeed } from "@/components/following-feed"
-import Link from "next/link"
 import { getServerUser } from "@/lib/session"
 import { getUserLocale } from "@/lib/i18n/server"
 import { loadTranslations, t as translate } from "@/lib/i18n/translation-loader"
-import {
-  Clock,
-  Flame,
-  Sparkles,
-  Star,
-  TrendingUp,
-  Package,
-} from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -86,6 +76,36 @@ function isSectionActive(section: any): boolean {
   return true
 }
 
+async function getTopLevelCategories() {
+  try {
+    return await prisma.category.findMany({
+      where: { parentId: null },
+      orderBy: { displayOrder: "asc" },
+      take: 8,
+      select: { id: true, name: true, slug: true },
+    })
+  } catch (error) {
+    console.error("Failed to fetch homepage categories:", error)
+    return []
+  }
+}
+
+/** Ranked by the shared trending score, then hydrated for the product card. */
+async function getTrendingProducts(limit: number, excludeIds: string[]) {
+  const rankedIds = await getTrendingProductIds(limit, excludeIds)
+  if (rankedIds.length === 0) return []
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: rankedIds } },
+    include: PRODUCT_CARD_FIELDS,
+  })
+
+  const order = new Map(rankedIds.map((id, i) => [id, i]))
+  return enrich(products).sort(
+    (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)
+  )
+}
+
 async function getSectionData(section: any, user: any, usedIds: Set<string>) {
   const config = section.config || {}
   const limit = config.limit ?? 8
@@ -115,45 +135,44 @@ async function getSectionData(section: any, user: any, usedIds: Set<string>) {
       }
     }
 
-    case "staffPicks": {
+    case "popularCreators": {
       try {
-        const picks = await prisma.staffPick.findMany({
+        const creators = await prisma.user.findMany({
           where: {
-            isActive: true,
-            product: { isPublished: true, creator: { isInternal: false }, id: { notIn: [...usedIds] } },
+            role: { in: ["CREATOR", "VERIFIED_CREATOR"] },
+            creatorStatus: "APPROVED",
+            status: "ACTIVE",
+            isInternal: false,
+            store: { visibility: "PUBLISHED" },
           },
-          take: config.limit ?? 6,
-          include: {
-            product: {
-              include: {
-                creator: {
-                  select: { id: true, username: true, displayName: true, avatar: true, isVerified: true },
-                },
-                media: { where: { isThumbnail: true }, take: 1 },
-                reviews: { select: { rating: true } },
-                _count: { select: { favorites: true, reviews: true } },
-              },
-            },
-            staff: { select: { username: true, displayName: true } },
+          take: config.limit ?? 4,
+          orderBy: [
+            { salesCount: "desc" },
+            { followersCount: "desc" },
+          ],
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatar: true,
+            bio: true,
+            isVerified: true,
+            salesCount: true,
+            rating: true,
+            followersCount: true,
+            store: { select: { name: true, slug: true, banner: true } },
+            _count: { select: { products: { where: { isPublished: true } } } },
           },
         })
-        const enrichedStaffPicks = picks.map((p: any) => {
-          const avgRating = p.product.reviews.length > 0
-            ? p.product.reviews.reduce((s: number, r: any) => s + r.rating, 0) / p.product.reviews.length
-            : 0
-          return {
-            id: p.id,
-            note: p.note,
-            createdAt: p.createdAt.toISOString(),
-            product: { ...p.product, rating: avgRating, reviewCount: p.product.reviews.length },
-            staff: p.staff,
-          }
-        })
-        return { type: "staffPicks", picks: enrichedStaffPicks, config, usedIds: picks.map((p: any) => p.product.id) }
+        return { type: "popularCreators", creators, config, usedIds: [] }
       } catch (error) {
-        console.error("Failed to fetch staff picks:", error)
-        return { type: "staffPicks", picks: [], config, usedIds: [] }
+        console.error("Failed to fetch popular creators:", error)
+        return { type: "popularCreators", creators: [], config, usedIds: [] }
       }
+    }
+
+    case "commissions": {
+      return { type: "commissions", config, usedIds: [] }
     }
 
     case "followingFeed":
@@ -161,18 +180,8 @@ async function getSectionData(section: any, user: any, usedIds: Set<string>) {
 
     case "trendingProducts": {
       try {
-        const products = await prisma.product.findMany({
-          where: {
-            isPublished: true,
-            creator: { isInternal: false },
-            id: { notIn: [...usedIds] },
-          },
-          take: limit,
-          include: PRODUCT_CARD_FIELDS,
-          orderBy: { favorites: { _count: "desc" } },
-        })
-        const enriched = enrich(products)
-        return { type: "trendingProducts", products: enriched, config, usedIds: products.map((p) => p.id) }
+        const products = await getTrendingProducts(limit, [...usedIds])
+        return { type: "trendingProducts", products, config, usedIds: products.map((p) => p.id) }
       } catch (error) {
         console.error("Failed to fetch trending products:", error)
         return { type: "trendingProducts", products: [], config, usedIds: [] }
@@ -435,6 +444,10 @@ export default async function Home() {
   // t function without namespace prefix for components that build full keys themselves
   const t = (key: string) => translate(homeMessages, key)
 
+  // The hero carries the category entry points, so it needs them
+  // whether or not a full category grid section is enabled.
+  const heroCategories = await getTopLevelCategories()
+
   return (
     <div className="min-h-screen bg-background">
       {Array.from(dedupedSectionMap.values())
@@ -449,48 +462,28 @@ export default async function Home() {
           )
         })}
 
-      <main className="pv-home-content container mx-auto px-4 py-10 md:py-14 space-y-16">
+      <main className="pv-shell pb-20">
         {Array.from(dedupedSectionMap.entries()).map(([sectionId, data]) => {
           const section = activeSections.find((s) => s.id === sectionId)
           if (!section) return null
 
           switch (data.type) {
             case "hero": {
-              const config = data.config
+              const config = data.config ?? {}
               return (
-                <section key={sectionId} className="pv-hero">
-                  <div className="pv-hero-grid">
-                    <div className="max-w-3xl relative z-10">
-                      <div className="pv-eyebrow"><Sparkles className="h-3.5 w-3.5" /> {ht("eyebrow")}</div>
-                      <h1 className="mt-5 text-5xl sm:text-6xl lg:text-7xl font-black tracking-[-0.045em] text-text-primary leading-[0.98]">
-                        {ht("headingA")} <span className="pv-gradient-text">{ht("headingB")}</span>
-                      </h1>
-                      <p className="mt-6 max-w-2xl text-lg sm:text-xl leading-8 text-text-secondary">
-                        {ht("description")}
-                      </p>
-                      {config.showCTA && (
-                        <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                          <Button size="lg" className="rounded-2xl px-7 h-12 shadow-card-hover" asChild>
-                            <Link href={config.ctaHref ?? "/browse"}>{config.ctaText ?? ht("browse")}<span aria-hidden>→</span></Link>
-                          </Button>
-                          <Button variant="surface" size="lg" className="rounded-2xl px-7 h-12" asChild>
-                            <Link href={config.secondaryCtaHref ?? "/auth/signin"}>{config.secondaryCtaText ?? ht("sell")}</Link>
-                          </Button>
-                        </div>
-                      )}
-                      <div className="mt-9 flex flex-wrap gap-x-7 gap-y-3 text-sm text-text-muted">
-                        <span className="flex items-center gap-2"><span className="pv-dot pv-dot-green" />{ht("creatorStores")}</span>
-                        <span className="flex items-center gap-2"><span className="pv-dot" />{ht("instant")}</span>
-                        <span className="flex items-center gap-2"><span className="pv-dot pv-dot-pink" />{ht("built")}</span>
-                      </div>
-                    </div>
-                    <div className="pv-hero-art" aria-hidden="true">
-                      <div className="pv-orb pv-orb-one" />
-                      <div className="pv-orb pv-orb-two" />
-                      <div className="pv-hero-card pv-hero-card-back"><div className="pv-spark">✦</div><span>CREATE</span></div>
-                      <div className="pv-hero-card pv-hero-card-front"><div className="pv-card-window"><span /><span /><span /></div><div className="pv-art-line" /><div className="pv-art-line short" /><div className="pv-mini-row"><b>Digital goods</b><em>∞</em></div></div>
-                    </div>
-                  </div>
+                <section key={sectionId}>
+                  <MarketplaceHero
+                    eyebrow={ht("eyebrow")}
+                    heading={`${ht("headingA")} ${ht("headingB")}`}
+                    description={ht("description")}
+                    searchPlaceholder={ht("searchPlaceholder")}
+                    browseLabel={config.ctaText ?? ht("browse")}
+                    browseHref={config.ctaHref ?? "/browse"}
+                    sellLabel={config.secondaryCtaText ?? ht("sell")}
+                    sellHref={config.secondaryCtaHref ?? "/become-creator"}
+                    browseAllCategoriesLabel={ht("browseCategories")}
+                    categories={config.showCTA === false ? [] : heroCategories}
+                  />
                 </section>
               )
             }
@@ -499,10 +492,9 @@ export default async function Home() {
               const d = data as any
               if (!d.products?.length) return null
               return (
-                <section key={sectionId}>
+                <section key={sectionId} className="pv-section">
                   <SectionHeader
                     title={d.config.title ?? ht("featured")}
-                    icon={<Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
                     actionLabel={d.config.actionLabel ?? ht("allFeatured")}
                     actionHref={d.config.actionHref ?? "/browse?featured=true"}
                   />
@@ -511,29 +503,24 @@ export default async function Home() {
               )
             }
 
-            case "staffPicks": {
-              const d = data as any
-              if (!d.picks?.length) return null
-              return (
-                <StaffPicksSection key={sectionId} picks={d.picks} />
-              )
-            }
-
             case "followingFeed": {
               const d = data as any
               if (!d.userId) return null
-              return <FollowingFeed key={sectionId} userId={d.userId} />
+              return (
+                <div className="pv-section" key={sectionId}>
+                  <FollowingFeed userId={d.userId} />
+                </div>
+              )
             }
 
             case "trendingProducts": {
               const d = data as any
               if (!d.products?.length) return null
               return (
-                <section key={sectionId}>
+                <section key={sectionId} className="pv-section">
                   <SectionHeader
                     title={d.config.title ?? ht("trending")}
                     subtitle={d.config.subtitle ?? ht("popularNow")}
-                    icon={<TrendingUp className="h-4 w-4 text-rose-500" />}
                     actionLabel={d.config.actionLabel ?? ht("seeMore")}
                     actionHref={d.config.actionHref ?? "/browse?sort=popular"}
                   />
@@ -546,11 +533,10 @@ export default async function Home() {
               const d = data as any
               if (!d.products?.length) return null
               return (
-                <section key={sectionId}>
+                <section key={sectionId} className="pv-section">
                   <SectionHeader
                     title={d.config.title ?? ht("newDrops")}
                     subtitle={d.config.subtitle ?? ht("recently")}
-                    icon={<Clock className="h-4 w-4 text-sky-500" />}
                     actionLabel={d.config.actionLabel ?? ht("seeAllNew")}
                     actionHref={d.config.actionHref ?? "/browse?sort=newest"}
                   />
@@ -563,13 +549,13 @@ export default async function Home() {
               const d = data as any
               if (!d.categories?.length) return null
               return (
-                <section key={sectionId}>
+                <section key={sectionId} className="pv-section">
                   <SectionHeader
                     title={d.config.title ?? ht("categories")}
                     actionLabel={d.config.actionLabel ?? ht("allCategories")}
                     actionHref={d.config.actionHref ?? "/categories"}
                   />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                     {d.categories.map((c: any) => (
                       <CategoryCard key={c.id} category={c} t={t} />
                     ))}
@@ -578,19 +564,36 @@ export default async function Home() {
               )
             }
 
+            case "popularCreators": {
+              const d = data as any
+              if (!d.creators?.length) return null
+              return (
+                <div key={sectionId}>
+                  <PopularCreators
+                    creators={d.creators}
+                    title={d.config.title ?? ht("popularCreators")}
+                    subtitle={d.config.subtitle ?? ht("popularCreatorsSub")}
+                    actionLabel={d.config.actionLabel ?? ht("allCreators")}
+                    actionHref={d.config.actionHref ?? "/creators"}
+                  />
+                </div>
+              )
+            }
+
             case "creatorSpotlight": {
               const d = data as any
               if (!d.creator) return null
               return (
-                <section key={sectionId}>
+                <section key={sectionId} className="pv-section">
                   <SectionHeader
                     title={d.config.title ?? ht("spotlight")}
                     subtitle={d.config.subtitle ?? ht("meetCreators")}
-                    icon={<Sparkles className="h-4 w-4 text-amber-400" />}
                     actionLabel={d.config.actionLabel ?? ht("viewStore")}
                     actionHref={`/store/${d.creator.store?.slug || d.creator.username}`}
                   />
-                  <CreatorCard creator={d.creator} featured />
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+                    <CreatorCard creator={d.creator} />
+                  </div>
                 </section>
               )
             }
@@ -599,11 +602,10 @@ export default async function Home() {
               const d = data as any
               if (!d.products?.length) return null
               return (
-                <section key={sectionId}>
+                <section key={sectionId} className="pv-section">
                   <SectionHeader
                     title={d.config.title ?? ht("free")}
                     subtitle={d.config.subtitle ?? ht("handPicked")}
-                    icon={<Flame className="h-4 w-4 text-emerald-500" />}
                     actionLabel={d.config.actionLabel ?? ht("freeAll")}
                     actionHref={d.config.actionHref ?? "/browse?free=true"}
                   />
@@ -612,19 +614,32 @@ export default async function Home() {
               )
             }
 
+            case "commissions": {
+              const d = data as any
+              return (
+                <div key={sectionId} className="pv-section">
+                  <CommissionsBand
+                    title={d.config.title ?? ht("commissions")}
+                    body={d.config.subtitle ?? ht("commissionsBody")}
+                    actionLabel={d.config.actionLabel ?? ht("exploreCommissions")}
+                    actionHref={d.config.actionHref ?? "/services"}
+                  />
+                </div>
+              )
+            }
+
             case "bundles": {
               const d = data as any
               if (!d.bundles?.length) return null
               return (
-                <section key={sectionId}>
+                <section key={sectionId} className="pv-section">
                   <SectionHeader
                     title={d.config.title ?? ht("bundles")}
                     subtitle={d.config.subtitle ?? ht("curated")}
-                    icon={<Package className="h-4 w-4 text-violet-500" />}
                     actionLabel={d.config.actionLabel ?? ht("allBundles")}
                     actionHref={d.config.actionHref ?? "/bundles"}
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
                     {d.bundles.map((bundle: any) => (
                       <BundleCard key={bundle.id} bundle={bundle} />
                     ))}

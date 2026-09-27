@@ -5,16 +5,18 @@ import Link from "next/link"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ProductGrid } from "@/components/product-grid"
+import { SectionHeader } from "@/components/section-header"
+import { StatusBadge } from "@/components/status-badge"
+import { EmptyState } from "@/components/empty-state"
 import { Rating } from "@/components/rating"
 import { FollowButton } from "@/components/follow-button"
-import { Store, ExternalLink, Calendar, Package, Users } from "lucide-react"
 import { Metadata } from "next"
 import { getServerUser } from "@/lib/session"
 import { canSeeInternalAccounts } from "@/lib/roles"
 import { formatDate } from "@/lib/currency"
+import { formatCount } from "@/lib/format"
 import { getServerCurrency } from "@/lib/currency-server"
 
 interface Props {
@@ -73,7 +75,7 @@ async function getCreator(username: string, role?: string | null) {
 }
 
 async function getCreatorProducts(creatorId: string) {
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     where: {
       creatorId,
       isPublished: true,
@@ -96,14 +98,30 @@ async function getCreatorProducts(creatorId: string) {
         where: { isThumbnail: true },
         take: 1,
       },
+      reviews: { select: { rating: true } },
       _count: {
         select: {
           reviews: true,
+          favorites: true,
+          downloads: true,
         },
       },
     },
     orderBy: { createdAt: "desc" },
     take: 12,
+  })
+
+  return products.map((p) => {
+    const avgRating =
+      p.reviews.length > 0
+        ? p.reviews.reduce((s: number, r: any) => s + r.rating, 0) / p.reviews.length
+        : 0
+    return {
+      ...p,
+      rating: avgRating,
+      reviewCount: p.reviews.length,
+      salesCount: p._count?.downloads ?? 0,
+    }
   })
 }
 
@@ -176,123 +194,143 @@ export default async function CreatorProfilePage({ params }: Props) {
   const { locale: userLocale } = await getServerCurrency()
   const fmtDate = (d: Date | string) => formatDate(d, userLocale)
 
+  const [featured, rest] = partitionFeatured(products)
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="relative h-48 md:h-64 bg-gradient-to-r from-purple-600 to-rose-500">
+      {/* Banner: the creator's own image, or a quiet neutral placeholder */}
+      <div className="relative h-40 bg-surface-subtle md:h-56">
         {creator.store?.banner && (
           <Image
             src={creator.store.banner}
             alt=""
             fill
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
       </div>
 
-      <div className="container mx-auto px-4 -mt-16 relative z-10">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex-shrink-0">
-            <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
-              <AvatarImage src={creator.avatar || ""} alt={name} />
-              <AvatarFallback className="text-4xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white">
-                {name[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </div>
+      <div className="pv-shell">
+        <div className="-mt-12 flex flex-col gap-5 sm:-mt-14 md:flex-row md:items-end md:gap-6">
+          <Avatar className="h-24 w-24 shrink-0 border-4 border-background md:h-32 md:w-32">
+            <AvatarImage src={creator.avatar || ""} alt={name} />
+            <AvatarFallback className="bg-muted text-3xl font-semibold text-text-secondary">
+              {name[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
 
-          <div className="flex-1 pt-4 md:pt-8">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl md:text-3xl font-bold">{name}</h1>
-              {creator.isVerified && (
-                <Badge variant="secondary" className="bg-info/10 text-info border-0">
-                  <svg className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  Verified
-                </Badge>
-              )}
-            </div>
-            <p className="text-muted-foreground">@{creator.username}</p>
+          <div className="min-w-0 flex-1 pb-1">
+            <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight text-text-primary md:text-3xl">
+              {name}
+              {creator.isVerified && <StatusBadge type="verified" />}
+            </h1>
+            <p className="text-sm text-text-muted">@{creator.username}</p>
 
             {creator.bio && (
-              <p className="mt-3 text-sm max-w-2xl">{creator.bio}</p>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-secondary">
+                {creator.bio}
+              </p>
             )}
 
-            <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                Joined {fmtDate(creator.createdAt)}
-              </div>
-              <div className="flex items-center gap-1">
-                <Package className="h-4 w-4" />
-                {productCount} product{productCount === 1 ? "" : "s"}
-              </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                {followerCount} follower{followerCount === 1 ? "" : "s"}
-              </div>
-              {creator.rating > 0 && (
-                <div className="flex items-center gap-1">
-                  <Rating rating={creator.rating} size="sm" showCount={false} />
-                  <span>{creator.rating.toFixed(1)}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-3 mt-4">
-              <Button asChild className="gradient-bg text-white">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <FollowButton creatorId={creator.id} creatorName={name} />
+              <Button asChild variant="outline" size="sm">
                 <Link href={`/store/${creator.store?.slug || creator.username}`}>
-                  <Store className="h-4 w-4 mr-2" />
-                  View Store
+                  View store
                 </Link>
               </Button>
-
-              <FollowButton creatorId={creator.id} creatorName={name} />
-
               {Object.entries(socialLinks).map(([platform, url]) => (
-                <Button key={platform} variant="outline" size="sm" asChild>
-                  <a href={url} target="_blank" rel="noopener noreferrer">
-                    {platform}
-                    <ExternalLink className="h-3 w-3 ml-1" />
-                  </a>
-                </Button>
+                <a
+                  key={platform}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-text-secondary underline-offset-4 transition-colors hover:text-text-primary hover:underline"
+                >
+                  {platform}
+                </a>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-8">
-          {creator.store?.description && (
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-2">About</h2>
-              <p className="text-muted-foreground">{creator.store.description}</p>
+        {/* Stats: plain numbers, no decorative icons */}
+        <dl className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-border py-4 text-sm">
+          <div className="flex items-center gap-1.5">
+            <dt className="text-text-muted">Products</dt>
+            <dd className="font-medium text-text-primary">
+              {formatCount(productCount)}
+            </dd>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <dt className="text-text-muted">Followers</dt>
+            <dd className="font-medium text-text-primary">
+              {formatCount(followerCount)}
+            </dd>
+          </div>
+          {creator.rating > 0 && (
+            <div className="flex items-center gap-1.5">
+              <dt className="text-text-muted">Rating</dt>
+              <dd className="flex items-center gap-1.5 font-medium text-text-primary">
+                <Rating rating={creator.rating} size="sm" showCount={false} />
+                {creator.rating.toFixed(1)}
+              </dd>
             </div>
           )}
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Products</h2>
-              {productCount > 12 && (
-                <Button variant="link" asChild>
-                  <Link href={`/store/${creator.store?.slug || creator.username}`}>
-                    View all {productCount} products
-                  </Link>
-                </Button>
-              )}
-            </div>
-
-            {products.length > 0 ? (
-              <ProductGrid products={products} />
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <Package className="h-12 w-12 mx-auto mb-3 opacity-40" />
-                <p>No products yet</p>
-              </div>
-            )}
+          <div className="flex items-center gap-1.5">
+            <dt className="text-text-muted">Joined</dt>
+            <dd className="font-medium text-text-primary">
+              {fmtDate(creator.createdAt)}
+            </dd>
           </div>
-        </div>
+        </dl>
+
+        {featured.length > 0 && (
+          <section className="mt-10">
+            <SectionHeader title="Featured" />
+            <ProductGrid products={featured} />
+          </section>
+        )}
+
+        <section className="mt-12">
+          <SectionHeader
+            title="Products"
+            actionLabel={
+              productCount > products.length
+                ? `View all ${formatCount(productCount)}`
+                : undefined
+            }
+            actionHref={`/store/${creator.store?.slug || creator.username}`}
+          />
+
+          {products.length > 0 ? (
+            <ProductGrid products={rest.length > 0 ? rest : products} />
+          ) : (
+            <EmptyState
+              title="Nothing here yet."
+              description={`${name} hasn’t published any products yet.`}
+            />
+          )}
+        </section>
+
+        {creator.store?.description && (
+          <section className="mt-12 max-w-2xl">
+            <SectionHeader title="About" />
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+              {creator.store.description}
+            </p>
+          </section>
+        )}
       </div>
     </div>
   )
+}
+
+/** The three most favourited products lead the profile; the rest follow. */
+function partitionFeatured(products: any[]) {
+  const FEATURED_COUNT = 3
+  const sorted = [...products].sort(
+    (a, b) => (b._count?.favorites ?? 0) - (a._count?.favorites ?? 0)
+  )
+  return [sorted.slice(0, FEATURED_COUNT), sorted.slice(FEATURED_COUNT)]
 }

@@ -103,12 +103,13 @@ export async function GET() {
       product: l.product,
     }))
 
+    const account = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true, displayName: true, avatar: true, role: true },
+    })
+
     return NextResponse.json({
-      user: {
-        id: userId,
-        displayName: access.role,
-        role: access.role,
-      },
+      user: account,
       store,
       productCount: totalProducts,
       publishedProducts,

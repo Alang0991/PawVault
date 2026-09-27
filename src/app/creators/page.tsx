@@ -144,7 +144,6 @@ export default async function CreatorsPage({ searchParams }: Props) {
         <SectionHeader
           title={t("navigation.creators") || "Creators"}
           subtitle={t("home.meetCreators") || "Meet the talented artists and developers behind the assets"}
-          icon={<Store className="h-5 w-5 text-text-muted" />}
         />
 
         <div className="mb-6 flex flex-wrap gap-4 items-center justify-between">

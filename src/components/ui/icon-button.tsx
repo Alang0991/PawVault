@@ -36,15 +36,18 @@ export interface IconButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof iconButtonVariants> {
   asChild?: boolean
+  /** Required for accessibility - describes the button's purpose for screen readers */
+  ariaLabel?: string
 }
 
 const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, ariaLabel, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     return (
       <Comp
         className={cn(iconButtonVariants({ variant, size, className }), "p-0")}
         ref={ref}
+        aria-label={ariaLabel}
         {...props}
       />
     )

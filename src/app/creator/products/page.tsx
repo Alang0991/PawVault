@@ -65,5 +65,9 @@ export default async function CreatorProductsPage({
     createdAt: p.createdAt.toISOString(),
   }))
 
-  return <ProductsList products={list} counts={counts} activeFilter={filter} />
+  return (
+    <div className="pv-shell py-8 md:py-10">
+      <ProductsList products={list} counts={counts} activeFilter={filter} />
+    </div>
+  )
 }

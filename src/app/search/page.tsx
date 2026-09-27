@@ -9,6 +9,8 @@ import { BrowseSkeleton } from "@/components/browse-skeleton"
 import { Suspense } from "react"
 import { CreatorGrid } from "@/components/creator-grid"
 import { CategoryGrid } from "@/components/category-grid"
+import { formatCount, pluralize } from "@/lib/format"
+import Link from "next/link"
 
 const PAGE_SIZE = 24
 
@@ -28,7 +30,7 @@ async function SearchContent({ q, type }: { q: string; type: string }) {
         creator: { select: { id: true, username: true, displayName: true, avatar: true } },
         media: { where: { isThumbnail: true }, take: 1 },
         reviews: { select: { rating: true } },
-        _count: { select: { favorites: true, reviews: true } },
+        _count: { select: { favorites: true, reviews: true, downloads: true } },
       },
       orderBy: { createdAt: "desc" },
       take: PAGE_SIZE,
@@ -81,74 +83,79 @@ async function SearchContent({ q, type }: { q: string; type: string }) {
     const avgRating = p.reviews.length > 0
       ? p.reviews.reduce((s: number, r: any) => s + r.rating, 0) / p.reviews.length
       : 0
-    return { ...p, rating: avgRating, reviewCount: p.reviews.length }
+    return {
+      ...p,
+      rating: avgRating,
+      reviewCount: p.reviews.length,
+      salesCount: p._count?.downloads ?? 0,
+    }
   })
 
   const hasResults = productsWithRating.length > 0 || creators.length > 0 || categories.length > 0 || tags.length > 0
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="mb-6">
-          <SectionHeader
-            title="Search Results"
-            subtitle={`Results for "${q}"`}
-          />
-          <div className="mt-4 max-w-xl">
-            <SearchBar />
-          </div>
-        </div>
+    <div className="pv-shell py-8 md:py-10">
+      <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
+        Search
+      </h1>
+      <p className="mt-1 text-sm text-text-muted">Results for “{q}”</p>
 
-        {!hasResults ? (
-          <EmptyBrowseState hasFilters={false} query={q} />
-        ) : (
-          <div className="space-y-12">
-            {productsWithRating.length > 0 && (
-              <section>
-                <SectionHeader
-                  title="Products"
-                  subtitle={`${productsWithRating.length} product${productsWithRating.length === 1 ? "" : "s"}`}
-                />
-                <ProductGrid products={productsWithRating} />
-              </section>
-            )}
-
-            {creators.length > 0 && (
-              <section>
-                <SectionHeader
-                  title="Creators"
-                  subtitle={`${creators.length} creator${creators.length === 1 ? "" : "s"}`}
-                />
-                <CreatorGrid creators={creators} />
-              </section>
-            )}
-
-            {categories.length > 0 && (
-              <section>
-                <SectionHeader title="Categories" />
-                <CategoryGrid categories={categories} />
-              </section>
-            )}
-
-            {tags.length > 0 && (
-              <section>
-                <SectionHeader title="Tags" />
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((t) => (
-                    <a
-                      key={t.id}
-                      href={`/browse?tags=${t.slug}`}
-                      className="px-3 py-1.5 rounded-full border border-border text-sm text-text-secondary hover:border-accent hover:text-accent transition-colors"
-                    >
-                      {t.name} ({t._count.products})
-                    </a>
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
-        )}
+      <div className="mt-5 max-w-xl">
+        <SearchBar />
       </div>
+
+      {!hasResults ? (
+        <div className="mt-10">
+          <EmptyBrowseState hasFilters={false} query={q} />
+        </div>
+      ) : (
+        <div className="mt-10 space-y-12">
+          {productsWithRating.length > 0 && (
+            <section>
+              <SectionHeader
+                title="Products"
+                subtitle={pluralize(productsWithRating.length, "product")}
+              />
+              <ProductGrid products={productsWithRating} />
+            </section>
+          )}
+
+          {creators.length > 0 && (
+            <section>
+              <SectionHeader
+                title="Creators"
+                subtitle={pluralize(creators.length, "creator")}
+              />
+              <CreatorGrid creators={creators} />
+            </section>
+          )}
+
+          {categories.length > 0 && (
+            <section>
+              <SectionHeader title="Categories" />
+              <CategoryGrid categories={categories} />
+            </section>
+          )}
+
+          {tags.length > 0 && (
+            <section>
+              <SectionHeader title="Tags" />
+              <ul className="flex flex-wrap gap-2">
+                {tags.map((t) => (
+                  <li key={t.id}>
+                    <Link
+                      href={`/browse?tags=${t.slug}`}
+                      className="pv-chip"
+                    >
+                      {t.name} ({formatCount(t._count.products)})
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -163,11 +170,15 @@ export default async function SearchPage({
 
   if (!q) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-xl mx-auto">
-            <SearchBar />
-          </div>
+      <div className="pv-shell py-10">
+        <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
+          Search
+        </h1>
+        <p className="mt-1 text-sm text-text-muted">
+          Search products, creators and categories.
+        </p>
+        <div className="mt-5 max-w-xl">
+          <SearchBar />
         </div>
       </div>
     )

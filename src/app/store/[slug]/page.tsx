@@ -1,15 +1,10 @@
 export const dynamic = "force-dynamic"
 
 import { prisma } from "@/lib/prisma"
-import { ProductCard } from "@/components/product-card"
 import { ProductGrid } from "@/components/product-grid"
 import { SectionHeader } from "@/components/section-header"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
 import { Rating } from "@/components/rating"
 import { StatusBadge } from "@/components/status-badge"
 import { SortSelect } from "@/components/sort-select"
@@ -17,12 +12,24 @@ import { CategoryFilter } from "@/components/category-filter"
 import { AdultContentPreview } from "@/components/adult-content-preview"
 import { FollowButton } from "@/components/follow-button"
 import { ShareButton } from "@/components/share-button"
+import { EmptyState } from "@/components/empty-state"
+import { CommissionCard } from "@/components/storefront/commission-card"
+import { StorefrontTabs } from "@/components/storefront/storefront-tabs"
 import { getOwnedProducts } from "@/lib/ownership"
+import { getCreatorCommissions, getCreatorReviews } from "@/lib/commissions"
+import { formatCount, pluralize } from "@/lib/format"
 import { sanitizeSocialUrl } from "@/lib/sanitizer"
 import { getServerUser } from "@/lib/session"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Users, Store, Package, User, Twitter, Youtube, MessageCircle, Star } from "lucide-react"
+import {
+  Store,
+  Twitter,
+  Youtube,
+  MessageCircle,
+  Layers,
+  X,
+} from "lucide-react"
 import Image from "next/image"
 
 const STORE_PAGE_SIZE = 12
@@ -342,7 +349,15 @@ export default async function StorePage({
   const priceMax = searchParams.priceMax
   const page = Math.max(1, parseInt(searchParams.page || "1"))
 
-  const [featuredProducts, collections, productsResult, categories, ownedProducts] = await Promise.all([
+  const [
+    featuredProducts,
+    collections,
+    productsResult,
+    categories,
+    ownedProducts,
+    commissions,
+    reviews,
+  ] = await Promise.all([
     getFeaturedProducts(store.id, store.user.id),
     getPublicCollections(store.user.id),
     getStoreProducts({
@@ -366,6 +381,8 @@ export default async function StorePage({
       orderBy: { name: "asc" },
     }),
     currentUser ? getOwnedProducts(currentUser.id) : Promise.resolve([]),
+    getCreatorCommissions(store.user.id),
+    getCreatorReviews(store.user.id),
   ])
 
   const ownedProductIds = new Set(ownedProducts.map((op: any) => op.product.id))
@@ -373,321 +390,471 @@ export default async function StorePage({
 
   const featuredWithRating = featuredProducts.map((product) => {
     const avgRating = product.reviews.length > 0
-      ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+      ? product.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / product.reviews.length
       : 0
     return { ...product, rating: avgRating, reviewCount: product.reviews.length }
   })
 
-  const hasActiveFilters = category || priceMin || priceMax
+  const hasActiveFilters = Boolean(category || priceMin || priceMax)
+
+  const socialLinks = parseStoreSocialLinks(store.socialLinks)
+
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Store banner */}
-      <div className="relative h-48 md:h-56 w-full overflow-hidden bg-surface-subtle">
-        {store.banner ? (
+      {/* Banner: the creator's own image, or a quiet neutral placeholder */}
+      <div className="relative h-40 w-full overflow-hidden bg-surface-subtle md:h-56">
+        {store.banner && (
           <AdultContentPreview
             directUrl={store.banner}
             contentRating="SFW"
             alt={`Banner for ${store.name}`}
             variant="background"
             aspect="video"
-            className="w-full h-full"
+            className="h-full w-full"
           />
-        ) : (
-          <div className="h-full w-full bg-gradient-to-br from-violet-600/15 to-fuchsia-500/15" />
         )}
       </div>
 
-      <div className="container mx-auto px-4">
-        <div className="relative -mt-16 mb-8">
-          <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
-            <Avatar className="h-28 w-28 md:h-32 md:w-32 border-4 border-background bg-surface">
-              <AvatarImage src={store.user.avatar || ""} alt={creatorName} />
-              <AvatarFallback className="text-4xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white font-semibold">
-                {creatorName[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+      <div className="pv-shell">
+        <div className="-mt-12 flex flex-col gap-5 sm:-mt-14 md:flex-row md:items-end md:gap-6">
+          <Avatar className="h-24 w-24 shrink-0 border-4 border-background bg-surface md:h-32 md:w-32">
+            <AvatarImage src={store.user.avatar || ""} alt={creatorName} />
+            <AvatarFallback className="bg-muted text-3xl font-semibold text-text-secondary">
+              {creatorName[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
 
-            <div className="flex-1 min-w-0 py-4">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl md:text-3xl font-bold text-text-primary">
-                  {store.name}
-                </h1>
-                {isVerified && <StatusBadge type="verified" />}
-              </div>
-              <p className="text-sm text-text-secondary mt-1">
-                @{store.user.username} · Creator
+          <div className="min-w-0 flex-1 pb-1">
+            <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-tight text-text-primary md:text-3xl">
+              {store.name}
+              {isVerified && <StatusBadge type="verified" />}
+            </h1>
+            <p className="text-sm text-text-muted">
+              <Link
+                href={`/creators/${store.user.username}`}
+                className="underline-offset-4 hover:underline"
+              >
+                @{store.user.username}
+              </Link>
+            </p>
+
+            {(store.description || store.user.bio) && (
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-secondary">
+                {store.description || store.user.bio}
               </p>
-              {store.description && (
-                <p className="mt-2 text-sm text-text-secondary line-clamp-2">
-                  {store.description}
-                </p>
-              )}
+            )}
 
-              {store.socialLinks && (() => {
-                let social: Record<string, string> = {}
-                try { social = JSON.parse(store.socialLinks) } catch { return null }
-                const twitter = sanitizeSocialUrl(social.twitter)
-                const youtube = sanitizeSocialUrl(social.youtube)
-                const discord = sanitizeSocialUrl(social.discord)
-                if (!twitter && !youtube && !discord) return null
-                return (
-                  <div className="flex items-center gap-3 mt-3">
-                    {twitter && (
-                      <a href={twitter} target="_blank" rel="noopener noreferrer" className="text-text-muted hover:text-accent" aria-label="Twitter">
-                        <Twitter className="h-4 w-4" />
-                      </a>
-                    )}
-                    {youtube && (
-                      <a href={youtube} target="_blank" rel="noopener noreferrer" className="text-text-muted hover:text-accent" aria-label="YouTube">
-                        <Youtube className="h-4 w-4" />
-                      </a>
-                    )}
-                    {discord && (
-                      <a href={discord} target="_blank" rel="noopener noreferrer" className="text-text-muted hover:text-accent" aria-label="Discord">
-                        <MessageCircle className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                )
-              })()}
-
-              <div className="flex items-center gap-4 mt-3 text-sm text-text-muted flex-wrap">
-                <span className="flex items-center gap-1.5">
-                  <Rating rating={store.rating} size="sm" showCount={false} />
-                  {store.rating > 0 && <span>{store.rating.toFixed(1)}</span>}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  {store.user.followersCount} followers
-                </span>
-                <span className="flex items-center gap-1">
-                  <Package className="h-4 w-4" />
-                  {store.totalProducts} product{store.totalProducts === 1 ? "" : "s"}
-                </span>
+            {socialLinks && (
+              <div className="mt-3 flex items-center gap-3">
+                {socialLinks.twitter && (
+                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="text-text-muted transition-colors hover:text-text-primary">
+                    <Twitter className="h-4 w-4" />
+                  </a>
+                )}
+                {socialLinks.youtube && (
+                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-text-muted transition-colors hover:text-text-primary">
+                    <Youtube className="h-4 w-4" />
+                  </a>
+                )}
+                {socialLinks.discord && (
+                  <a href={socialLinks.discord} target="_blank" rel="noopener noreferrer" aria-label="Discord" className="text-text-muted transition-colors hover:text-text-primary">
+                    <MessageCircle className="h-4 w-4" />
+                  </a>
+                )}
               </div>
-            </div>
+            )}
 
-            <div className="flex gap-2 pb-2">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               {isOwner ? (
-                <Button variant="outline" asChild>
+                <Button asChild variant="outline" size="sm">
                   <Link href="/creator/dashboard">
-                    <Store className="h-4 w-4 mr-2" />
-                    Manage Store
+                    <Store className="h-4 w-4" />
+                    Manage store
                   </Link>
                 </Button>
               ) : (
                 <FollowButton creatorId={store.user.id} creatorName={creatorName} />
               )}
-              <ShareButton url={`https://pawvault.com/store/${store.user.username}`} title={store.name} />
+              <ShareButton
+                url={`https://pawvault.com/store/${store.user.username}`}
+                title={store.name}
+              />
+              <Link
+                href={`/store/${store.user.username}/posts`}
+                className="text-sm text-text-secondary underline-offset-4 transition-colors hover:text-text-primary hover:underline"
+              >
+                Posts
+              </Link>
             </div>
           </div>
         </div>
 
-        <Separator className="mb-6" />
-
-        <nav className="mb-8">
-          <div className="flex items-center gap-1 border-b overflow-x-auto">
-            <Link
-              href={`/store/${store.user.username}`}
-              className="px-4 py-2 text-sm font-medium border-b-2 border-accent text-accent whitespace-nowrap"
-            >
-              <div className="flex items-center gap-2">
-                <Store className="h-4 w-4" />
-                Products
-              </div>
-            </Link>
-            <Link
-              href={`/profile/${store.user.username}`}
-              className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary transition-colors whitespace-nowrap"
-            >
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                About
-              </div>
-            </Link>
-            <Link
-              href={`/store/${store.user.username}/posts`}
-              className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary transition-colors whitespace-nowrap"
-            >
-              Posts
-            </Link>
+        {/* Stats: plain numbers, no decorative icons */}
+        <dl className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-border py-4 text-sm">
+          <div className="flex items-center gap-1.5">
+            <dt className="text-text-muted">Products</dt>
+            <dd className="font-medium text-text-primary">
+              {formatCount(store.totalProducts)}
+            </dd>
           </div>
-        </nav>
+          <div className="flex items-center gap-1.5">
+            <dt className="text-text-muted">Followers</dt>
+            <dd className="font-medium text-text-primary">
+              {formatCount(store.user.followersCount)}
+            </dd>
+          </div>
+          {store.user.salesCount > 0 && (
+            <div className="flex items-center gap-1.5">
+              <dt className="text-text-muted">Sales</dt>
+              <dd className="font-medium text-text-primary">
+                {formatCount(store.user.salesCount)}
+              </dd>
+            </div>
+          )}
+          {store.rating > 0 && (
+            <div className="flex items-center gap-1.5">
+              <dt className="text-text-muted">Rating</dt>
+              <dd className="flex items-center gap-1.5 font-medium text-text-primary">
+                <Rating rating={store.rating} size="sm" showCount={false} />
+                {store.rating.toFixed(1)}
+              </dd>
+            </div>
+          )}
+        </dl>
 
         {featuredWithRating.length > 0 && !hasActiveFilters && page === 1 && (
-          <section className="mb-12">
-            <SectionHeader
-              title="Featured"
-              icon={<Star className="h-5 w-5 text-amber-400 fill-amber-400" />}
-            />
+          <section className="mt-10">
+            <SectionHeader title="Featured" />
             <ProductGrid products={featuredWithRating} />
           </section>
         )}
 
         {collections.length > 0 && !hasActiveFilters && page === 1 && (
-          <section className="mb-12">
-            <SectionHeader title="Collections" />
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <section className="mt-12">
+            <SectionHeader
+              title="Collections"
+              actionLabel={collections.length > 3 ? "View all" : undefined}
+              actionHref={`/creators/${store.user.username}/collections`}
+            />
+            <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {collections.slice(0, 3).map((collection) => (
-                <Link key={collection.id} href={`/collections/${collection.slug}`}>
-                  <Card className="h-full hover:shadow-card-hover transition-shadow">
-                    <CardContent className="p-0">
-                      <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
-                        {collection.coverImage ? (
-                          <Image src={collection.coverImage} alt={collection.name} fill className="object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">
-                            📚
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-text-primary truncate">{collection.name}</h3>
-                        {collection.description && (
-                          <p className="text-sm text-text-secondary line-clamp-1 mt-1">
-                            {collection.description}
-                          </p>
-                        )}
-                        <p className="text-xs text-text-muted mt-2">
-                          {collection._count.items} product{collection._count.items === 1 ? "" : "s"}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <li key={collection.id}>
+                  <Link href={`/collections/${collection.slug}`} className="group block focus-ring rounded-xl">
+                    <div className="pv-product-media aspect-video w-full">
+                      {collection.coverImage ? (
+                        <Image
+                          src={collection.coverImage}
+                          alt={collection.name}
+                          fill
+                          sizes="(max-width: 640px) 100vw, 33vw"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-text-muted">
+                          <Layers className="h-6 w-6 opacity-40" aria-hidden="true" />
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="mt-2.5 truncate text-sm font-semibold text-text-primary">
+                      {collection.name}
+                    </h3>
+                    {collection.description && (
+                      <p className="mt-0.5 line-clamp-1 text-xs text-text-muted">
+                        {collection.description}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-text-muted">
+                      {pluralize(collection._count.items, "product")}
+                    </p>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
         )}
 
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-text-primary">
-                {hasActiveFilters ? "Filtered Products" : "All Products"}
-              </h2>
-              <p className="text-text-secondary text-sm mt-1">
-                {total} product{total === 1 ? "" : "s"}
-                {hasActiveFilters && " (filtered)"}
-              </p>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <SortSelect
-                current={sort}
-                params={{
-                  sort,
-                  category: category || undefined,
-                  priceMin: priceMin || undefined,
-                  priceMax: priceMax || undefined,
-                }}
-                basePath={`/store/${store.user.username}`}
-              />
-              <CategoryFilter
-                storeId={store.id}
-                currentCategory={category}
-                categories={categories}
-              />
-            </div>
-          </div>
+        <div className="mt-12">
+          <StorefrontTabs
+            tabs={[
+              {
+                value: "products",
+                label: "Products",
+                count: total,
+                content: (
+                  <section>
+                    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm text-text-muted">
+                        {hasActiveFilters
+                          ? `${total} ${total === 1 ? "product" : "products"} matching your filters`
+                          : `${total} ${total === 1 ? "product" : "products"}`}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <SortSelect
+                          current={sort}
+                          params={{
+                            sort,
+                            category: category || undefined,
+                            priceMin: priceMin || undefined,
+                            priceMax: priceMax || undefined,
+                          }}
+                          basePath={`/store/${store.user.username}`}
+                        />
+                        <CategoryFilter
+                          storeId={store.id}
+                          currentCategory={category}
+                          categories={categories}
+                        />
+                      </div>
+                    </div>
 
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2 mb-6 flex-wrap">
-              <span className="text-sm text-text-muted">Active filters:</span>
-              {category && (
-                <Badge variant="secondary" className="gap-1">
-                  Category: {category}
-                  <Link href={buildStoreHref(store.user.username, { category: undefined, page: undefined })} className="ml-1 hover:text-text-primary">
-                    ×
-                  </Link>
-                </Badge>
-              )}
-              {priceMin && (
-                <Badge variant="secondary" className="gap-1">
-                  Min: {priceMin}
-                  <Link href={buildStoreHref(store.user.username, { priceMin: undefined, page: undefined })} className="ml-1 hover:text-text-primary">
-                    ×
-                  </Link>
-                </Badge>
-              )}
-              {priceMax && (
-                <Badge variant="secondary" className="gap-1">
-                  Max: {priceMax}
-                  <Link href={buildStoreHref(store.user.username, { priceMax: undefined, page: undefined })} className="ml-1 hover:text-text-primary">
-                    ×
-                  </Link>
-                </Badge>
-              )}
-              <Link
-                href={buildStoreHref(store.user.username, { category: undefined, priceMin: undefined, priceMax: undefined, page: undefined })}
-                className="text-sm text-sale hover:underline"
-              >
-                Clear all
-              </Link>
-            </div>
-          )}
-
-          {products.length === 0 ? (
-            <Card className="p-12 text-center">
-              <Package className="h-12 w-12 mx-auto text-text-muted mb-4" />
-              <h3 className="text-lg font-semibold text-text-primary mb-2">No products found</h3>
-              <p className="text-text-secondary max-w-md mx-auto mb-6">
-                {hasActiveFilters
-                  ? "No products match your current filters. Try adjusting or clearing your filters."
-                  : isOwner
-                  ? "Your store is ready but you haven't published any products yet."
-                  : "This creator hasn't published any products yet."}
-              </p>
-              {hasActiveFilters && (
-                <Button asChild variant="outline">
-                  <Link href={`/store/${store.user.username}`}>Clear filters</Link>
-                </Button>
-              )}
-            </Card>
-          ) : (
-            <>
-              <ProductGrid
-                products={products.map((p: any) => ({
-                  ...p,
-                  isOwned: ownedProductIds.has(p.id),
-                }))}
-              />
-
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    asChild={page > 1}
-                  >
-                    {page > 1 ? (
-                      <Link href={buildStoreHref(store.user.username, { page: String(page - 1) })}>Previous</Link>
-                    ) : (
-                      <span>Previous</span>
+                    {hasActiveFilters && (
+                      <div className="mb-5 flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-text-muted">Active filters:</span>
+                        {category && (
+                          <Link
+                            href={buildStoreHref(store.user.username, { category: undefined, page: undefined })}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs text-text-secondary transition-colors hover:border-accent/50 hover:text-text-primary"
+                          >
+                            {categoryLabel(categories, category)}
+                            <X className="h-3 w-3" aria-hidden="true" />
+                            <span className="sr-only">Remove category filter</span>
+                          </Link>
+                        )}
+                        {priceMin && (
+                          <Link
+                            href={buildStoreHref(store.user.username, { priceMin: undefined, page: undefined })}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs text-text-secondary transition-colors hover:border-accent/50 hover:text-text-primary"
+                          >
+                            Min {priceMin}
+                            <X className="h-3 w-3" aria-hidden="true" />
+                            <span className="sr-only">Remove minimum price filter</span>
+                          </Link>
+                        )}
+                        {priceMax && (
+                          <Link
+                            href={buildStoreHref(store.user.username, { priceMax: undefined, page: undefined })}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs text-text-secondary transition-colors hover:border-accent/50 hover:text-text-primary"
+                          >
+                            Max {priceMax}
+                            <X className="h-3 w-3" aria-hidden="true" />
+                            <span className="sr-only">Remove maximum price filter</span>
+                          </Link>
+                        )}
+                        <Link
+                          href={buildStoreHref(store.user.username, {
+                            category: undefined,
+                            priceMin: undefined,
+                            priceMax: undefined,
+                            page: undefined,
+                          })}
+                          className="text-xs text-text-muted underline-offset-4 transition-colors hover:text-text-primary hover:underline"
+                        >
+                          Clear all
+                        </Link>
+                      </div>
                     )}
-                  </Button>
-                  <span className="text-sm text-text-muted px-2">
-                    Page {page} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= totalPages}
-                    asChild={page < totalPages}
-                  >
-                    {page < totalPages ? (
-                      <Link href={buildStoreHref(store.user.username, { page: String(page + 1) })}>Next</Link>
+
+                    {products.length === 0 ? (
+                      <EmptyState
+                        title="Nothing here yet."
+                        description={
+                          hasActiveFilters
+                            ? "No products match your current filters."
+                            : isOwner
+                              ? "Your store is ready, but you haven’t published any products yet."
+                              : "This creator hasn’t published any products yet."
+                        }
+                        action={
+                          hasActiveFilters
+                            ? { label: "Clear filters", href: `/store/${store.user.username}` }
+                            : isOwner
+                              ? { label: "Add a product", href: "/creator/products/new" }
+                              : undefined
+                        }
+                      />
                     ) : (
-                      <span>Next</span>
+                      <>
+                        <ProductGrid
+                          products={products.map((p: any) => ({
+                            ...p,
+                            isOwned: ownedProductIds.has(p.id),
+                          }))}
+                        />
+
+                        {totalPages > 1 && (
+                          <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={page <= 1}
+                              asChild={page > 1}
+                            >
+                              {page > 1 ? (
+                                <Link href={buildStoreHref(store.user.username, { page: String(page - 1) })}>Previous</Link>
+                              ) : (
+                                <span>Previous</span>
+                              )}
+                            </Button>
+                            <span className="text-sm text-text-muted">
+                              {page} / {totalPages}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={page >= totalPages}
+                              asChild={page < totalPages}
+                            >
+                              {page < totalPages ? (
+                                <Link href={buildStoreHref(store.user.username, { page: String(page + 1) })}>Next</Link>
+                              ) : (
+                                <span>Next</span>
+                              )}
+                            </Button>
+                          </nav>
+                        )}
+                      </>
                     )}
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
+                  </section>
+                ),
+              },
+              {
+                value: "commissions",
+                label: "Commissions",
+                count: commissions.length,
+                content:
+                  commissions.length > 0 ? (
+                    <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {commissions.map((listing) => (
+                        <li key={listing.id}>
+                          <CommissionCard listing={listing} />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <EmptyState
+                      title="No commissions listed."
+                      description={
+                        isOwner
+                          ? "You haven’t set up commission availability yet."
+                          : `${creatorName} isn’t taking commissions right now.`
+                      }
+                      action={
+                        isOwner
+                          ? { label: "Set up commissions", href: "/creator/commissions" }
+                          : undefined
+                      }
+                    />
+                  ),
+              },
+              {
+                value: "reviews",
+                label: "Reviews",
+                count: reviews.length,
+                content:
+                  reviews.length > 0 ? (
+                    <ul className="space-y-4">
+                      {reviews.map((review) => (
+                        <li key={review.id} className="rounded-lg border border-border p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage
+                                  src={review.user.avatar || ""}
+                                  alt={review.user.displayName || review.user.username}
+                                />
+                                <AvatarFallback className="bg-muted text-xs text-text-secondary">
+                                  {(review.user.displayName || review.user.username)[0]?.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-text-primary">
+                                  {review.user.displayName || review.user.username}
+                                </p>
+                                <p className="truncate text-xs text-text-muted">
+                                  on {review.product.title}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="shrink-0">
+                              <Rating rating={review.rating} size="sm" showCount={false} />
+                            </div>
+                          </div>
+                          {review.title && (
+                            <p className="mt-3 text-sm font-medium text-text-primary">
+                              {review.title}
+                            </p>
+                          )}
+                          {review.content && (
+                            <p className="mt-1 text-sm text-text-secondary">{review.content}</p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <EmptyState
+                      title="No reviews yet."
+                      description="Reviews from buyers will show up here."
+                    />
+                  ),
+              },
+              {
+                value: "about",
+                label: "About",
+                content: (
+                  <section className="max-w-2xl space-y-4">
+                    {store.user.bio && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-text-primary">
+                          About {creatorName}
+                        </h3>
+                        <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                          {store.user.bio}
+                        </p>
+                      </div>
+                    )}
+                    {store.description && store.description !== store.user.bio && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-text-primary">About this store</h3>
+                        <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                          {store.description}
+                        </p>
+                      </div>
+                    )}
+                    <Link
+                      href={`/creators/${store.user.username}`}
+                      className="inline-block text-sm text-text-secondary underline-offset-4 transition-colors hover:text-text-primary hover:underline"
+                    >
+                      View full profile
+                    </Link>
+                  </section>
+                ),
+              },
+            ]}
+          />
         </div>
       </div>
     </div>
   )
+}
+
+function categoryLabel(categories: any[], slug: string | undefined) {
+  if (!slug) return ""
+  return categories.find((c: any) => c.slug === slug)?.name ?? slug
+}
+
+/** Only the three networks we render, each run through the URL sanitiser. */
+function parseStoreSocialLinks(raw: string | undefined) {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as Record<string, string>
+    const links = {
+      twitter: sanitizeSocialUrl(parsed.twitter),
+      youtube: sanitizeSocialUrl(parsed.youtube),
+      discord: sanitizeSocialUrl(parsed.discord),
+    }
+    return links.twitter || links.youtube || links.discord ? links : null
+  } catch {
+    return null
+  }
 }

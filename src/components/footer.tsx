@@ -7,13 +7,13 @@ import { useTranslation } from "@/hooks/use-translation"
 export default function Footer() {
   const { t } = useTranslation()
   return (
-    <footer className="border-t bg-surface/60">
-      <div className="container mx-auto px-4 py-12">
+    <footer className="border-t border-border bg-surface">
+      <div className="pv-shell py-12">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
           <div className="col-span-2 md:col-span-1 space-y-4">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="h-7 w-7 rounded-md bg-gradient-to-br from-pink-500 via-violet-600 to-indigo-600 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">P</span>
+              <div className="pv-logo-mark h-7 w-7 rounded-lg text-xs">
+                <span>P</span>
               </div>
               <span className="text-lg font-bold text-text-primary">PawVault</span>
             </Link>

@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 import { Box, Clapperboard, Shirt, Sparkles, ShoppingBag, Shapes, PackageOpen } from "lucide-react"
 import type { TranslationKeys } from "@/lib/i18n/translations/en"
 import { getCategoryTranslationKey } from "@/lib/i18n/category-translations"
@@ -51,27 +50,22 @@ export function CategoryCard({ category, className, t, translations }: CategoryC
     <Link
       href={`/categories/${category.slug}`}
       className={cn(
-        "group relative block overflow-hidden rounded-2xl border border-border/70 bg-surface/80 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:bg-surface hover:shadow-card-hover",
+        "group flex items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent/40",
         className
       )}
     >
-      <div className="flex flex-col items-center text-center">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent ring-1 ring-accent/10 transition-transform duration-300 group-hover:scale-110">
-          <Icon className="h-5 w-5" />
-        </div>
-        <h3 className="font-semibold text-sm text-text-primary group-hover:text-accent transition-colors">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-text-secondary">
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold text-text-primary">
           {categoryName}
-        </h3>
+        </span>
         {productCount > 0 && (
-          <Badge
-            variant="subtle"
-            size="sm"
-            className="mt-1"
-          >
-            {assetLabel}
-          </Badge>
+          <span className="block text-xs text-text-muted">{assetLabel}</span>
         )}
-      </div>
+      </span>
     </Link>
   )
 }

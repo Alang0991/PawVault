@@ -6,7 +6,7 @@ import { getServerCurrency, makeServerPriceFormatter } from "@/lib/currency-serv
 import Link from "next/link"
 import { CartItemRow } from "@/components/cart-item-row"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { EmptyState } from "@/components/empty-state"
 import { ShoppingCart, ArrowRight } from "lucide-react"
 
 async function getCart(userId: string) {
@@ -117,30 +117,23 @@ export default async function CartPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-10 md:py-12">
-        <h1 className="text-3xl font-bold text-text-primary mb-2">
-          Shopping Cart
+      <div className="pv-shell py-8 md:py-10">
+        <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
+          Cart
         </h1>
-        <p className="text-sm text-text-secondary mb-8">
-          {lineItems.length} item{lineItems.length === 1 ? "" : "s"} in your cart
+        <p className="mt-1 text-sm text-text-muted">
+          {lineItems.length} {lineItems.length === 1 ? "item" : "items"}
         </p>
 
         {lineItems.length === 0 ? (
-          <Card className="p-12 text-center">
-            <ShoppingCart className="h-12 w-12 mx-auto text-text-muted mb-4" />
-            <h2 className="text-xl font-semibold text-text-primary mb-2">
-              Your cart is empty
-            </h2>
-            <p className="text-sm text-text-secondary mb-6">
-              Discover something worth bringing home.
-            </p>
-            <Button asChild>
-              <Link href="/browse">
-                Browse Marketplace
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </Card>
+          <div className="mt-10">
+            <EmptyState
+              icon={<ShoppingCart className="h-6 w-6" />}
+              title="Your cart is empty."
+              description="Find something worth keeping."
+              action={{ label: "Browse products", href: "/browse" }}
+            />
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
             <div className="space-y-4">
@@ -150,11 +143,11 @@ export default async function CartPage() {
             </div>
 
             <div>
-              <Card className="sticky top-20">
-                <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+              <section className="sticky top-20 rounded-xl border border-border bg-surface p-5">
+                <h2 className="text-lg font-bold tracking-tight text-text-primary">
+                  Order summary
+                </h2>
+                <div className="mt-4 space-y-3">
                   <SummaryRow label="Subtotal" value={format(subtotal)} />
                   {bundleSavings > 0 && (
                     <SummaryRow
@@ -167,26 +160,22 @@ export default async function CartPage() {
                     value={format(platformFee)}
                   />
                   <SummaryRow label="Taxes" value={format(tax)} />
-                  <div className="border-t pt-3">
-                    <SummaryRow
-                      label="Total"
-                      value={format(total)}
-                      bold
-                    />
+                  <div className="border-t border-border pt-3">
+                    <SummaryRow label="Total" value={format(total)} bold />
                   </div>
-                </CardContent>
-                <CardFooter className="flex-col gap-2">
+                </div>
+                <div className="mt-5 flex flex-col gap-2">
                   <Button className="w-full" size="lg" asChild>
                     <Link href="/checkout">
-                      Proceed to Checkout
+                      Checkout
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="/browse">Continue Shopping</Link>
+                    <Link href="/browse">Continue shopping</Link>
                   </Button>
-                </CardFooter>
-              </Card>
+                </div>
+              </section>
             </div>
           </div>
         )}

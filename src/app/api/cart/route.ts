@@ -236,9 +236,10 @@ export async function POST(request: Request) {
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
+      include: { creator: { select: { isInternal: true } } },
     })
 
-    if (!product) {
+    if (!product || product.creator.isInternal) {
       return NextResponse.json(
         { error: "Product not found" },
         { status: 404 }

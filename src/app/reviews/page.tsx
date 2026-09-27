@@ -10,6 +10,7 @@ import { Star, ExternalLink } from "lucide-react"
 import Image from "next/image"
 import { formatDate } from "@/lib/helpers"
 import { getServerCurrency } from "@/lib/currency-server"
+import { EmptyState } from "@/components/empty-state"
 
 export const dynamic = "force-dynamic"
 
@@ -37,24 +38,23 @@ export default async function MyReviewsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="pv-shell py-8 md:py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text-primary">My Reviews</h1>
-          <p className="text-sm text-text-secondary mt-1">
-            Reviews you&apos;ve written for products you&apos;ve purchased.
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary md:text-[32px]">
+            Your reviews
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">
+            What you&apos;ve said about products you&apos;ve bought.
           </p>
         </div>
 
         {reviews.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Star className="h-10 w-10 mx-auto mb-4 text-text-muted" />
-              <p className="text-text-secondary">You haven&apos;t written any reviews yet.</p>
-              <Button asChild className="mt-4">
-                <Link href="/browse">Browse Products</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={<Star className="h-6 w-6" />}
+            title="Nothing here yet."
+            description="Reviews you write on products you own will show up here."
+            action={{ label: "Browse products", href: "/browse" }}
+          />
         ) : (
           <div className="space-y-6">
             {reviews.map((review) => {

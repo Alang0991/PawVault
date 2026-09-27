@@ -43,6 +43,7 @@ export async function GET(
             username: true,
             displayName: true,
             avatar: true,
+            isInternal: true,
           },
         },
         product: {
@@ -62,6 +63,11 @@ export async function GET(
     })
 
     if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 })
+    }
+
+    // Block access to internal/tester user posts for non-founders
+    if (post.user.isInternal && (!currentUser || currentUser.role !== "FOUNDER")) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 

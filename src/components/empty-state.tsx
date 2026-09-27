@@ -18,7 +18,7 @@ interface EmptyStateProps {
 export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
   return (
     <div className={cn("text-center py-12", className)}>
-      <div className="mx-auto h-12 w-12 rounded-full bg-surface-subtle flex items-center justify-center mb-4">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
         {icon || <Package className="h-6 w-6 text-text-muted" />}
       </div>
       <h3 className="text-lg font-semibold text-text-primary mb-1">
@@ -42,6 +42,10 @@ export function EmptyState({ icon, title, description, action, className }: Empt
   )
 }
 
+/**
+ * Empty copy follows the design direction §15: say something
+ * intentional, then offer the way out. Never a bare "no results".
+ */
 export function EmptyBrowseState({
   hasFilters,
   query,
@@ -53,8 +57,8 @@ export function EmptyBrowseState({
     return (
       <EmptyState
         icon={<Package className="h-6 w-6" />}
-        title="No products found"
-        description={`No results for "${query}". Try adjusting your search or filters.`}
+        title={`Nothing here for “${query}”.`}
+        description="Try a different search term, or remove a filter."
         action={{ label: "Clear search", href: "/browse" }}
       />
     )
@@ -64,8 +68,8 @@ export function EmptyBrowseState({
     return (
       <EmptyState
         icon={<Package className="h-6 w-6" />}
-        title="No products match your filters"
-        description="Try adjusting or clearing your filters."
+        title="Nothing here yet."
+        description="Try removing a filter or searching for something else."
         action={{ label: "Clear filters", href: "/browse" }}
       />
     )
@@ -74,8 +78,8 @@ export function EmptyBrowseState({
   return (
     <EmptyState
       icon={<Package className="h-6 w-6" />}
-      title="No products yet"
-      description="More drops are on the way. Check back soon."
+      title="Nothing here yet."
+      description="No products have been published. Check back soon."
       action={{ label: "Start selling", href: "/creator/dashboard" }}
     />
   )

@@ -14,12 +14,15 @@ export async function GET(request: Request) {
 
     const events = await prisma.event.findMany({
       where,
-      include: { creator: { select: { username: true, displayName: true } } },
+      include: { creator: { select: { username: true, displayName: true, isInternal: true } } },
       orderBy: { startDate: "asc" },
       take: limit,
     })
 
-    return NextResponse.json({ events })
+    // Filter out events created by internal/tester users
+    const filteredEvents = events.filter((e) => e.creator && !e.creator.isInternal)
+
+    return NextResponse.json({ events: filteredEvents })
   } catch (error) {
     console.error("Get events error:", error)
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 })

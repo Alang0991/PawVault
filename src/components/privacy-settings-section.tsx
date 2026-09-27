@@ -106,7 +106,7 @@ export function PrivacySettingsSection() {
 
       <div className="flex items-center gap-3">
         {saved && <span className="text-sm text-green-600">Saved!</span>}
-        <Button onClick={handleSave} disabled={saving} className="gradient-bg text-white">
+        <Button onClick={handleSave} disabled={saving}>
           {saving ? "Saving..." : "Save Changes"}
         </Button>
       </div>

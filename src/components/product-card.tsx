@@ -3,13 +3,14 @@
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { IconButton } from "@/components/ui/icon-button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Price } from "@/components/price"
 import { Rating } from "@/components/rating"
 import { AdultContentPreview } from "@/components/adult-content-preview"
-import { Heart, Package, ShoppingCart } from "lucide-react"
+import { Heart, Package } from "lucide-react"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
+import { useTranslation } from "@/hooks/use-translation"
+import { formatCount } from "@/lib/format"
 import { StatusBadge } from "@/components/status-badge"
 
 interface Product {
@@ -31,10 +32,12 @@ interface Product {
   }
   rating?: number
   reviewCount?: number
+  salesCount?: number
   category?: { name: string; slug: string } | null
   tags?: { tag: { name: string; slug: string } }[]
   _count?: {
     favorites: number
+    downloads?: number
   }
 }
 
@@ -45,6 +48,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, isOwned, onAddToCart }: ProductCardProps) {
+  const { t } = useTranslation()
   const [isLiked, setIsLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(product._count?.favorites || 0)
   const { data: session } = useSession()
@@ -52,6 +56,7 @@ export function ProductCard({ product, isOwned, onAddToCart }: ProductCardProps)
   const thumbnail = product.media?.[0]
   const creatorName = product.creator.displayName || product.creator.username || "Unknown"
   const hasDiscount = product.isOnSale && product.salePrice && product.salePrice < product.price
+  const salesCount = product.salesCount ?? product._count?.downloads ?? 0
 
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -72,8 +77,8 @@ export function ProductCard({ product, isOwned, onAddToCart }: ProductCardProps)
   return (
     <Link href={`/product/${product.slug}`} className="group block">
       <div className="pv-product-card flex flex-col">
-        {/* Image — dominant visual area */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-surface-subtle border border-border/70 shadow-card transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-card-hover">
+        {/* Image — the product is the star, so it owns the card */}
+        <div className="pv-product-media aspect-[4/3] w-full">
           {thumbnail ? (
             <AdultContentPreview
               mediaId={thumbnail.id}
@@ -81,34 +86,36 @@ export function ProductCard({ product, isOwned, onAddToCart }: ProductCardProps)
               contentRating={product.contentRating || "SFW"}
               alt={product.title}
               className="w-full h-full"
-              imgClassName="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              imgClassName="w-full h-full object-cover"
               variant="image"
               aspect="video"
               showBadge
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-text-muted">
-              <Package className="h-8 w-8 opacity-30" />
+            <div className="flex h-full w-full items-center justify-center text-text-muted">
+              <Package className="h-7 w-7 opacity-30" aria-hidden="true" />
             </div>
           )}
 
-          {/* Overlay badges */}
-          <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
-            {hasDiscount && (
+          {/* At most two chips: one commercial signal, one content signal.
+              Anything more turns a product grid into a wall of badges. */}
+          <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
+            {hasDiscount ? (
               <Badge variant="sale" size="sm" className="font-bold">
                 -{Math.round(((product.price - product.salePrice!) / product.price) * 100)}%
               </Badge>
-            )}
-            {product.isFree && <StatusBadge type="free" />}
-            {isOwned && <StatusBadge type="owned" />}
+            ) : product.isFree ? (
+              <StatusBadge type="free" />
+            ) : isOwned ? (
+              <StatusBadge type="owned" />
+            ) : null}
             {product.contentRating !== "SFW" && <StatusBadge type="mature" />}
           </div>
 
-          {/* Wishlist action */}
           <IconButton
             variant="ghost"
             size="sm"
-            className="absolute top-2.5 right-2.5 bg-surface/70 backdrop-blur hover:bg-surface group-opacity-100 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute right-2.5 top-2.5 bg-surface/80 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
             onClick={handleLike}
             aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
           >
@@ -122,61 +129,51 @@ export function ProductCard({ product, isOwned, onAddToCart }: ProductCardProps)
           </IconButton>
         </div>
 
-        {/* Info area */}
-        <div className="pt-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-5 w-5">
-              <AvatarImage src={product.creator.avatar || ""} alt={creatorName} />
-              <AvatarFallback className="text-[10px]">
-                {creatorName[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <span className="flex items-center gap-1.5 min-w-0">
-              <span className="text-xs text-text-muted truncate group-hover:text-text-secondary transition-colors">
-                {creatorName}
-              </span>
-              {product.creator.isVerified && (
-                <StatusBadge type="verified" size="sm" className="shrink-0" />
-              )}
-            </span>
-          </div>
-
-          <p className="text-[15px] font-semibold text-text-primary line-clamp-2 group-hover:text-accent transition-colors leading-snug">
+        {/* Info — quiet, stacked, scannable in a grid */}
+        <div className="mt-3 flex flex-col gap-1">
+          <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-text-primary">
             {product.title}
+          </h3>
+
+          <p className="truncate text-xs text-text-muted">
+            {t("marketplace.byCreator", { name: creatorName })}
           </p>
 
-          <div className="flex items-center justify-between">
+          {(salesCount > 0 || (product.rating ?? 0) > 0) && (
+            <p className="flex items-center gap-1.5 text-xs text-text-muted">
+              {typeof product.rating === "number" && product.rating > 0 && (
+                <Rating rating={product.rating} size="sm" showCount={false} />
+              )}
+              {salesCount > 0 && (
+                <span>
+                  {t("marketplace.salesLabel", { count: formatCount(salesCount) })}
+                </span>
+              )}
+            </p>
+          )}
+
+          <div className="mt-1.5">
             <Price
               amount={product.price}
               salePrice={product.salePrice}
               isFree={product.isFree}
-              amountClassName="text-base"
+              amountClassName="text-base font-semibold"
             />
-            {typeof product.rating === "number" &&
-              product.rating > 0 &&
-              (product.reviewCount || 0) > 0 && (
-                <Rating
-                  rating={product.rating}
-                  reviewCount={product.reviewCount}
-                  size="sm"
-                  showCount
-                />
-              )}
           </div>
-          {onAddToCart && (
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onAddToCart(product.id)
-              }}
-              className="mt-2 w-full text-xs text-primary hover:text-accent transition-colors font-medium"
-            >
-              <ShoppingCart className="inline h-3 w-3 mr-1" />
-              Add to Cart
-            </button>
-          )}
         </div>
+
+        {onAddToCart && (
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onAddToCart(product.id)
+            }}
+            className="mt-3 w-full rounded-lg border py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-accent hover:text-text-primary focus-ring"
+          >
+            {t("marketplace.addToCart")}
+          </button>
+        )}
       </div>
     </Link>
   )

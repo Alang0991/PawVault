@@ -228,7 +228,6 @@ const moveToCart = async (productId: string) => {
                 <SectionHeader
                   title="Recently Viewed"
                   subtitle="Products you've recently looked at"
-                  icon={<Clock className="h-5 w-5" />}
                 />
                 <ProductGrid products={recentlyViewed} />
               </div>

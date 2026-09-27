@@ -17,7 +17,7 @@ interface Suggestion {
   image?: string
 }
 
-export function SearchBar() {
+export function SearchBar({ placeholder }: { placeholder?: string }) {
   const router = useRouter()
   const { t } = useTranslation()
   const [query, setQuery] = useState("")
@@ -112,7 +112,7 @@ export function SearchBar() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder={(t("marketplace.searchPlaceholder") as string)}
+            placeholder={placeholder ?? (t("marketplace.searchPlaceholder") as string)}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -159,7 +159,7 @@ export function SearchBar() {
 <button
             type="button"
             onClick={() => go(query)}
-            className="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-muted border-t"
+            className="w-full border-t bg-surface px-3 py-2 text-left text-sm text-text-secondary transition-colors hover:bg-muted hover:text-text-primary"
           >
             {(t("marketplace.seeAllResults", { query }) as string)}
           </button>
